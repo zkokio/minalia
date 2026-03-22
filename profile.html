@@ -6180,11 +6180,17 @@ What are you envisioning for unit ${unitLetter}?`;
       if (!scored.length) {
         wrap.innerHTML = '<div class="ph-no-data">' + ((!isViewingOtherUser || isViewingOwnProfile) ? 'Tune your units to see health' : 'Tune data private') + '</div>';
         if (avgRow) avgRow.style.display = 'none';
+        const hEl = document.getElementById('healthPct');
+        if (hEl) { hEl.textContent = 'N/A'; hEl.style.color = 'rgba(255,255,255,0.25)'; }
         return;
       }
 
       const avg = Math.round(scored.reduce((a,u) => a + u.tune_score, 0) / scored.length);
       const avgColor = avg >= 80 ? '#4ade80' : avg >= 50 ? '#FFE08A' : avg >= 25 ? '#fb923c' : '#f87171';
+
+      // Update the top-right health % display
+      const hEl = document.getElementById('healthPct');
+      if (hEl) { hEl.textContent = avg + '%'; hEl.style.color = avgColor; }
 
       const display = [...units].sort((a,b) => a.unit_code.localeCompare(b.unit_code)).slice(0, 32);
       wrap.innerHTML = display.map(u => {
