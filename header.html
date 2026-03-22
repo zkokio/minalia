@@ -1,0 +1,238 @@
+<!-- header.html - Shared Header Component -->
+<nav class="nav">
+  <div class="nav-left">
+    <a href="intro.html" class="nav-logo-link">
+      <img src="images/mina-logo.png" alt="Mina" class="nav-logo-img" />
+      <span class="nav-logo-text">MINALIA</span>
+    </a>
+  </div>
+  <div class="nav-right">
+    <!-- User dropdown will be inserted here by user-dropdown.js -->
+    <div class="nav-audio-slot"></div>
+  </div>
+</nav>
+
+<style>
+/* Header Navigation */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(18,14,24,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,224,138,0.15);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.nav-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.nav-logo-link:hover {
+  opacity: 0.8;
+}
+
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+}
+
+.nav-logo-text {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-audio-slot {
+  display: flex;
+  align-items: center;
+}
+
+/* User Dropdown */
+.user-dropdown-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.user-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,224,138,0.3);
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.user-avatar-btn:hover {
+  border-color: rgba(255,224,138,0.6);
+  transform: scale(1.05);
+}
+
+.user-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-btn.no-avatar {
+  font-size: 14px;
+  color: #FFE08A;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(255,224,138,0.2), rgba(255,224,138,0.1));
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: rgba(18,14,24,0.98);
+  border: 1px solid rgba(255,224,138,0.2);
+  border-radius: 12px;
+  min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  backdrop-filter: blur(16px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s;
+  z-index: 2000;
+}
+
+.user-dropdown-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  background: rgba(18,14,24,0.98);
+  border-left: 1px solid rgba(255,224,138,0.2);
+  border-top: 1px solid rgba(255,224,138,0.2);
+  transform: rotate(45deg);
+}
+
+.dropdown-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.dropdown-username {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFE08A;
+  margin-bottom: 4px;
+}
+
+.dropdown-email {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  word-break: break-all;
+}
+
+.dropdown-menu-items {
+  padding: 8px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: rgba(255,224,138,0.1);
+  color: #FFE08A;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 8px 0;
+}
+
+.dropdown-item.danger {
+  color: rgba(255,100,100,0.9);
+}
+
+.dropdown-item.danger:hover {
+  background: rgba(255,100,100,0.1);
+  color: rgb(255,120,120);
+}
+
+/* Audio Button */
+.audio-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: rgba(255,255,255,0.8);
+  padding: 0;
+}
+
+.audio-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+.audio-btn svg {
+  width: 20px;
+  height: 20px;
+}
+</style>

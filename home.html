@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minaliens — All 20 Ministers — MINALIA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260301c"></script>
+  <script src="auth_auro.js?v=20260301c"></script>
+  <link rel="stylesheet" href="style.css?v=20260301c">
+  <style>
+    body { min-height:100vh; padding-top:92px; overflow-x:hidden; }
+    .nav-audio-slot { display:flex; align-items:center; }
+
+    /* ── Page layout ── */
+    .container { max-width:1280px; margin:0 auto; padding:48px 24px 100px; position:relative; z-index:2; }
+    .breadcrumb { font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:36px; display:flex; align-items:center; gap:8px; }
+    .breadcrumb a { color:rgba(255,255,255,0.45); text-decoration:none; transition:color .2s; }
+    .breadcrumb a:hover { color:#FFE08A; }
+    .breadcrumb span { color:rgba(255,255,255,0.2); }
+
+    /* ── Hero ── */
+    .page-hero { margin-bottom:56px; }
+    .page-eyebrow { font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+      color:#4ade80; margin-bottom:12px; opacity:.8; }
+    .page-title { font-size:52px; font-weight:900; color:#fff; line-height:1.05; margin-bottom:16px; }
+    .page-title span { color:#4ade80; }
+    .page-sub { font-size:15px; color:rgba(255,255,255,0.5); max-width:600px; line-height:1.7; }
+    .stats-bar { display:flex; gap:32px; margin-top:28px; flex-wrap:wrap; }
+    .stat-pill { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      border-radius:20px; padding:8px 18px; display:flex; align-items:center; gap:8px; }
+    .stat-pill-num { font-size:18px; font-weight:800; color:#FFE08A; }
+    .stat-pill-lbl { font-size:12px; color:rgba(255,255,255,0.4); }
+
+    /* ── Grid ── */
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
+
+    /* ── Card ── */
+    .mcard {
+      background:rgba(20,16,28,0.95);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:16px;
+      overflow:hidden;
+      transition:all .25s ease;
+      cursor:pointer;
+      text-decoration:none;
+      display:block;
+      position:relative;
+    }
+    .mcard:hover { border-color:rgba(74,222,128,0.35); transform:translateY(-4px);
+      box-shadow:0 16px 48px rgba(0,0,0,0.5), 0 0 24px rgba(74,222,128,0.08); }
+    .mcard.rarity-legendary { border-color:rgba(255,215,0,0.25); }
+    .mcard.rarity-legendary:hover { border-color:rgba(255,215,0,0.55); box-shadow:0 16px 48px rgba(0,0,0,0.5), 0 0 30px rgba(255,215,0,0.12); }
+    .mcard.rarity-rare { border-color:rgba(192,132,252,0.2); }
+    .mcard.rarity-rare:hover { border-color:rgba(192,132,252,0.5); box-shadow:0 16px 48px rgba(0,0,0,0.5), 0 0 28px rgba(192,132,252,0.1); }
+
+    /* Card image */
+    .mcard-img-wrap { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#0a0810; }
+    .mcard-img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s ease; }
+    .mcard:hover .mcard-img { transform:scale(1.04); }
+    .mcard-img-overlay { position:absolute; inset:0;
+      background:linear-gradient(to bottom, transparent 50%, rgba(14,10,20,0.98) 100%); }
+
+    /* Rarity badge floating on image */
+    .mcard-rarity-tag {
+      position:absolute; top:12px; right:12px;
+      font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      padding:3px 10px; border-radius:20px; backdrop-filter:blur(8px);
+    }
+    .tag-legendary { background:rgba(255,215,0,0.2); border:1px solid rgba(255,215,0,0.5); color:#FFD700; }
+    .tag-rare      { background:rgba(192,132,252,0.2); border:1px solid rgba(192,132,252,0.5); color:#C084FC; }
+    .tag-uncommon  { background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.4); color:#4ade80; }
+    .tag-common    { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.55); }
+
+    /* Signed badge */
+    .mcard-signed {
+      position:absolute; top:12px; left:12px;
+      font-size:10px; font-weight:700; letter-spacing:.06em;
+      padding:3px 9px; border-radius:20px; backdrop-filter:blur(8px);
+      background:rgba(96,255,171,0.15); border:1px solid rgba(96,255,171,0.4); color:#60FFAB;
+    }
+
+    /* Card body */
+    .mcard-body { padding:16px 18px 20px; }
+    .mcard-territory { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+      color:#4ade80; margin-bottom:6px; opacity:.75; }
+    .mcard-name-row { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
+    .mcard-name { font-size:22px; font-weight:900; color:#fff; line-height:1; }
+    .mcard-token { font-size:11px; color:rgba(255,255,255,0.25); font-family:monospace; }
+    .mcard-superpower { font-size:12px; color:rgba(74,222,128,0.85); font-weight:600;
+      margin-bottom:10px; display:flex; align-items:center; gap:5px; }
+    .mcard-superpower::before { content:'⚡'; font-size:10px; }
+
+    /* Stars */
+    .mcard-stars { font-size:14px; letter-spacing:2px; margin-bottom:12px; }
+    .star-on  { color:#FFE08A; text-shadow:0 0 8px rgba(255,224,138,0.5); }
+    .star-off { color:rgba(255,255,255,0.1); }
+
+    /* Score bar */
+    .mcard-score-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .mcard-score-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+      color:rgba(255,255,255,0.3); font-weight:600; flex-shrink:0; }
+    .mcard-score-bar { flex:1; height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
+    .mcard-score-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,#4ade80,#60FFAB); }
+    .mcard-score-num { font-size:13px; font-weight:800; color:#FFE08A; flex-shrink:0; min-width:24px; text-align:right; }
+
+    /* Owner row */
+    .mcard-owner { display:flex; align-items:center; gap:8px; padding:10px 0 0;
+      border-top:1px solid rgba(255,255,255,0.06); }
+    .mcard-owner-avatar { width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.1); overflow:hidden; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:13px; }
+    .mcard-owner-avatar img { width:100%; height:100%; object-fit:cover; }
+    .mcard-owner-info { flex:1; min-width:0; }
+    .mcard-owner-name { font-size:12px; font-weight:600; color:rgba(255,255,255,0.75);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mcard-owner-sub { font-size:10px; color:rgba(255,255,255,0.3); }
+    .mcard-owner-badge { font-size:10px; padding:2px 8px; border-radius:10px;
+      background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.25); color:#4ade80;
+      font-weight:600; flex-shrink:0; }
+    .mcard-unclaimed { font-size:11px; color:rgba(255,255,255,0.25); font-style:italic; }
+
+    /* Filter bar */
+    .filter-bar { display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap; align-items:center; }
+    .filter-btn { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:20px; padding:6px 16px; font-size:12px; font-weight:600;
+      color:rgba(255,255,255,0.5); cursor:pointer; transition:all .2s; }
+    .filter-btn:hover { border-color:rgba(255,255,255,0.25); color:rgba(255,255,255,0.8); }
+    .filter-btn.active { background:rgba(74,222,128,0.15); border-color:rgba(74,222,128,0.5);
+      color:#4ade80; }
+    .filter-sep { width:1px; height:20px; background:rgba(255,255,255,0.08); margin:0 4px; }
+
+    /* No results */
+    .no-results { text-align:center; padding:60px 0; color:rgba(255,255,255,0.3); font-size:14px; }
+  </style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-left">
+    <a href="intro.html" class="nav-logo-link">
+      <img src="images/mina-logo.png" alt="Mina" class="nav-logo-img" />
+      <span class="nav-logo-text">MINALIA</span>
+    </a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-center" id="navCenter" style="display:none;">
+      <a href="map.html" class="nav-link">Map</a>
+      <a href="realestate.html" class="nav-link">Real Estate</a>
+      <a href="profile.html" class="nav-link">Profile</a>
+    </div>
+    <div class="auth-links" id="authLinks" style="display:none;">
+      <a href="register.html" class="auth-link register">Register</a>
+      <a href="login.html" class="auth-link login">Login</a>
+    </div>
+    <div class="nav-audio-slot"></div>
+    <div class="user-dropdown-container" id="userDropdown" style="display:none;">
+      <button class="user-avatar-btn" id="userAvatarBtn">
+        <span id="userInitials">??</span>
+      </button>
+      <div class="user-dropdown-menu" id="dropdownMenu">
+        <div class="dropdown-header">
+          <div class="dropdown-username" id="dropdownUsername">User</div>
+          <div class="dropdown-wallet" id="dropdownWallet" onclick="copyWallet()" title="Click to copy">B62q...xyz</div>
+        </div>
+        <div class="dropdown-menu-items">
+          <a href="#" class="dropdown-item" onclick="alert('Coming soon'); return false;">Game Settings</a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item" onclick="alert('Coming soon'); return false;">Help &amp; Contact</a>
+          <a href="#" class="dropdown-item" onclick="alert('Coming soon'); return false;">About</a>
+          <a href="#" class="dropdown-item" onclick="alert('Coming soon'); return false;">Privacy Info</a>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ticker Tape -->
+<div class="ticker-container">
+  <div class="ticker-content">
+    <div class="ticker-clock-box" id="ticker-clock-box" title="">
+      <span class="lum-time-label" id="ticker-clock">Y1 · D1 · 00:00</span>
+    </div>
+    <div class="ticker-scroll-wrapper">
+      <div class="ticker-scroll" id="ticker-scroll"></div>
+    </div>
+  </div>
+</div>
+
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="map.html">MAP</a>
+      <span>›</span>
+      <span style="color:rgba(255,255,255,0.7)">MINALIENS</span>
+    </div>
+
+    <div class="page-hero">
+      <div class="page-eyebrow">Luminaea's Council of 20</div>
+      <div class="page-title">The <span>Minaliens</span></div>
+      <div class="page-sub">Each territory in Luminaea is governed by a Minalien minister — a unique NFT character with attributes, superpowers, and their own personality. Explore all 20 ministers and their territories.</div>
+      <div class="stats-bar">
+        <div class="stat-pill"><span class="stat-pill-num">20</span><span class="stat-pill-lbl">Ministers</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-legendary">1</span><span class="stat-pill-lbl">Legendary</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-rare">2</span><span class="stat-pill-lbl">Rare</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-signed">17</span><span class="stat-pill-lbl">Signed</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-owners">—</span><span class="stat-pill-lbl">Territory Owners</span></div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All 20</button>
+      <button class="filter-btn" onclick="setFilter('legendary',this)">⭐ Legendary</button>
+      <button class="filter-btn" onclick="setFilter('rare',this)">💜 Rare</button>
+      <button class="filter-btn" onclick="setFilter('signed',this)">✍️ Signed</button>
+      <div class="filter-sep"></div>
+      <button class="filter-btn" onclick="setSort('score',this)">↓ Score</button>
+      <button class="filter-btn" onclick="setSort('stars',this)">↓ Stars</button>
+      <button class="filter-btn" onclick="setSort('territory',this)">↓ Territory</button>
+    </div>
+
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="no-results" id="no-results" style="display:none">No Minaliens match this filter.</div>
+  </div>
+
+  <div class="ticker-container">
+    <div class="ticker-content">
+      <div class="ticker-clock-box" id="ticker-clock-box">
+        <span class="lum-time-label" id="ticker-clock">Y1 · D1 · 00:00</span>
+      </div>
+      <div class="ticker-scroll-wrapper">
+        <div class="ticker-scroll" id="ticker-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ── MINALIEN DATA ──
+  const MINALIENS = [
+    { token:'13', name:'Nova',  lum:1,  area:'LUM-01', stars:8,  overall:81, rarity:'uncommon', signed:true,  superpower:'Enhances telescope clarity for stargazing', food:'Chicken Quesadilla', hobbies:'Astronomy, Mapping constellations', img:'/nfts/13_NOVA.png',  page:'minister_nova.html',   territory:'Aurvandil',   color:'#FFE08A' },
+    { token:'2',  name:'Faze',  lum:2,  area:'LUM-02', stars:3,  overall:92, rarity:'legendary',signed:true,  superpower:'Summons Fireflies',                          food:'Gourmet Pasta',       hobbies:'Culinary Arts, Hosting Dinners', img:'/nfts/2_FAZE.png',    page:'minister_faze.html',   territory:'Celestara',   color:'#60DFFF' },
+    { token:'8',  name:'Luma',  lum:3,  area:'LUM-03', stars:8,  overall:82, rarity:'uncommon', signed:true,  superpower:'Summons meteors with a whistle',              food:'TBD',                 hobbies:'Cultivating glowing alien plants', img:'/nfts/8_LUMA.png',   page:'minister_luma.html',   territory:'Driftmere',   color:'#B388FF' },
+    { token:'1',  name:'Talha', lum:4,  area:'LUM-04', stars:0,  overall:72, rarity:'uncommon', signed:false, superpower:'Gravity Manipulation',                        food:'Spaghetti Bolognese', hobbies:'Stargazing, Mapping Constellations', img:'/nfts/1_TALHA.png', page:'minister_talha.html', territory:'Emberveil',   color:'#FF6B35' },
+    { token:'38', name:'Wisp',  lum:5,  area:'LUM-05', stars:8,  overall:82, rarity:'uncommon', signed:true,  superpower:'Knows the thoughts of nearby plants',         food:'TBD',                 hobbies:'Crafting stardust sculptures, Art', img:'/nfts/38_WISP.png', page:'minister_wisp.html',   territory:'Frostholm',   color:'#80DEEA' },
+    { token:'47', name:'Halo',  lum:6,  area:'LUM-06', stars:8,  overall:79, rarity:'uncommon', signed:true,  superpower:'Grows flowers with a clap of their hands',    food:'Goulash',             hobbies:'Painting, Floral art', img:'/nfts/47_HALO.png',          page:'minister_halo.html',   territory:'Gloomhaven',  color:'#F06292' },
+    { token:'84', name:'Gaze',  lum:7,  area:'LUM-07', stars:9,  overall:81, rarity:'rare',     signed:true,  superpower:'Sees distant objects in extreme detail',      food:'Baklava',             hobbies:'Landscape painting, Extracting natural pigments', img:'/nfts/84_GAZE.png', page:'minister_gaze.html', territory:'Hollowfen',   color:'#CE93D8' },
+    { token:'16', name:'Blip',  lum:8,  area:'LUM-08', stars:7,  overall:79, rarity:'uncommon', signed:true,  superpower:'Creates harmonic sound frequencies',          food:'Miso Ramen',          hobbies:'Sound engineering, Music composition', img:'/nfts/16_BLIP.png', page:'minister_blip.html',  territory:'Ironcrest',   color:'#4FC3F7' },
+    { token:'3',  name:'Drip',  lum:9,  area:'LUM-09', stars:1,  overall:80, rarity:'common',   signed:false, superpower:'Water Control',                               food:'Sushi',               hobbies:'Fashion, Art Galleries', img:'/nfts/3_DRIP.png',           page:'minister_drip.html',   territory:'Jadehollow',  color:'#4ade80' },
+    { token:'42', name:'Opal',  lum:10, area:'LUM-10', stars:8,  overall:80, rarity:'uncommon', signed:true,  superpower:'Reflects and redirects light to create illusions', food:'Crystal Fruit Salad', hobbies:'Meditation, Light sculpture', img:'/nfts/42_OPAL.png', page:'minister_opal.html',  territory:'Kelspire',    color:'#80CBC4' },
+    { token:'25', name:'Frog',  lum:11, area:'LUM-11', stars:7,  overall:80, rarity:'uncommon', signed:true,  superpower:'Leaps across vast distances using energy springs', food:'Grilled Vegetables', hobbies:'Parkour, Exploring new heights', img:'/nfts/25_FROG.png', page:'minister_frog.html',   territory:'Lumenvast',   color:'#AED581' },
+    { token:'18', name:'Quip',  lum:12, area:'LUM-12', stars:8,  overall:85, rarity:'uncommon', signed:true,  superpower:'Amplifies the laughter of nearby individuals', food:'Stuffed Zucchini',    hobbies:'Comedy, Wordplay', img:'/nfts/18_QUIP.png',           page:'minister_quip.html',   territory:'Mirewood',    color:'#FFD54F' },
+    { token:'69', name:'Vale',  lum:13, area:'LUM-13', stars:8,  overall:85, rarity:'uncommon', signed:false, superpower:'Reshapes materials with her mind',             food:'Fennel Salad',        hobbies:'Cosmic architecture, Designing adaptive structures', img:'/nfts/69_VALE.png', page:'minister_vale.html', territory:'Nightveil',  color:'#FF8A65' },
+    { token:'60', name:'Angel', lum:14, area:'LUM-14', stars:8,  overall:81, rarity:'uncommon', signed:true,  superpower:'Creates temporary protective shields',         food:'Ceviche',             hobbies:'Exploring alien ruins, Artifact hunting', img:'/nfts/60_ANGEL.png', page:'minister_angel.html', territory:'Oremount',  color:'#F48FB1' },
+    { token:'59', name:'Wise',  lum:15, area:'LUM-15', stars:8,  overall:72, rarity:'uncommon', signed:true,  superpower:'Projects holograms from their hands',          food:'Chicken Couscous',    hobbies:'Philosophy, Storytelling', img:'/nfts/59_WISE.png',   page:'minister_wise.html',   territory:'Peakwhisper', color:'#80DEEA' },
+    { token:'82', name:'Yasin', lum:16, area:'LUM-16', stars:9,  overall:81, rarity:'rare',     signed:true,  superpower:'Charges objects with energy by touch',         food:'Eggs Benedict',       hobbies:'Engineering, Crafting energy-efficient devices', img:'/nfts/82_YASIN.png', page:'minister_yasin.html', territory:'Quartzrift', color:'#CE93D8' },
+    { token:'61', name:'Ali',   lum:17, area:'LUM-17', stars:8,  overall:77, rarity:'uncommon', signed:true,  superpower:'Detects ingredients with a single sniff',      food:'Sushi Platter',       hobbies:'Cooking, Galactic banquets', img:'/nfts/61_ALI.png',    page:'minister_ali.html',    territory:'Rustmarsh',   color:'#FFCC80' },
+    { token:'19', name:'Mino',  lum:18, area:'LUM-18', stars:8,  overall:76, rarity:'uncommon', signed:true,  superpower:'Can mimic the abilities of nearby Minaliens',  food:'Chili Con Carne',     hobbies:'Collecting rare minerals, Expeditions', img:'/nfts/19_MINO.png', page:'minister_mino.html',   territory:'Stonehollow', color:'#A5D6A7' },
+    { token:'17', name:'Zoro',  lum:19, area:'LUM-19', stars:10, overall:82, rarity:'uncommon', signed:true,  superpower:'Creates holographic images to illustrate stories', food:'Bibimbap',         hobbies:'Storytelling, Performing', img:'/nfts/17_ZORO.png',   page:'minister_zoro.html',   territory:'Thistlerun',  color:'#FFA726' },
+    { token:'37', name:'Sike',  lum:20, area:'LUM-20', stars:8,  overall:79, rarity:'uncommon', signed:true,  superpower:'Converts sound waves into heat energy',        food:'TBD',                 hobbies:'Pranks, Comedy setups', img:'/nfts/37_SIKE.png',          page:'minister_sike.html',   territory:'Underveil',   color:'#EF9A9A' },
+  ];
+
+  // Territory owners from DEMO_PLAYERS (will be overridden by DB)
+  const TERRITORY_OWNERS = {
+    'LUM-01': { name:'explorer_dev_001', avatar:'/images/profile_icons/demo_me.jpg',  color:'#FFE08A' },
+    'LUM-02': { name:'cosmic_trader',    avatar:'/images/profile_icons/demo5.jpg',    color:'#FF8A65' },
+    'LUM-03': { name:'moonveil',         avatar:'/images/profile_icons/demo1.jpg',    color:'#B388FF' },
+    'LUM-04': { name:'explorer_dev_001', avatar:'/images/profile_icons/demo_me.jpg',  color:'#FFE08A' },
+    'LUM-05': { name:'stellar_wanderer', avatar:'/images/profile_icons/demo2.jpg',    color:'#80DEEA' },
+    'LUM-06': { name:'nightbloom_kai',   avatar:'/images/profile_icons/demo3.jpg',    color:'#F48FB1' },
+    'LUM-07': { name:'forest_dweller',   avatar:'/images/profile_icons/demo7.jpg',    color:'#FFA726' },
+    'LUM-08': { name:'stellar_wanderer', avatar:'/images/profile_icons/demo2.jpg',    color:'#80DEEA' },
+    'LUM-09': { name:'glowgrove',        avatar:'/images/profile_icons/demo4.jpg',    color:'#60FFAB' },
+    'LUM-12': { name:'canopy_sage',      avatar:'/images/profile_icons/demo6.jpg',    color:'#A5D6A7' },
+  };
+
+  let currentFilter = 'all';
+  let currentSort   = 'territory';
+  let dbOwners = {};
+
+  function stars(n) {
+    let h = '';
+    for(let i=1;i<=10;i++) h += `<span class="${i<=n?'star-on':'star-off'}">${i<=n?'★':'☆'}</span>`;
+    return h;
+  }
+
+  function ownerHtml(area) {
+    const cu = window.currentUser || window._sessionUser;
+    const owner = dbOwners[area] || TERRITORY_OWNERS[area];
+    if (!owner) return `<span class="mcard-unclaimed">No owner yet</span>`;
+    const isSelf = cu && cu.username === owner.name;
+    const av = owner.avatar;
+    const isUrl = av && (av.startsWith('http')||av.startsWith('/')||av.startsWith('images'));
+    const avatarContent = isUrl
+      ? `<img src="${av}" alt="" onerror="this.parentElement.textContent='${owner.name[0].toUpperCase()}'">`
+      : (av || owner.name[0].toUpperCase());
+    return `
+      <div class="mcard-owner-avatar">${avatarContent}</div>
+      <div class="mcard-owner-info">
+        <div class="mcard-owner-name" style="${owner.color?`color:${owner.color}`:''}">
+          ${owner.name}${isSelf?' <span style="color:#60FFAB;font-size:10px;">(You)</span>':''}
+        </div>
+        <div class="mcard-owner-sub">Territory owner</div>
+      </div>
+      <span class="mcard-owner-badge">Owner</span>
+    `;
+  }
+
+  function renderCard(m) {
+    const rarityClass = `rarity-${m.rarity}`;
+    const tagClass = `tag-${m.rarity}`;
+    const rarityLabel = m.rarity.charAt(0).toUpperCase() + m.rarity.slice(1);
+    const scorePct = Math.round((m.overall / 100) * 100);
+    return `
+      <a class="mcard ${rarityClass}" href="${m.page}" data-rarity="${m.rarity}" data-lum="${m.lum}" data-score="${m.overall}" data-stars="${m.stars}" data-signed="${m.signed}">
+        <div class="mcard-img-wrap">
+          <img class="mcard-img" src="${m.img}" alt="${m.name}" loading="lazy"
+            onerror="this.src='images/profile_icons/demo_me.jpg'">
+          <div class="mcard-img-overlay"></div>
+          <span class="mcard-rarity-tag ${tagClass}">${rarityLabel}</span>
+          ${m.signed ? '<span class="mcard-signed">✍ Signed</span>' : ''}
+        </div>
+        <div class="mcard-body">
+          <div class="mcard-territory">${m.area} · ${m.territory}</div>
+          <div class="mcard-name-row">
+            <span class="mcard-name">${m.name}</span>
+            <span class="mcard-token">#${m.token.padStart(2,'0')}</span>
+          </div>
+          <div class="mcard-superpower">${m.superpower}</div>
+          <div class="mcard-stars">${stars(m.stars)}</div>
+          <div class="mcard-score-row">
+            <span class="mcard-score-lbl">Score</span>
+            <div class="mcard-score-bar"><div class="mcard-score-fill" style="width:${scorePct}%"></div></div>
+            <span class="mcard-score-num">${m.overall}</span>
+          </div>
+          <div class="mcard-owner">${ownerHtml(m.area)}</div>
+        </div>
+      </a>`;
+  }
+
+  function getSorted(data) {
+    const arr = [...data];
+    if (currentSort === 'score')     arr.sort((a,b) => b.overall - a.overall);
+    else if (currentSort === 'stars') arr.sort((a,b) => b.stars - a.stars);
+    else                              arr.sort((a,b) => a.lum - b.lum);
+    return arr;
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('cards-grid');
+    const noRes = document.getElementById('no-results');
+    let data = MINALIENS;
+
+    if (currentFilter === 'legendary') data = data.filter(m => m.rarity === 'legendary');
+    else if (currentFilter === 'rare') data = data.filter(m => m.rarity === 'rare');
+    else if (currentFilter === 'signed') data = data.filter(m => m.signed);
+
+    data = getSorted(data);
+
+    if (data.length === 0) {
+      grid.innerHTML = '';
+      noRes.style.display = 'block';
+    } else {
+      noRes.style.display = 'none';
+      grid.innerHTML = data.map(renderCard).join('');
+    }
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
+      if (['all','legendary','rare','signed'].some(x => b.onclick && b.onclick.toString().includes(`'${x}'`)))
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    renderGrid();
+  }
+
+  function setSort(s, btn) {
+    currentSort = s;
+    // Remove active from sort buttons
+    document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
+      if (b.onclick && ['score','stars','territory'].some(x => b.onclick.toString().includes(`'${x}'`)))
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    renderGrid();
+  }
+
+  // ── Load real owner data from DB ──
+  async function loadOwners() {
+    try {
+      if (!window.supabase || typeof window.supabase.from !== 'function') return;
+      // Get all claimed units grouped by territory
+      const { data } = await window.supabase
+        .from('units')
+        .select('unit_code, owner_id')
+        .not('owner_id', 'is', null);
+      if (!data || data.length === 0) return;
+
+      // Get unique owner IDs
+      const ownerIds = [...new Set(data.map(r => r.owner_id))];
+      const { data: users } = await window.supabase
+        .from('users')
+        .select('id, username, avatar_url, avatar')
+        .in('id', ownerIds);
+      if (!users) return;
+
+      const userMap = {};
+      users.forEach(u => { userMap[u.id] = u; });
+
+      // Map territories to owners (first unit found per territory)
+      data.forEach(r => {
+        const territory = r.unit_code.split('-').slice(0,2).join('-'); // LUM-01-B → LUM-01
+        if (!dbOwners[territory] && userMap[r.owner_id]) {
+          const u = userMap[r.owner_id];
+          dbOwners[territory] = {
+            name: u.username,
+            avatar: u.avatar_url || u.avatar,
+            color: null
+          };
+        }
+      });
+
+      // Count unique territory owners
+      const uniqueOwners = new Set(Object.values(dbOwners).map(o => o.name)).size;
+      const el = document.getElementById('stat-owners');
+      if (el) el.textContent = uniqueOwners;
+
+      renderGrid();
+    } catch(e) {
+      console.warn('Owner load failed:', e.message);
+    }
+  }
+
+  // ── Ticker ──
+  const tickerItems = [
+    { icon:'👥', color:'info',    text:'20 Minalien ministers govern the territories of Luminaea' },
+    { icon:'⭐', color:'sale',    text:'Faze (LUM-02) is the rarest Minalien with Legendary status' },
+    { icon:'✍️', color:'collab', text:'17 of 20 Minaliens are signed editions' },
+    { icon:'⚡', color:'alert',   text:'Consult your territory minister for development strategy' },
+    { icon:'🔨', color:'auction', text:'Zoro (LUM-19) holds a perfect 10-star rating' },
+    { icon:'ℹ️', color:'info',    text:'Each Minalien NFT governs 16 land units in their territory' },
+  ];
+  const scroll = document.getElementById('ticker-scroll');
+  if (scroll) {
+    const doubled = [...tickerItems, ...tickerItems];
+    scroll.innerHTML = doubled.map(i =>
+      `<div class="ticker-item"><span class="ticker-icon ${i.color}">${i.icon}</span><span>${i.text}</span></div>`
+    ).join('');
+  }
+
+  // ── Init ──
+  renderGrid();
+  // Load owners after supabase is ready
+  setTimeout(loadOwners, 500);
+  </script>
+
+  <script src="lum-time.js?v=20260301c"></script>
+  <script>startLumClock();</script>
+  <script src="nav-audio.js?v=20260301c"></script>
+<script>
+  document.addEventListener('navLoaded', function() {
+    if (window.initNavAudio) window.initNavAudio();
+  });
+</script>
+<script>
+  // ── AUTH GATE ──
+  (function() {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('minalia_session')); } catch(e) {}
+    if (!s || !s.wallet_address || s.mode === 'spectator') {
+      window.location.replace('login.html');
+    }
+  })();
+</script>
+
+<script>
+  // Ticker init (load-nav.js not used on this page - inline nav)
+  (function() {
+    const items = [
+      { icon: '🤝', color: 'collab', text: 'stellar_wanderer seeking collaborators for LUM-04 development' },
+      { icon: '⚠️', color: 'alert', text: 'Minister Talha consultation available for LUM-01 owners' },
+      { icon: 'ℹ️', color: 'info',  text: '320 units across 20 territories · Join MINALIA today' },
+      { icon: '🤝', color: 'collab', text: 'cosmic_trader offering partnership on LUM-09 expansion' },
+      { icon: '⚠️', color: 'alert', text: 'New loan tier available: 40K MINA at 8% for qualified owners' },
+      { icon: 'ℹ️', color: 'info',  text: 'Minister alerts now live · Check your dashboard for insights' },
+    ];
+    function renderTicker(arr) {
+      var scroll = document.getElementById('ticker-scroll');
+      if (!scroll) return;
+      var doubled = arr.concat(arr);
+      scroll.innerHTML = doubled.map(function(i) {
+        return '<div class="ticker-item"><span class="ticker-icon ' + i.color + '">' + i.icon + '</span><span>' + i.text + '</span></div>';
+      }).join('');
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { renderTicker(items); });
+    } else {
+      renderTicker(items);
+    }
+  })();
+</script>
+</body>
+</html>

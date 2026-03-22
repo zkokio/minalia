@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enter Luminaea — MINALIA</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+
+    /* ── ONBOARDING OVERLAY ── */
+    #onboarding {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Main content wrapper */
+    .ob-content {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 820px;
+      padding: 80px 24px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+
+    /* ── STEP SYSTEM ── */
+    .ob-step {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .ob-step.active {
+      display: flex;
+    }
+    .ob-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Progress dots */
+    .ob-progress {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.5s ease 0.3s;
+    }
+    .ob-progress.visible { opacity: 1; }
+    .ob-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,224,138,0.25);
+      transition: all 0.3s ease;
+    }
+    .ob-dot.active {
+      background: #FFE08A;
+      box-shadow: 0 0 8px rgba(255,224,138,0.6);
+      width: 20px;
+      border-radius: 3px;
+    }
+    .ob-dot.done {
+      background: rgba(255,224,138,0.5);
+    }
+
+    /* Skip button */
+    .ob-skip {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.4);
+      font-size: 11px;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ob-skip:hover {
+      border-color: rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.7);
+    }
+    .ob-skip.hidden { display: none; }
+
+    /* ── TYPOGRAPHY ── */
+    .ob-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,224,138,0.5);
+      margin-bottom: 16px;
+    }
+    .ob-eyebrow-alert {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      color: rgba(255,224,138,1);
+      animation: transmissionAlert 1.6s ease-in-out infinite;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ob-eyebrow-alert::before {
+      content: '';
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,224,138,1);
+      box-shadow: 0 0 8px rgba(255,224,138,0.9), 0 0 16px rgba(255,224,138,0.5);
+      animation: alertDot 1.6s ease-in-out infinite;
+    }
+    @keyframes transmissionAlert {
+      0%, 100% { opacity: 1; text-shadow: 0 0 12px rgba(255,224,138,0.6), 0 0 24px rgba(255,224,138,0.3); letter-spacing: 0.3em; }
+      50%       { opacity: 0.4; text-shadow: none; letter-spacing: 0.28em; }
+    }
+    @keyframes alertDot {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(0.5); opacity: 0.3; }
+    }
+    .ob-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-align: center;
+      background: linear-gradient(135deg, #FFE08A 0%, #FFF4D6 50%, #FFD060 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 30px rgba(255,224,138,0.3));
+    }
+    .ob-title.small {
+      font-size: clamp(22px, 4vw, 42px);
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    @media (max-width: 700px) {
+      .ob-title.small { white-space: normal; }
+    }
+    .ob-subtitle {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,224,138,0.6);
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .ob-body {
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.65);
+      text-align: center;
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .ob-body strong {
+      color: rgba(255,224,138,0.9);
+      font-weight: 600;
+    }
+    .ob-body em {
+      color: rgba(255,255,255,0.85);
+      font-style: normal;
+    }
+
+    /* ── STEP 1: ARRIVAL ── */
+    .ob-enter-btn {
+      position: relative;
+      padding: 20px 56px;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1.5px solid rgba(255,224,138,0.5);
+      color: #FFE08A;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+    .ob-enter-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,224,138,0.08), rgba(255,224,138,0.03));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .ob-enter-btn:hover {
+      border-color: rgba(255,224,138,0.8);
+      box-shadow: 0 0 30px rgba(255,224,138,0.2), inset 0 0 20px rgba(255,224,138,0.05);
+      transform: translateY(-2px);
+    }
+    .ob-enter-btn:hover::before { opacity: 1; }
+    .ob-enter-btn .sound-icon {
+      margin-right: 10px;
+      font-size: 16px;
+      vertical-align: middle;
+    }
+
+    /* Pulse ring around enter button */
+    .ob-pulse-ring {
+      position: absolute;
+      inset: -8px;
+      border: 1px solid rgba(255,224,138,0.2);
+      border-radius: 6px;
+      animation: pulseRing 2.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pulseRing {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.03); }
+    }
+
+    /* ── STEP 2: LORE ── */
+    .ob-lore-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .ob-lore-line {
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      line-height: 2.0;
+      color: rgba(255,255,255,0.0);
+      text-align: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: color 1.2s ease;
+    }
+    .ob-lore-line:last-child { border-bottom: none; }
+    .ob-lore-line strong, .ob-lore-line em { color: inherit; transition: color 1.2s ease; }
+    .ob-lore-line.revealed { color: rgba(255,255,255,0.78); }
+    .ob-lore-line.revealed strong { color: rgba(255,224,138,0.95); font-weight: 600; }
+    .ob-lore-line.revealed em { color: rgba(255,255,255,0.9); font-style: normal; }
+    .ob-lore-line--closing { font-style: italic; }
+    .ob-lore-line--closing.revealed { color: rgba(255,224,138,0.7) !important; }
+
+    /* ── OG BADGE (for Genesis Founders) ── */
+    .ob-og-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgba(255,224,138,0.15), rgba(255,224,138,0.05));
+      border: 1px solid rgba(255,224,138,0.35);
+      border-radius: 30px;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #FFE08A;
+      margin-bottom: 28px;
+    }
+    .ob-og-badge .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: #FFE08A;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255,224,138,0.8);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+    @keyframes badgePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── STEP CARDS (profile setup) ── */
+    .ob-card {
+      width: 100%;
+      background: rgba(18, 14, 24, 0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+    .ob-card-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,224,138,0.5);
+      margin-bottom: 12px;
+    }
+    .ob-input {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ob-input:focus {
+      border-color: rgba(255,224,138,0.4);
+    }
+    .ob-input::placeholder { color: rgba(255,255,255,0.25); }
+
+    /* Avatar upload */
+    .ob-avatar-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .ob-avatar-preview {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,224,138,0.3);
+      background: rgba(255,224,138,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .ob-avatar-preview:hover {
+      border-color: rgba(255,224,138,0.6);
+      background: rgba(255,224,138,0.12);
+    }
+    .ob-avatar-preview img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .ob-avatar-hint {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.6;
+    }
+    .ob-avatar-hint span {
+      display: block;
+      color: rgba(255,224,138,0.6);
+      font-size: 11px;
+      margin-top: 4px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    #avatarFileInput { display: none; }
+
+    /* ── COLOUR PICKER ── */
+    .ob-color-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .ob-color-swatch {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .ob-color-swatch:hover {
+      transform: scale(1.15);
+    }
+    .ob-color-swatch.selected {
+      border-color: #fff;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
+      transform: scale(1.15);
+    }
+    .ob-color-swatch.selected::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #fff;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* ── TOGGLES ── */
+    .ob-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .ob-toggle-row:last-child { border-bottom: none; }
+    .ob-toggle-info { flex: 1; padding-right: 16px; }
+    .ob-toggle-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      font-weight: 500;
+    }
+    .ob-toggle-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+    .ob-toggle {
+      width: 44px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      border: none;
+    }
+    .ob-toggle.on { background: rgba(255,224,138,0.4); }
+    .ob-toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      transition: all 0.2s;
+    }
+    .ob-toggle.on::after {
+      left: 23px;
+      background: #FFE08A;
+    }
+
+    /* ── STEP 5: BRIEFING ── */
+    .ob-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 36px;
+    }
+    .ob-task {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      transition: all 0.2s;
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+    .ob-task.revealed {
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 0.5s ease, transform 0.5s ease, background 0.2s, border-color 0.2s;
+    }
+    .ob-task:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,224,138,0.15);
+    }
+    .ob-task-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,224,138,0.5);
+      letter-spacing: 0.1em;
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
+    .ob-task-body {}
+    .ob-task-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 4px;
+    }
+    .ob-task-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+    }
+
+    /* ── STEP 6: AGENT ── */
+    .ob-agent-card {
+      width: 100%;
+      background: rgba(10,10,20,0.8);
+      border: 1px solid rgba(255,224,138,0.2);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .ob-agent-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,224,138,0.04);
+    }
+    .ob-agent-avatar {
+      width: 48px;
+      height: 64px;
+      border-radius: 6px;
+      border: 1.5px solid rgba(255,224,138,0.3);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ob-agent-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+    .ob-agent-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #FFE08A;
+    }
+    .ob-agent-role {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+    .ob-agent-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 0.08em;
+    }
+    .ob-agent-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 8px #4ade80;
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .ob-chat-messages {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 100px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .ob-msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .ob-msg.visible { opacity: 1; }
+    .ob-msg.agent {
+      background: rgba(255,224,138,0.07);
+      border: 1px solid rgba(255,224,138,0.12);
+      color: rgba(255,255,255,0.8);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .ob-msg.user {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .ob-typing {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(255,224,138,0.07);
+      border: 1px solid rgba(255,224,138,0.12);
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .ob-typing.visible { opacity: 1; }
+    .ob-typing span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,224,138,0.5);
+      animation: typingDot 1.2s ease-in-out infinite;
+    }
+    .ob-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .ob-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .ob-prompts {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ob-prompt-btn {
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: rgba(255,255,255,0.65);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ob-prompt-btn:hover {
+      background: rgba(255,224,138,0.07);
+      border-color: rgba(255,224,138,0.2);
+      color: rgba(255,255,255,0.9);
+    }
+    .ob-prompt-btn .prompt-arrow {
+      margin-left: auto;
+      opacity: 0.3;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .ob-prompt-btn:hover .prompt-arrow {
+      opacity: 0.7;
+      transform: translateX(3px);
+    }
+
+    /* ── NAVIGATION BUTTONS ── */
+    .ob-btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .ob-btn-row.revealed {
+      opacity: 1;
+    }
+    .ob-btn {
+      padding: 14px 36px;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+      min-width: 160px;
+    }
+    .ob-btn-primary {
+      background: linear-gradient(135deg, rgba(255,224,138,0.25), rgba(255,224,138,0.15));
+      border: 1.5px solid rgba(255,224,138,0.5);
+      color: #FFE08A;
+    }
+    .ob-btn-primary:hover {
+      background: linear-gradient(135deg, rgba(255,224,138,0.35), rgba(255,224,138,0.22));
+      border-color: rgba(255,224,138,0.8);
+      box-shadow: 0 4px 20px rgba(255,224,138,0.2);
+      transform: translateY(-2px);
+    }
+    .ob-btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.4);
+    }
+    .ob-btn-ghost:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.7);
+    }
+    .ob-btn-finish {
+      background: linear-gradient(135deg, rgba(255,224,138,0.3), rgba(255,200,80,0.2));
+      border: 1.5px solid rgba(255,224,138,0.6);
+      color: #FFE08A;
+      box-shadow: 0 0 20px rgba(255,224,138,0.1);
+    }
+    .ob-btn-finish:hover {
+      box-shadow: 0 0 40px rgba(255,224,138,0.25);
+      transform: translateY(-2px);
+    }
+
+    /* ── MUTE TOGGLE (persistent) ── */
+
+    /* Fade in/out transitions */
+    /* Ghost logo — fades in at step 7 in nav position */
+    .ob-ghost-logo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+      z-index: 200;
+    }
+    .ob-ghost-logo.visible {
+      opacity: 1;
+    }
+    .ob-ghost-logo img {
+      height: 32px;
+      width: auto;
+    }
+    .ob-ghost-logo span {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Wallet connect button */
+    .ob-wallet-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+      padding: 18px 24px;
+      background: rgba(96,255,171,0.12);
+      border: 1px solid rgba(96,255,171,0.35);
+      border-radius: 10px;
+      color: rgba(96,255,171,0.95);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0 auto;
+    }
+    .ob-wallet-btn:hover {
+      background: rgba(96,255,171,0.2);
+      border-color: rgba(96,255,171,0.55);
+      transform: translateY(-2px);
+    }
+    .ob-wallet-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .ob-wallet-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(96,255,171,0.3);
+      border-top-color: rgba(96,255,171,0.9);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ob-animate-in {
+      animation: fadeInUp 0.7s ease forwards;
+    }
+
+    /* ── RESPONSIVE ── */
+    /* Cancel body::after planet from style.css — login uses its own .earth-footer div */
+    body::after { display: none !important; }
+
+    /* Planet — full width fixed at bottom, fades in after enter */
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 55vh;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 2.5s ease;
+    }
+    .earth-footer.visible {
+      opacity: 1;
+    }
+    .earth-footer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 20%, black 55%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 20%, black 55%);
+    }
+
+    @media (max-width: 480px) {
+      .ob-color-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
+      .ob-btn { min-width: 130px; padding: 14px 20px; }
+      .ob-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Stars background — outside overlay so z-index stacking works correctly -->
+<div class="stars"></div>
+<div class="twinkling"></div>
+
+<!-- Planet image — outside overlay, exactly as map.html -->
+<div class="earth-footer"><img src="images/minalia.png" alt="" /></div>
+
+<!-- Onboarding overlay -->
+<div id="onboarding">
+  <!-- Ghost nav logo — appears at step 7 -->
+  <div class="ob-ghost-logo" id="ghostLogo">
+    <img src="images/mina-logo.png" alt="Mina" />
+    <span>MINALIA</span>
+  </div>
+
+  <!-- Top controls -->
+  <div id="topControls" style="position:fixed; top:14px; right:24px; z-index:10010; display:flex; gap:10px; align-items:center;">
+    <div id="volumeControl" style="display:flex;align-items:center;gap:7px;background:rgba(10,8,18,0.55);border:1px solid rgba(255,224,138,0.2);border-radius:20px;padding:0 12px 0 10px;height:36px;transition:border-color 0.2s;">
+      <!-- Speaker icon — clicking mutes/unmutes -->
+      <svg id="volIcon" onclick="toggleVolumeMute()" viewBox="0 0 24 24" style="width:15px;height:15px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;cursor:pointer;flex-shrink:0;stroke:#FFE08A;">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <path id="volWave1" d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        <path id="volWave2" d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        <line id="volMuteLine1" x1="23" y1="9" x2="17" y2="15" style="display:none;"/>
+        <line id="volMuteLine2" x1="17" y1="9" x2="23" y2="15" style="display:none;"/>
+      </svg>
+      <!-- Slim range slider -->
+      <input id="volumeSlider" type="range" min="0" max="100" value="45"
+        oninput="onVolumeSlide(this.value)"
+        style="
+          -webkit-appearance:none; appearance:none;
+          width:72px; height:3px;
+          background: linear-gradient(to right, #FFE08A 45%, rgba(255,255,255,0.15) 45%);
+          border-radius:2px; outline:none; cursor:pointer; border:none;
+        "
+      />
+    </div>
+    <style>
+      #volumeSlider::-webkit-slider-thumb {
+        -webkit-appearance:none; appearance:none;
+        width:13px; height:13px;
+        border-radius:50%;
+        background:#FFE08A;
+        cursor:pointer;
+        box-shadow:0 0 4px rgba(255,224,138,0.5);
+      }
+      #volumeSlider::-moz-range-thumb {
+        width:13px; height:13px;
+        border-radius:50%; border:none;
+        background:#FFE08A; cursor:pointer;
+      }
+      #volumeControl:hover { border-color: rgba(255,224,138,0.45); }
+    </style>
+    <button class="ob-skip hidden" id="skipBtn" onclick="skipOnboarding()">Skip →</button>
+  </div>
+
+  <!-- Progress dots -->
+  <div class="ob-progress" id="obProgress">
+    <div class="ob-dot" id="dot-0"></div>
+    <div class="ob-dot" id="dot-1"></div>
+    <div class="ob-dot" id="dot-2"></div>
+    <div class="ob-dot" id="dot-3"></div>
+    <div class="ob-dot" id="dot-4"></div>
+    <div class="ob-dot" id="dot-5"></div>
+    <div class="ob-dot" id="dot-6"></div>
+    <div class="ob-dot" id="dot-7"></div>
+    <div class="ob-dot" id="dot-8"></div>
+    <div class="ob-dot" id="dot-9"></div>
+    <div class="ob-dot" id="dot-10"></div>
+    <div class="ob-dot" id="dot-11"></div>
+  </div>
+
+  <div class="ob-content">
+
+    <!-- ══ STEP 0: ARRIVAL + WALLET CONNECT ══ -->
+    <div class="ob-step" id="step-0">
+      <div class="ob-eyebrow-alert">Transmission incoming</div>
+      <div class="ob-title">MINALIA</div>
+      <div id="introSubtitle" class="ob-subtitle" style="transition: opacity 1s ease;">The Luminaea Chronicles</div>
+      <p id="introBody" class="ob-body" style="transition: opacity 1s ease;">
+        You have been chosen to receive this signal.<br>
+      </p>
+
+      <!-- Phase 1: Enter button -->
+      <div id="enterPhase" style="position: relative; display: inline-block;">
+        <div class="ob-pulse-ring"></div>
+        <button class="ob-enter-btn" onclick="enterLuminaea()">
+          <span class="sound-icon">🔊</span> Sound On · Enter Luminaea
+        </button>
+      </div>
+
+      <!-- Phase 2: Wallet connect (shown after enter is clicked) -->
+      <div id="walletPhase" style="display:none; width:100%; max-width:380px; margin-top:8px;">
+        <div id="walletPhaseStatus" style="display:none; padding:12px 16px; border-radius:8px; font-size:13px; margin-bottom:16px; text-align:center;"></div>
+        <button id="walletConnectBtn" class="ob-wallet-btn" onclick="connectWallet()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Connect Auro Wallet
+        </button>
+
+      </div>
+
+      <!-- Phase 3: Welcome back (returning user) -->
+      <div id="welcomeBackPanel" style="display:none; text-align:center; margin-top:8px;">
+        <div style="font-size:13px; letter-spacing:0.12em; color:rgba(255,255,255,0.45); text-transform:uppercase; margin-bottom:12px;">Welcome back</div>
+        <div id="welcomeBackName" style="font-size:32px; font-weight:700; color:#FFE08A; margin-bottom:10px;"></div>
+        <p class="ob-body" id="welcomeBackTagline" style="font-size:15px; color:rgba(255,255,255,0.7); margin-bottom:6px;"></p>
+        <p style="font-size:11px; color:rgba(255,255,255,0.25); margin-top:10px; font-family:monospace;" id="welcomeBackWallet"></p>
+      </div>
+    </div>
+
+    <!-- ══ STEP 1: LORE 1 ══ -->
+    <div class="ob-step" id="step-1">
+      <div class="ob-eyebrow">The Chronicles of Etheria</div>
+      <div class="ob-title small">Before Luminaea</div>
+      <div class="ob-lore-lines" id="loreLines1">
+        <div class="ob-lore-line">Long ago, on the vibrant and harmonious planet <strong>Etheria</strong>, the ancestors of Baby Minaliens faced an impossible choice.</div>
+        <div class="ob-lore-line">Their twin suns, once the source of life and stability, had begun their catastrophic dance toward destruction.</div>
+        <div class="ob-lore-line">The wisest of their kind, the <strong>Elders of Etheria</strong>, devised the <strong>Ark Initiative</strong> — a plan to send their youngest and brightest to a new world.</div>
+        <div class="ob-lore-line">A planet discovered in the distant reaches of space, similar to their own — a civilisation on the verge of extinction reaching out across the stars.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 2: LORE 2 ══ -->
+    <div class="ob-step" id="step-2">
+      <div class="ob-eyebrow">The Ark Initiative</div>
+      <div class="ob-title small">A Civilisation Encoded in Light</div>
+      <div class="ob-lore-lines" id="loreLines2">
+        <div class="ob-lore-line">The <strong>Ark Initiative</strong> was their final gambit — a civilisation encoded into light, launched across the void.</div>
+        <div class="ob-lore-line">The Arks were no mere ships; they were<br>hallowed sanctuaries of stasis.</div>
+        <div class="ob-lore-line">By weaving <strong>Vyralon</strong> — the crystalline life-blood of Etheria's core — into the very air, the Elders suspended the touch of time itself.</div>
+        <div class="ob-lore-line">Inside each Ark, the Elders created <strong>Knowledge Chambers</strong> — crystalline, biomechanical spaces infused with the essence of Etherian wisdom.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 3: LORE 3 ══ -->
+    <div class="ob-step" id="step-3">
+      <div class="ob-eyebrow">The Knowledge Chambers</div>
+      <div class="ob-title small">Learning Through Light</div>
+      <div class="ob-lore-lines" id="loreLines3">
+        <div class="ob-lore-line">Instead of books or lectures, the chambers used <strong>liquid light pools</strong> — viscous, glowing substances the Baby Minaliens could absorb through touch, sight, and even taste.</div>
+        <div class="ob-lore-line">When they dipped their hands into the pools, the liquid light flowed into them, embedding knowledge directly into their minds.</div>
+        <div class="ob-lore-line">History, science, art, survival skills — everything the Elders knew became part of them, not as dry facts, but as <em>vivid, immersive experiences</em>.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 4: LORE 4 ══ -->
+    <div class="ob-step" id="step-4">
+      <div class="ob-eyebrow">The Voyage</div>
+      <div class="ob-title small">Frozen in Dawn</div>
+      <div class="ob-lore-lines" id="loreLines4">
+        <div class="ob-lore-line">The chambers were interactive environments where the travellers could consume knowledge in a way that felt natural to their playful and inquisitive nature.</div>
+        <div class="ob-lore-line">Within this glowing embrace, the Baby Minaliens remained <strong>unaged</strong> — their hearts and bodies frozen in a dawn that never ended.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 5: LORE 5 ══ -->
+    <div class="ob-step" id="step-5">
+      <div class="ob-eyebrow">The Elders' Legacy</div>
+      <div class="ob-title small">Ageless Pioneers</div>
+      <div class="ob-lore-lines" id="loreLines5">
+        <div class="ob-lore-line">This eternal youth was the Elders' ultimate legacy. They sought to bottle the boundless wonder and tireless creativity of childhood, shielding it from the decay of years.</div>
+        <div class="ob-lore-line">They dreamed that when these voyagers finally touched a new shore, they would step forth not as weary survivors, but as <strong>ageless pioneers</strong>.</div>
+        <div class="ob-lore-line">Possessing the innocence of the young and the tempered wisdom of the stars.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 6: LORE 6 — ARRIVAL ══ -->
+    <div class="ob-step" id="step-6">
+      <div class="ob-eyebrow">The Ark Initiative · Year 27</div>
+      <div class="ob-title small">A New World Awaits</div>
+      <div class="ob-lore-lines" id="loreLines6">
+        <div class="ob-lore-line">The Elders selected a small group of Baby Minaliens to govern each territory on the planet — the <strong>Ministers</strong>.</div>
+        <div class="ob-lore-line">After <strong>27 years of travel</strong>, the Arks reached a new world — <em>Luminaea</em>.</div>
+        <div class="ob-lore-line">You are one of the first to arrive. You have been chosen to help the Ministers create a brave new world.</div>
+        <div class="ob-lore-line ob-lore-line--closing" style="padding-top: 8px;">Your decisions will shape what Luminaea becomes.</div>
+      </div>
+      <div class="ob-btn-row" style="margin-top: 32px;">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">I am Ready →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 7: IDENTITY ══ -->
+    <div class="ob-step" id="step-7">
+      <div class="ob-eyebrow">Step 1 of 4 · Your Identity</div>
+      <div class="ob-title small">Establish Your Presence</div>
+
+      <p class="ob-body" style="margin-bottom: 24px;">
+          How will the Ministers and other pioneers know you?
+        </p>
+        <div style="
+          background: rgba(255,224,138,0.07);
+          border: 1px solid rgba(255,224,138,0.25);
+          border-radius: 10px;
+          padding: 12px 16px;
+          margin-bottom: 16px;
+          font-size: 12px;
+          color: rgba(255,224,138,0.85);
+          line-height: 1.5;
+        ">
+          ⚠️ <strong>Your username is permanent.</strong> It will stay with you through your entire adventure in Luminaea. Choose wisely — it cannot be changed later.
+        </div>
+        <div id="ogBadge" class="ob-og-badge" style="display:none;">
+          <div class="badge-dot"></div>
+          GENESIS FOUNDER · OG STATUS
+        </div>
+        <div class="ob-card">
+          <div class="ob-card-label">Username</div>
+          <input class="ob-input" type="text" id="usernameInput" placeholder="Your pioneer name..." maxlength="20">
+          <div id="usernameStatus" style="font-size:11px; margin-top:8px; color: rgba(255,255,255,0.3);"></div>
+        </div>
+        <div class="ob-card">
+          <div class="ob-card-label">Profile Avatar</div>
+          <div class="ob-avatar-row">
+            <div class="ob-avatar-preview" id="avatarPreview" onclick="document.getElementById('avatarFileInput').click()">😎</div>
+            <div class="ob-avatar-hint">
+              Your face in Luminaea.<br>
+              <span onclick="document.getElementById('avatarFileInput').click()">Upload an image →</span>
+            </div>
+          </div>
+          <input type="file" id="avatarFileInput" accept="image/*">
+        </div>
+        <div class="ob-btn-row">
+          <button class="ob-btn ob-btn-primary" onclick="saveIdentity()">Confirm Identity →</button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 8: TERRITORY COLOUR ══ -->
+    <div class="ob-step" id="step-8">
+      <div class="ob-eyebrow">Step 2 of 4 · Your Allegiance</div>
+      <div class="ob-title small">Choose Your Colour</div>
+      <p class="ob-body" style="margin-bottom: 24px;">
+        Your colour marks your territory on the map.<br>
+        <strong>Choose wisely — it will define your legacy.</strong>
+      </p>
+
+      <div class="ob-card">
+        <div class="ob-card-label">Territory Colour</div>
+        <div class="ob-color-grid" id="colorGrid">
+          <!-- Populated by JS -->
+        </div>
+        <div id="colorName" style="text-align:center; margin-top: 16px; font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 0.15em; color: rgba(255,224,138,0.6); text-transform: uppercase;">—</div>
+      </div>
+
+      <div class="ob-btn-row">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="saveColor()">Set My Colour →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 9: PREFERENCES ══ -->
+    <div class="ob-step" id="step-9">
+      <div class="ob-eyebrow">Step 3 of 4 · Your Standing</div>
+      <div class="ob-title small">Privacy & Verification</div>
+      <p class="ob-body" style="margin-bottom: 24px;">
+        Control how others see you in Luminaea.
+      </p>
+
+      <div class="ob-card">
+        <div class="ob-toggle-row">
+          <div class="ob-toggle-info">
+            <div class="ob-toggle-label">Show Achievements</div>
+            <div class="ob-toggle-desc">Display your badges and milestones on your public profile</div>
+          </div>
+          <button class="ob-toggle on" id="toggle-badges" onclick="togglePref(this)"></button>
+        </div>
+        <div class="ob-toggle-row">
+          <div class="ob-toggle-info">
+            <div class="ob-toggle-label">Public Profile</div>
+            <div class="ob-toggle-desc">Allow other pioneers to view your territory and units</div>
+          </div>
+          <button class="ob-toggle on" id="toggle-profile" onclick="togglePref(this)"></button>
+        </div>
+        <div class="ob-toggle-row">
+          <div class="ob-toggle-info">
+            <div class="ob-toggle-label">Show Units</div>
+            <div class="ob-toggle-desc">Make your unit holdings visible on your profile page</div>
+          </div>
+          <button class="ob-toggle on" id="toggle-units" onclick="togglePref(this)"></button>
+        </div>
+      </div>
+
+      <div class="ob-card" style="border-color: rgba(255,224,138,0.15);">
+        <div class="ob-card-label">ZK Verification · Optional</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap: 16px;">
+          <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;">
+            Verify your wallet on the Mina Protocol for a <strong style="color: rgba(255,224,138,0.8);">+10 Stability bonus</strong> and a verified badge on your profile.
+          </div>
+          <button class="ob-btn ob-btn-ghost" style="white-space: nowrap; min-width: auto; padding: 10px 16px; font-size: 9px;" onclick="verifyMina()">Verify Now</button>
+        </div>
+      </div>
+
+      <div class="ob-btn-row">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="savePrefs()">Save Preferences →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 10: BRIEFING ══ -->
+    <div class="ob-step" id="step-10">
+      <div class="ob-eyebrow">Step 4 of 4 · Your Mission</div>
+      <div class="ob-title small">Your First Moves</div>
+      <p class="ob-body" style="margin-bottom: 24px;">
+        Luminaea rewards those who act with purpose.<br>Here is where to begin.
+      </p>
+
+      <div class="ob-tasks" id="taskList">
+        <div class="ob-task" data-delay="0">
+          <div class="ob-task-num">01</div>
+          <div class="ob-task-body">
+            <div class="ob-task-title">Tune Your Units</div>
+            <div class="ob-task-desc">Every unit must be tuned every 10 days to maintain Luminescence. Miss the window and your unit enters Flicker state — royalties frozen.</div>
+          </div>
+        </div>
+        <div class="ob-task" data-delay="150">
+          <div class="ob-task-num">02</div>
+          <div class="ob-task-body">
+            <div class="ob-task-title">Explore the Map</div>
+            <div class="ob-task-desc">20 territories, 320 units. See who your neighbours are, which units are for sale, and where the Ministerial Auctions are happening.</div>
+          </div>
+        </div>
+        <div class="ob-task" data-delay="300">
+          <div class="ob-task-num">03</div>
+          <div class="ob-task-body">
+            <div class="ob-task-title">Build Something</div>
+            <div class="ob-task-desc">Select a unit and open the Development Catalog. Each structure you build generates yield and increases your territory's value.</div>
+          </div>
+        </div>
+        <div class="ob-task" data-delay="450">
+          <div class="ob-task-num">04</div>
+          <div class="ob-task-body">
+            <div class="ob-task-title">Consult Your Minister</div>
+            <div class="ob-task-desc">Each territory has an AI Minister with deep knowledge of Luminaea. They can advise on development, markets, and strategy.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ob-btn-row">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Meet Your Minister →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 11: AGENT ══ -->
+    <div class="ob-step" id="step-11">
+      <div class="ob-eyebrow">Minister Consultation</div>
+      <div class="ob-title small">The Ministers Await</div>
+
+      <div class="ob-agent-card">
+        <div class="ob-agent-header">
+          <div class="ob-agent-avatar">
+            <img src="images/thumbnails/1_TALHA.jpg" alt="Minister" id="agentAvatar" onerror="this.parentElement.style.background='rgba(255,224,138,0.1)'">
+          </div>
+          <div>
+            <div class="ob-agent-name" id="agentName">MINISTER TALHA</div>
+            <div class="ob-agent-role" id="agentTerritory">Luminary of LUM-01 · Celestara</div>
+          </div>
+          <div class="ob-agent-status">Online</div>
+        </div>
+
+        <div class="ob-chat-messages" id="chatMessages">
+          <div class="ob-typing visible" id="typingIndicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="ob-prompts" id="chatPrompts" style="display:none;">
+          <button class="ob-prompt-btn" onclick="sendPrompt(this, 'What is Luminaea?')">
+            💫 What is Luminaea?
+            <span class="prompt-arrow">→</span>
+          </button>
+          <button class="ob-prompt-btn" onclick="sendPrompt(this, 'What should I do first?')">
+            🗺️ What should I do first?
+            <span class="prompt-arrow">→</span>
+          </button>
+          <button class="ob-prompt-btn" onclick="sendPrompt(this, 'Tell me about the Pulse system')">
+            ⚡ Tell me about the Pulse system
+            <span class="prompt-arrow">→</span>
+          </button>
+          <button class="ob-prompt-btn" onclick="sendPrompt(this, 'What is my territory worth?')">
+            💎 What is my territory worth?
+            <span class="prompt-arrow">→</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ob-btn-row">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-finish" onclick="finishOnboarding()">Enter Luminaea →</button>
+      </div>
+    </div>
+
+  </div><!-- /ob-content -->
+</div><!-- /onboarding -->
+
+<!-- Audio -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="audio/intro.mp3" type="audio/mpeg">
+</audio>
+<audio id="walletConnectSfx" preload="auto">
+  <source src="audio/wallet-connect.mp3" type="audio/mpeg">
+</audio>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=999"></script>
+
+<script>
+  // ── STATE ──
+  let currentStep = 0;
+  const TOTAL_STEPS = 12;
+  let selectedColor = null;
+  let masterVolume = parseFloat(localStorage.getItem('minalia_volume') ?? '0.45');
+  let isMuted = false;
+  let audioStarted = false;
+  let currentUser = null;
+  let pendingChanges = {};
+
+  const TERRITORY_COLORS = [
+    // Golds & Warm
+    { hex: '#FFE08A', name: 'Solar Gold' },
+    { hex: '#FFA726', name: 'Amber Pulse' },
+    { hex: '#FF8A65', name: 'Ember' },
+    { hex: '#FFCC80', name: 'Dawn Flare' },
+    // Reds & Pinks
+    { hex: '#FF6B6B', name: 'Crimson Arc' },
+    { hex: '#F48FB1', name: 'Nebula Rose' },
+    { hex: '#EF9A9A', name: 'Coral Wake' },
+    { hex: '#FF4081', name: 'Pulse Magenta' },
+    // Purples — light
+    { hex: '#B388FF', name: 'Void Violet' },
+    { hex: '#CE93D8', name: 'Spectra' },
+    { hex: '#EA80FC', name: 'Aether Bloom' },
+    { hex: '#E040FB', name: 'Warp Signal' },
+    // Purples — dark
+    { hex: '#7C4DFF', name: 'Deep Warp' },
+    { hex: '#651FFF', name: 'Obsidian Pulse' },
+    { hex: '#4A148C', name: 'Void Core' },
+    { hex: '#6A1B9A', name: 'Dark Matter' },
+    // Blues
+    { hex: '#80DEEA', name: 'Drift Cyan' },
+    { hex: '#90CAF9', name: 'Frost Signal' },
+    { hex: '#4DD0E1', name: 'Arclight' },
+    { hex: '#1565C0', name: 'Deep Orbit' },
+    // Teals & Greens
+    { hex: '#60FFAB', name: 'Lumina Green' },
+    { hex: '#A5D6A7', name: 'Verdant' },
+    { hex: '#80CBC4', name: 'Tidal Mist' },
+    { hex: '#00BFA5', name: 'Flux Teal' },
+    // Dark & moody
+    { hex: '#37474F', name: 'Void Slate' },
+    { hex: '#4E342E', name: 'Ash Ember' },
+    { hex: '#1A237E', name: 'Night Ark' },
+    { hex: '#880E4F', name: 'Dark Crimson' },
+    // Rare / unusual
+    { hex: '#E6EE9C', name: 'Ion Trace' },
+    { hex: '#FF6F00', name: 'Nova Flare' },
+    { hex: '#00E5FF', name: 'Arc Flash' },
+    { hex: '#76FF03', name: 'Bio Signal' },
+  ];
+
+  // Agent script responses
+  const AGENT_RESPONSES = {
+    'What is Luminaea?': `Luminaea is the first territory on the Ark's horizon — a world divided into 20 districts, each governed by a Minister like myself. Every district contains 16 units of land, ready to be developed, traded, and grown. You are among the first pioneers to arrive. What you build here will echo through the Chronicles.`,
+    'What should I do first?': `Your priority is simple: tune your units. Every unit you own must be tuned once every 10 days to maintain its Luminescence. After that, visit the Development Catalog and begin construction. A unit that generates yield is a unit that grows in value. The map will show you what your neighbours are doing.`,
+    'Tell me about the Pulse system': `The Pulse is the heartbeat of your territory. Every unit must be tuned within 10 days — think of it as renewing your connection to the land. After day 10, a unit enters Flicker state: your royalties and yields are frozen in escrow. If day 21 passes without tuning, the unit is forfeited to the Ministerial Auction. Stay active. The land remembers who tends it.`,
+    'What is my territory worth?': `Territory value is determined by three forces: the developments you have built, the Luminescence of your units, and the market activity around you. A fully developed, actively maintained territory can generate substantial yield from the $ARKIS economy. The Genesis Founders like yourself started at a significant advantage — do not squander it.`
+  };
+
+  // ── INIT ──
+  document.addEventListener('DOMContentLoaded', async () => {
+    buildColorGrid();
+
+    // Init volume slider from saved preference
+    const slider = document.getElementById('volumeSlider');
+    if (slider) {
+      const savedVol = Math.round(masterVolume * 100);
+      slider.value = savedVol;
+      slider.style.background = `linear-gradient(to right, #FFE08A ${savedVol}%, rgba(255,255,255,0.15) ${savedVol}%)`;
+    }
+    isMuted = (masterVolume === 0);
+    updateVolIcon();
+
+    // On mobile inside Auro's in-app browser, window.mina is injected.
+    // Always force the wallet connect flow — never skip to map via session.
+    // The user arrived here deliberately via deeplink to connect their wallet.
+    const inAuroBrowser = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && typeof window.mina !== 'undefined';
+
+    // Check for existing session (desktop / non-Auro browser only)
+    if (!inAuroBrowser) {
+      const raw = localStorage.getItem('minalia_session');
+      if (raw) {
+        try {
+          const sd = JSON.parse(raw);
+          // Valid returning player — check expiry then skip lore, go straight to map
+          if (sd.mode === 'player' && sd.wallet_address && sd.user) {
+            const SESSION_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+            const loginTime = sd.login_time ? new Date(sd.login_time).getTime() : 0;
+            const expired   = !loginTime || (Date.now() - loginTime > SESSION_DURATION_MS);
+            if (expired) {
+              console.warn('⏰ Session expired — please log in again');
+              localStorage.removeItem('minalia_session');
+              // Fall through to normal login flow
+            } else {
+              currentUser = sd.user;
+              // Show minister dispatch then go to map
+              await generateAndShowMinisterDispatch(sd.user);
+              return;
+            }
+          }
+        } catch(e) {}
+      }
+    }
+
+    // No session (or in Auro browser) — start normal flow
+    showStep(0);
+  });
+
+  async function checkOGStatus() {
+    const client = window.supabaseClient || window.supabase;
+    if (!client || !currentUser) return;
+    const { data } = await client
+      .from('units')
+      .select('id')
+      .eq('owner_id', currentUser.id)
+      .limit(1);
+    if (data && data.length > 0) {
+      document.getElementById('ogBadge').style.display = 'inline-flex';
+    }
+    // Set minister based on user's primary territory (derived from units owned)
+    const { data: ownedUnits } = await client
+      .from('units')
+      .select('unit_code')
+      .eq('owner_id', currentUser.id);
+    if (ownedUnits && ownedUnits.length > 0) {
+      // Find territory with most units
+      const terrCount = {};
+      ownedUnits.forEach(u => {
+        const t = u.unit_code?.substring(0, 6);
+        if (t) terrCount[t] = (terrCount[t] || 0) + 1;
+      });
+      const primaryTerritory = Object.entries(terrCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+      if (primaryTerritory) setAgentForTerritory(primaryTerritory);
+    }
+  }
+
+  function setAgentForTerritory(territoryCode) {
+    const MINISTER_MAP = {
+      'LUM-01': { name: 'Nova',   token: 13 },
+      'LUM-02': { name: 'Faze',   token: 2  },
+      'LUM-03': { name: 'Luma',   token: 8  },
+      'LUM-04': { name: 'Talha',  token: 1  },
+      'LUM-05': { name: 'Wisp',   token: 38 },
+      'LUM-06': { name: 'Halo',   token: 47 },
+      'LUM-07': { name: 'Gaze',   token: 84 },
+      'LUM-08': { name: 'Blip',   token: 16 },
+      'LUM-09': { name: 'Drip',   token: 3  },
+      'LUM-10': { name: 'Opal',   token: 42 },
+      'LUM-11': { name: 'Frog',   token: 25 },
+      'LUM-12': { name: 'Quip',   token: 18 },
+      'LUM-13': { name: 'Vale',   token: 69 },
+      'LUM-14': { name: 'Angel',  token: 60 },
+      'LUM-15': { name: 'Wise',   token: 59 },
+      'LUM-16': { name: 'Yasin',  token: 82 },
+      'LUM-17': { name: 'Ali',    token: 61 },
+      'LUM-18': { name: 'Mino',   token: 19 },
+      'LUM-19': { name: 'Zorb',   token: 17 },
+      'LUM-20': { name: 'Sike',   token: 37 },
+    };
+    const TERRITORY_NAMES = {
+      'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+      'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+      'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+      'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+      'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+    };
+    const m = MINISTER_MAP[territoryCode];
+    if (!m) return;
+    const terrName = TERRITORY_NAMES[territoryCode] || territoryCode;
+    document.getElementById('agentName').textContent = `MINISTER ${m.name.toUpperCase()}`;
+    document.getElementById('agentTerritory').textContent = `Luminary of ${territoryCode} · ${terrName}`;
+    document.getElementById('agentAvatar').src = `images/thumbnails/${m.token}_${m.name.toUpperCase()}.jpg`;
+  }
+
+  // ── AUDIO ──
+  function enterLuminaea() {
+    const music = document.getElementById('bgMusic');
+    music.volume = 0;
+    music.play().then(() => {
+      audioStarted = true;
+      setMuteIconPlaying(true);
+      let vol = 0;
+      const fadeIn = setInterval(() => {
+        vol = Math.min(vol + 0.02, 0.45);
+        music.volume = vol;
+        if (vol >= 0.45) clearInterval(fadeIn);
+      }, 80);
+    }).catch(() => {});
+
+    document.getElementById('skipBtn').classList.remove('hidden');
+
+    // Fade in planet background
+    setTimeout(() => {
+      const planet = document.querySelector('.earth-footer');
+      if (planet) planet.classList.add('visible');
+    }, 300);
+
+    // Swap enter button for wallet connect panel
+    document.getElementById('enterPhase').style.display = 'none';
+    const wp = document.getElementById('walletPhase');
+    wp.style.display = 'block';
+    wp.style.opacity = '0';
+    wp.style.transition = 'opacity 0.8s ease';
+    setTimeout(() => { wp.style.opacity = '1'; }, 50);
+  }
+
+
+
+  function onVolumeSlide(val) {
+    masterVolume = val / 100;
+    isMuted = (masterVolume === 0);
+    const music = document.getElementById('bgMusic');
+    if (music) music.volume = masterVolume;
+    localStorage.setItem('minalia_volume', masterVolume);
+    updateVolIcon();
+    // Update slider track fill
+    const slider = document.getElementById('volumeSlider');
+    if (slider) slider.style.background = `linear-gradient(to right, #FFE08A ${val}%, rgba(255,255,255,0.15) ${val}%)`;
+  }
+
+  function toggleVolumeMute() {
+    const slider = document.getElementById('volumeSlider');
+    if (isMuted) {
+      // Restore to last non-zero volume (or 0.45 default)
+      masterVolume = parseFloat(localStorage.getItem('minalia_volume_pre_mute') ?? '0.45');
+      if (masterVolume === 0) masterVolume = 0.45;
+    } else {
+      localStorage.setItem('minalia_volume_pre_mute', masterVolume);
+      masterVolume = 0;
+    }
+    isMuted = !isMuted;
+    const music = document.getElementById('bgMusic');
+    if (music) music.volume = masterVolume;
+    if (slider) {
+      slider.value = Math.round(masterVolume * 100);
+      const pct = slider.value;
+      slider.style.background = `linear-gradient(to right, #FFE08A ${pct}%, rgba(255,255,255,0.15) ${pct}%)`;
+    }
+    updateVolIcon();
+  }
+
+  function updateVolIcon() {
+    const w1 = document.getElementById('volWave1');
+    const w2 = document.getElementById('volWave2');
+    const m1 = document.getElementById('volMuteLine1');
+    const m2 = document.getElementById('volMuteLine2');
+    const icon = document.getElementById('volIcon');
+    if (!w1) return;
+    if (isMuted) {
+      w1.style.display = 'none'; w2.style.display = 'none';
+      m1.style.display = 'block'; m2.style.display = 'block';
+      icon.style.stroke = 'rgba(255,255,255,0.4)';
+    } else {
+      w1.style.display = 'block'; w2.style.display = masterVolume < 0.4 ? 'none' : 'block';
+      m1.style.display = 'none'; m2.style.display = 'none';
+      icon.style.stroke = '#FFE08A';
+    }
+  }
+
+  function setMuteIconPlaying(on) {
+    // Legacy — now just sync volume state when music starts
+    if (on) {
+      const music = document.getElementById('bgMusic');
+      if (music) music.volume = masterVolume;
+      const slider = document.getElementById('volumeSlider');
+      if (slider) {
+        slider.value = Math.round(masterVolume * 100);
+        const pct = slider.value;
+        slider.style.background = `linear-gradient(to right, #FFE08A ${pct}%, rgba(255,255,255,0.15) ${pct}%)`;
+      }
+      updateVolIcon();
+    }
+  }
+
+  // ── STEP NAVIGATION ──
+  function showStep(n) {
+    // Hide all steps
+    document.querySelectorAll('.ob-step').forEach(s => {
+      s.classList.remove('active', 'visible');
+    });
+
+    currentStep = n;
+
+    // Update progress dots
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      const dot = document.getElementById(`dot-${i}`);
+      if (!dot) continue;
+      dot.classList.remove('active', 'done');
+      if (i < n) dot.classList.add('done');
+      else if (i === n) dot.classList.add('active');
+    }
+
+    // Show progress bar (not on step 0)
+    const progress = document.getElementById('obProgress');
+    if (n === 0) {
+      progress.classList.remove('visible');
+    } else {
+      progress.classList.add('visible');
+    }
+
+    // Show the step
+    const step = document.getElementById(`step-${n}`);
+    if (!step) return;
+    step.classList.add('active');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        step.classList.add('visible');
+      });
+    });
+
+    // Step-specific logic
+    if (n >= 1 && n <= 6) revealLoreLines(n);
+    if (n === 10) revealTasks();
+    if (n === 11) startAgentConversation();
+
+    // All steps: reveal button row last after content settles
+    // Lore steps (1-6): handled by revealLoreLines after all lines done
+    // Step 10: handled by revealTasks after all tasks revealed
+    // Step 11: handled by startAgentConversation
+    // Steps 7/8/9: show buttons after a short pause for title + content to register
+    if (n >= 7 && n <= 9) {
+      const btnRow = step && step.querySelector('.ob-btn-row');
+      if (btnRow) setTimeout(() => btnRow.classList.add('revealed'), 2500);
+    }
+
+    // Ghost logo: fade in at step 7+, fade out if going back before it
+    const ghostLogo = document.getElementById('ghostLogo');
+    if (ghostLogo) {
+      if (n >= 7) {
+        setTimeout(() => ghostLogo.classList.add('visible'), 800);
+      } else {
+        ghostLogo.classList.remove('visible');
+      }
+    }
+
+    // Restore music volume when moving to non-lore steps
+    if ((n < 1 || n > 6) && !isMuted) fadeMusicTo(0.45, 1000);
+
+    if (n === 7) {
+      const uInput = document.getElementById('usernameInput');
+      if (uInput && currentUser && currentUser.username && !currentUser.username.startsWith('player_')) {
+        // Pre-fill existing username (editable — one time only)
+        uInput.value = currentUser.username;
+        const status = document.getElementById('usernameStatus');
+        if (status) {
+          status.textContent = 'Your username is pre-filled — you can change it once here.';
+          status.style.color = 'rgba(255,224,138,0.5)';
+        }
+      }
+    }
+  }
+
+  function nextStep() {
+    if (currentStep < TOTAL_STEPS - 1) showStep(currentStep + 1);
+  }
+  function prevStep() {
+    if (currentStep > 0) showStep(currentStep - 1);
+  }
+
+  // ── LORE REVEAL ──
+  // Duck → target volume over ms
+  function fadeMusicTo(target, ms) {
+    const music = document.getElementById('bgMusic');
+    if (!music) return;
+    const steps = 30;
+    const interval = ms / steps;
+    const start = music.volume;
+    const delta = (target - start) / steps;
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      music.volume = Math.min(1, Math.max(0, start + delta * i));
+      if (i >= steps) clearInterval(t);
+    }, interval);
+  }
+
+  function revealLoreLines(stepNum) {
+    const container = document.getElementById(`loreLines${stepNum}`);
+    if (!container) return;
+    const lines = container.querySelectorAll('.ob-lore-line');
+    const step  = document.getElementById(`step-${stepNum}`);
+
+    // Always reveal text on timers — audio just plays alongside, no sync needed
+    const TITLE_PAUSE = 2000;
+    const SHORT_DELAY = 1000;
+    const LONG_DELAY  = 2000;
+    const FADE_TIME   = 600;
+    let cursor = TITLE_PAUSE;
+    lines.forEach((line) => {
+      setTimeout(() => line.classList.add('revealed'), cursor);
+      const charCount = (line.textContent || '').trim().length;
+      cursor += FADE_TIME + (charCount < 80 ? SHORT_DELAY : LONG_DELAY);
+    });
+    if (step) {
+      const btnRow = step.querySelector('.ob-btn-row');
+      if (btnRow) setTimeout(() => btnRow.classList.add('revealed'), cursor + 400);
+    }
+
+  }
+
+  // ── COLOUR GRID ──
+  function buildColorGrid() {
+    const grid = document.getElementById('colorGrid');
+    TERRITORY_COLORS.forEach((c, i) => {
+      const swatch = document.createElement('div');
+      swatch.className = 'ob-color-swatch';
+      swatch.style.background = c.hex;
+      swatch.style.boxShadow = `0 2px 8px ${c.hex}40`;
+      swatch.title = c.name;
+      swatch.addEventListener('click', () => selectColor(i));
+      grid.appendChild(swatch);
+    });
+    // Pre-select first
+    selectColor(0);
+  }
+
+  function selectColor(i) {
+    selectedColor = TERRITORY_COLORS[i];
+    document.querySelectorAll('.ob-color-swatch').forEach((s, idx) => {
+      s.classList.toggle('selected', idx === i);
+    });
+    document.getElementById('colorName').textContent = selectedColor.name;
+  }
+
+  // ── AVATAR ──
+  document.addEventListener('change', function(e) {
+    if (e.target.id !== 'avatarFileInput') return;
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const preview = document.getElementById('avatarPreview');
+      preview.innerHTML = `<img src="${ev.target.result}" alt="avatar">`;
+      pendingChanges.avatarDataUrl = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ── TOGGLES ──
+  function togglePref(btn) {
+    btn.classList.toggle('on');
+  }
+
+  // ── TASKS REVEAL ──
+  function revealTasks() {
+    const tasks = document.querySelectorAll('.ob-task');
+    let maxDelay = 0;
+    tasks.forEach(task => {
+      const delay = parseInt(task.dataset.delay || 0);
+      setTimeout(() => task.classList.add('revealed'), delay + 200);
+      maxDelay = Math.max(maxDelay, delay + 200);
+    });
+    // Reveal btn-row after all tasks are shown
+    const step10 = document.getElementById('step-10');
+    if (step10) {
+      const btnRow = step10.querySelector('.ob-btn-row');
+      if (btnRow) setTimeout(() => btnRow.classList.add('revealed'), maxDelay + 800);
+    }
+  }
+
+  // ── AGENT CONVERSATION ──
+  function startAgentConversation() {
+    const msgs = document.getElementById('chatMessages');
+    const typing = document.getElementById('typingIndicator');
+    const prompts = document.getElementById('chatPrompts');
+
+    // Show typing, then reveal greeting
+    typing.classList.add('visible');
+
+    setTimeout(() => {
+      typing.classList.remove('visible');
+      const msg = document.createElement('div');
+      msg.className = 'ob-msg agent';
+      msg.textContent = `Pioneer. I have been waiting for your arrival. Luminaea has much to offer those with vision. What would you like to know?`;
+      msgs.appendChild(msg);
+      requestAnimationFrame(() => requestAnimationFrame(() => msg.classList.add('visible')));
+
+      setTimeout(() => {
+        prompts.style.display = 'flex';
+        prompts.style.flexDirection = 'column';
+      }, 400);
+
+      // Reveal btn-row after agent greeting settles
+      const step11 = document.getElementById('step-11');
+      if (step11) {
+        const btnRow = step11.querySelector('.ob-btn-row');
+        if (btnRow) setTimeout(() => btnRow.classList.add('revealed'), 1200);
+      }
+    }, 2000);
+  }
+
+  function sendPrompt(btn, text) {
+    const msgs = document.getElementById('chatMessages');
+    const prompts = document.getElementById('chatPrompts');
+
+    // Hide prompts
+    prompts.style.display = 'none';
+
+    // User message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'ob-msg user';
+    userMsg.textContent = text;
+    msgs.appendChild(userMsg);
+    requestAnimationFrame(() => requestAnimationFrame(() => userMsg.classList.add('visible')));
+
+    // Typing
+    const typing = document.createElement('div');
+    typing.className = 'ob-typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    msgs.appendChild(typing);
+    requestAnimationFrame(() => requestAnimationFrame(() => typing.classList.add('visible')));
+
+    // Scroll
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Response
+    setTimeout(() => {
+      typing.remove();
+      const response = AGENT_RESPONSES[text] || `The Ministers know much about this, Pioneer. Seek further counsel in your territory.`;
+      const agentMsg = document.createElement('div');
+      agentMsg.className = 'ob-msg agent';
+      agentMsg.textContent = response;
+      msgs.appendChild(agentMsg);
+      requestAnimationFrame(() => requestAnimationFrame(() => agentMsg.classList.add('visible')));
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Show prompts again after a beat
+      setTimeout(() => {
+        prompts.style.display = 'flex';
+        prompts.style.flexDirection = 'column';
+      }, 800);
+    }, 1800);
+  }
+
+  // ── SAVE FUNCTIONS ──
+  // ── WALLET CONNECT (step 7) ──
+  function fadeOutAndRedirect() {
+    markOnboardingComplete(); // mark so next login goes straight to map
+    const music = document.getElementById('bgMusic');
+    if (music && !music.paused) {
+      let vol = music.volume;
+      const fadeOut = setInterval(() => {
+        vol = Math.max(vol - 0.015, 0);
+        music.volume = vol;
+        if (vol <= 0) { clearInterval(fadeOut); music.pause(); }
+      }, 60);
+    }
+    // Fade planet image out in sync with music (~2s fade)
+    const planet = document.querySelector('.earth-footer');
+    if (planet) {
+      planet.style.transition = 'opacity 2s ease';
+      planet.style.opacity = '0';
+    }
+    setTimeout(() => {
+      const overlay = document.getElementById('onboarding');
+      overlay.style.transition = 'opacity 1.5s ease';
+      overlay.style.opacity = '0';
+      setTimeout(async () => { await generateAndShowMinisterDispatch(currentUser); }, 1600);
+    }, 2000);
+  }
+
+  function showWalletStatus(msg, type) {
+    const el = document.getElementById('walletPhaseStatus');
+    el.style.display = 'block';
+    el.style.background = type === 'error' ? 'rgba(255,80,80,0.12)' : type === 'success' ? 'rgba(96,255,171,0.1)' : 'rgba(255,224,138,0.1)';
+    el.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#60ffab' : '#FFE08A';
+    el.style.border = `1px solid ${type === 'error' ? 'rgba(255,80,80,0.25)' : type === 'success' ? 'rgba(96,255,171,0.25)' : 'rgba(255,224,138,0.25)'}`;
+    el.innerHTML = msg;
+  }
+
+  async function connectWallet() {
+    const btn = document.getElementById('walletConnectBtn');
+    const WALLET_BTN_HTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Connect Auro Wallet';
+    const resetBtn = () => { btn.disabled = false; btn.innerHTML = WALLET_BTN_HTML; };
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ob-wallet-spinner"></span> Connecting...';
+
+    try {
+      if (typeof window.mina === 'undefined') {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          const targetURL = encodeURIComponent('https://play.minaliens.xyz/login.html');
+          const networkId = encodeURIComponent('mina:mainnet');
+          const deeplink = `https://applinks.aurowallet.com/applinks?action=openurl&networkid=${networkId}&url=${targetURL}`;
+          showWalletStatus(
+            `📱 Open this page in the Auro Wallet app — <a href="${deeplink}" style="color:#60ffab;font-weight:600;">Open in Auro →</a>`,
+            'info'
+          );
+        } else {
+          showWalletStatus('❌ Auro Wallet not detected. <a href="https://www.aurowallet.com/" target="_blank" style="color:#60ffab;">Install it here →</a>', 'error');
+        }
+        resetBtn();
+        return;
+      }
+
+      showWalletStatus('🔐 Requesting wallet access...', 'info');
+      const accounts = await window.mina.requestAccounts();
+      if (!accounts || !accounts.length) throw new Error('Wallet connection cancelled');
+      const minaAddress = accounts[0];
+      // Validate it's a real Mina address — Auro mobile can resolve with junk on cancel
+      if (!minaAddress || !minaAddress.startsWith('B62q') || minaAddress.length < 50) {
+        throw new Error('Wallet connection cancelled');
+      }
+
+      // ── SIGNATURE VERIFICATION ──────────────────────────────
+      // Set to true once edge function is deployed
+      const SIG_VERIFY_ENABLED = true;
+
+      if (SIG_VERIFY_ENABLED) {
+        showWalletStatus('🔏 Verifying wallet ownership...', 'info');
+        const EDGE_URL = 'https://minalia-verify.vercel.app/api/verify-wallet';
+
+        let verifyPassed = false;
+        let verifySkipped = false;
+
+        try {
+          const nonceRes = await fetch(EDGE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.SUPABASE_ANON_KEY },
+            body: JSON.stringify({ action: 'nonce', address: minaAddress }),
+            signal: AbortSignal.timeout(8000)  // 8s timeout
+          });
+
+          if (!nonceRes.ok) throw new Error(`Nonce request failed: ${nonceRes.status}`);
+          const { nonce, error: nonceErr } = await nonceRes.json();
+          if (nonceErr || !nonce) throw new Error(`No nonce: ${nonceErr || 'empty'}`);
+
+          let signature;
+          try {
+            const signed = await window.mina.signMessage({ message: nonce });
+            signature = signed.signature;
+          } catch (signErr) {
+            throw new Error('Wallet signing cancelled or failed');
+          }
+
+          const verifyRes = await fetch(EDGE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': window.CONFIG.SUPABASE_ANON_KEY },
+            body: JSON.stringify({ action: 'verify', address: minaAddress, signature }),
+            signal: AbortSignal.timeout(8000)
+          });
+          const { valid, error: verifyErr } = await verifyRes.json();
+          if (!valid) throw new Error(verifyErr || 'Wallet verification failed');
+          verifyPassed = true;
+
+        } catch (verifyErr) {
+          // If the error is a user cancellation, stop immediately
+          if (verifyErr.message === 'Wallet signing cancelled or failed') {
+            throw verifyErr;
+          }
+          // For network/timeout/server errors — degrade gracefully
+          // Log it but allow login to continue (wallet address ownership assumed)
+          console.warn('⚠️ Signature verification unavailable, proceeding without it:', verifyErr.message);
+          verifySkipped = true;
+          showWalletStatus('⚠️ Verification service offline — proceeding...', 'info');
+          await new Promise(r => setTimeout(r, 1200));
+        }
+      }
+      // ── END SIGNATURE VERIFICATION ──────────────────────────
+
+      showWalletStatus('🔍 Checking for existing account...', 'info');
+
+      const client = window.supabaseClient || window.supabase;
+      if (!client) throw new Error('Database not available');
+
+      const { data: existingUser, error: fetchErr } = await client
+        .from('users')
+        .select('*')
+        .eq('mina_wallet_address', minaAddress)
+        .single();
+
+      const isNewUser = !existingUser || fetchErr;
+      const hasSeenOnboarding = existingUser?.has_seen_onboarding === true;
+
+      if (isNewUser) {
+        showWalletStatus('✨ Creating your account...', 'info');
+        const { data: newUser, error: createErr } = await client
+          .from('users')
+          .insert({
+            mina_wallet_address: minaAddress,
+            username: `player_${minaAddress.substring(0, 8)}`,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        if (createErr) throw createErr;
+        currentUser = newUser;
+      } else {
+        currentUser = existingUser;
+      }
+
+      // Store session with real Supabase UUID
+      const SESSION_HOURS = 2;
+      localStorage.setItem('minalia_session', JSON.stringify({
+        user: currentUser,
+        wallet_address: minaAddress,
+        login_time: new Date().toISOString(),
+        expires_at: new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString(),
+        mode: 'player'
+      }));
+
+      // Play connect sound and fade intro text
+      const sfx = document.getElementById('walletConnectSfx');
+      if (sfx) { sfx.volume = 0.8; sfx.play().catch(() => {}); }
+      ['introSubtitle', 'introBody'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.opacity = '0';
+      });
+
+      // ── THREE-PATH ROUTING ──
+      const hasName = currentUser.username_set === true || currentUser.username_set === 'true';
+
+      if (isNewUser) {
+        // PATH 1: Brand new wallet — full lore → setup → map
+        showWalletStatus('✅ Welcome to Luminaea!', 'success');
+        setTimeout(() => nextStep(), 1200);
+
+      } else if (!hasName) {
+        // PATH 2: Known wallet but setup incomplete — skip lore, go to identity step
+        showWalletStatus('✅ Wallet recognised. Complete your setup...', 'success');
+        setTimeout(() => showStep(7), 1200);
+
+      } else if (!hasSeenOnboarding) {
+        // PATH 2b: Pre-seeded OG player first login — full lore + identity + colour picker
+        // Username pre-filled but editable (one-time change), then avatar + colour
+        showWalletStatus('✅ Welcome to Luminaea!', 'success');
+        setTimeout(() => nextStep(), 1200);
+
+      } else {
+        // PATH 3: Fully set up returning player — welcome back → map
+        document.getElementById('walletPhase').style.display = 'none';
+        const wb = document.getElementById('welcomeBackPanel');
+        wb.style.display = 'block';
+        document.getElementById('welcomeBackName').textContent = currentUser.username;
+
+        // Personal tagline — rotating flavour lines
+        const taglines = [
+          'Luminaea remembers you. Your territory awaits.',
+          'Your presence has been noted by the Ministers.',
+          'The grid stirs. A Pioneer has returned.',
+          'Luminaea is pleased to see you back again.',
+        ];
+        const tagline = taglines[Math.floor(Math.random() * taglines.length)];
+        document.getElementById('welcomeBackTagline').textContent = tagline;
+        document.getElementById('welcomeBackWallet').textContent = `${minaAddress.substring(0,16)}...${minaAddress.slice(-6)}`;
+        // Add "Not you?" escape link
+        const notYouEl = document.createElement('p');
+        notYouEl.style.cssText = 'font-size:11px;color:rgba(255,255,255,0.2);margin-top:6px;font-family:monospace;';
+        notYouEl.innerHTML = `<a href="#" onclick="localStorage.removeItem('minalia_session');window.location.reload();return false;" style="color:rgba(255,100,100,0.5);text-decoration:none;">Not you? Log out →</a>`;
+        document.getElementById('welcomeBackWallet').insertAdjacentElement('afterend', notYouEl);
+        // Add "Read the Story" button dynamically
+        const storyBtn = document.createElement('button');
+        storyBtn.className = 'ob-btn ob-btn-ghost';
+        storyBtn.style.cssText = 'margin-top:24px; font-size:12px;';
+        storyBtn.textContent = 'Read the Story →';
+        storyBtn.onclick = () => {
+          wb.style.display = 'none';
+          document.getElementById('walletPhase').style.display = 'none';
+          // Flag: skip setup steps at end of lore
+          window._skipSetup = true;
+          nextStep(); // go to lore step 1
+        };
+        wb.appendChild(storyBtn);
+
+        // Auto-redirect after 2.5s if they don't click the story button
+        const autoRedirect = setTimeout(() => fadeOutAndRedirect(), 6000);
+        // Cancel auto-redirect if they click the story button
+        storyBtn.addEventListener('click', () => clearTimeout(autoRedirect));
+      }
+
+    } catch(err) {
+      console.error('Wallet connect error:', err);
+      showWalletStatus(`❌ ${err.message} — <a href="#" onclick="connectWallet();return false;" style="color:#60ffab;">Try again →</a>`, 'error');
+      resetBtn();
+    }
+  }
+
+  function saveIdentity() {
+    const username = document.getElementById('usernameInput').value.trim();
+    if (!username) {
+      document.getElementById('usernameStatus').textContent = 'Please enter a username.';
+      document.getElementById('usernameStatus').style.color = 'rgba(255,100,100,0.8)';
+      return;
+    }
+    pendingChanges.username = username;
+    nextStep();
+  }
+
+  function saveColor() {
+    if (!selectedColor) { nextStep(); return; }
+    pendingChanges.territory_color = selectedColor.hex;
+    nextStep();
+  }
+
+  function savePrefs() {
+    pendingChanges.show_badges = document.getElementById('toggle-badges').classList.contains('on');
+    pendingChanges.profile_public = document.getElementById('toggle-profile').classList.contains('on');
+    pendingChanges.show_units = document.getElementById('toggle-units').classList.contains('on');
+    nextStep();
+  }
+
+  function verifyMina() {
+    // Stub — wire to ZK verify flow later
+    alert('ZK Verification coming soon. You can verify from your profile at any time.');
+  }
+
+  async function finishOnboarding() {
+    const client = window.supabaseClient || window.supabase;
+    if (client && currentUser && Object.keys(pendingChanges).length > 0) {
+      const updates = {};
+      if (pendingChanges.username) { updates.username = pendingChanges.username; updates.username_set = true; }
+      if (pendingChanges.territory_color) updates.territory_color = pendingChanges.territory_color;
+      if (pendingChanges.show_badges !== undefined) updates.show_badges = String(pendingChanges.show_badges);
+      if (pendingChanges.profile_public !== undefined) updates.profile_public = String(pendingChanges.profile_public);
+      if (pendingChanges.show_units !== undefined) updates.show_units = String(pendingChanges.show_units);
+
+      // ── AVATAR UPLOAD ──────────────────────────────────────
+      if (pendingChanges.avatarDataUrl) {
+        try {
+          // Convert base64 data URL to blob
+          const res = await fetch(pendingChanges.avatarDataUrl);
+          const blob = await res.blob();
+          const ext = blob.type.split('/')[1] || 'jpg';
+          const fileName = `${currentUser.id}.${ext}`;
+
+          // Upload to Supabase Storage avatars bucket
+          const { error: uploadErr } = await client.storage
+            .from('avatars')
+            .upload(fileName, blob, { upsert: true, contentType: blob.type });
+
+          if (!uploadErr) {
+            const { data: urlData } = client.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            updates.avatar = urlData.publicUrl;
+          }
+        } catch (avatarErr) {
+          console.warn('Avatar upload failed:', avatarErr);
+        }
+      }
+
+      const { error } = await client
+        .from('users')
+        .update(updates)
+        .eq('id', currentUser.id);
+
+      if (!error) {
+        const session = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+        if (session.user) {
+          session.user = { ...session.user, ...updates };
+          localStorage.setItem('minalia_session', JSON.stringify(session));
+        }
+      }
+    }
+
+    fadeOutAndRedirect();
+  }
+
+  async function markOnboardingComplete() {
+    try {
+      const session = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+      if (!session?.user?.id) return;
+      const client = window.supabaseClient || window.supabase;
+      if (!client) return;
+      await client.from('users').update({ has_seen_onboarding: true }).eq('id', session.user.id);
+      // Update session object too
+      if (session.user) { session.user.has_seen_onboarding = true; localStorage.setItem('minalia_session', JSON.stringify(session)); }
+    } catch(e) { console.warn('Could not mark onboarding complete:', e); }
+  }
+
+  function skipOnboarding() {
+    markOnboardingComplete();
+    const overlay = document.getElementById('onboarding');
+    overlay.style.transition = 'opacity 0.5s ease';
+    overlay.style.opacity = '0';
+    setTimeout(async () => {
+      await generateAndShowMinisterDispatch(currentUser);
+    }, 500);
+  }
+
+  // ── MINISTER DISPATCH SYSTEM ─────────────────────────────────────────────
+
+  const TERRITORY_NAMES = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+
+  const MINISTER_NAMES = {
+    'LUM-01':'Nova','LUM-02':'Faze','LUM-03':'Luma','LUM-04':'Talha','LUM-05':'Wisp',
+    'LUM-06':'Halo','LUM-07':'Gaze','LUM-08':'Blip','LUM-09':'Drip','LUM-10':'Opal',
+    'LUM-11':'Frog','LUM-12':'Quip','LUM-13':'Vale','LUM-14':'Angel','LUM-15':'Wise',
+    'LUM-16':'Yasin','LUM-17':'Ali','LUM-18':'Mino','LUM-19':'Zoro','LUM-20':'Sike'
+  };
+
+  async function generateAndShowMinisterDispatch(user) {
+    const client = window.supabaseClient || window.supabase;
+    if (!client || !user?.id) { window.location.href = 'map.html'; return; } // no dispatch without user
+
+    // ── Cooldown check: only show once per ~23 hours ──────────────────────
+    try {
+      const { data: lastAlert } = await client
+        .from('minister_alerts')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .eq('ai_generated', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastAlert?.created_at) {
+        const hoursSince = (Date.now() - new Date(lastAlert.created_at)) / 3600000;
+        if (hoursSince < 23) {
+          // Already had a minister message recently — go straight to map
+          window.location.href = 'map.html';
+          return;
+        }
+      }
+    } catch(e) {
+      console.warn('Minister cooldown check failed:', e);
+      // On error, still proceed — don't block login
+    }
+
+    // Show dispatch popup overlay while we generate
+    showDispatchLoading();
+
+    try {
+      // Fetch player data + last alert type for topic rotation
+      const [tokRes, unitRes, devRes, taxRes, lastAlertRes] = await Promise.all([
+        client.from('user_tokens').select('token_balance,plasm_balance,wire_balance,lichen_balance,spore_balance').eq('user_id', user.id).single(),
+        client.from('units').select('unit_code,area_code,for_sale,developed,development_type').eq('owner_id', user.id),
+        client.from('active_developments').select('unit_code,building_name,monthly_income').eq('owner_id', user.id),
+        client.from('holding_tax_log').select('net_tax,week_start').eq('player_id', user.id).order('week_start', { ascending: false }).limit(1),
+        client.from('minister_alerts').select('alert_type').eq('user_id', user.id).eq('ai_generated', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      ]);
+
+      const tokens = tokRes.data || {};
+      const units  = unitRes.data || [];
+      const devs   = devRes.data || [];
+      const lastTax = taxRes.data?.[0];
+      const lastAlertType = lastAlertRes.data?.alert_type || null;
+
+      // Determine primary territory (most units)
+      const terrCount = {};
+      units.forEach(u => { const t = u.unit_code?.substring(0,6); if(t) terrCount[t] = (terrCount[t]||0)+1; });
+      const primaryTerritory = Object.entries(terrCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'LUM-01';
+      const ministerName = MINISTER_NAMES[primaryTerritory] || 'Minister';
+      const territoryName = TERRITORY_NAMES[primaryTerritory] || 'Luminaea';
+
+      const arkis     = Number(tokens.token_balance || 0);
+      const unitCount = units.length;
+      const forSale   = units.filter(u => u.for_sale);
+      const devCount  = devs.length;
+      const weeklyTax = lastTax ? Number(lastTax.net_tax) : 0;
+      const monthlyTax = weeklyTax * 4.3;
+      const monthsLeft = weeklyTax > 0 ? Math.floor(arkis / (weeklyTax * 4.3)) : 99;
+
+      // Tweet text if units for sale
+      let shareText = null;
+      if (forSale.length > 0) {
+        shareText = `I'm looking to diversify and am putting units in ${territoryName} on the market in @Minaliens. Install an Auro wallet and join Luminaea now at play.minaliens.xyz 🌍 #Minalia #Mina`;
+      }
+
+      // Determine alert type
+      let alertType = 'general';
+      if (monthsLeft <= 3) alertType = 'financial';
+      else if (forSale.length > 0) alertType = 'market';
+      else if (devCount < 3 && unitCount > 4) alertType = 'strategic';
+
+      // Build context for Claude
+      const playerContext = `
+Player: ${user.username || 'Pioneer'}
+Territory: ${territoryName} (${primaryTerritory})
+Minister: ${ministerName}
+ARKIS balance: ${arkis.toLocaleString()}
+Units owned: ${unitCount} (${forSale.length} listed for sale)
+Developments built: ${devCount}
+Weekly tax: ${weeklyTax.toLocaleString()} ARKIS
+Estimated months of funds remaining at current burn rate: ${monthsLeft === 99 ? 'unlimited (no tax yet)' : monthsLeft}
+Other tokens: PLASM ${Number(tokens.plasm_balance||0).toLocaleString()}, WIRE ${Number(tokens.wire_balance||0).toLocaleString()}, LICHEN ${Number(tokens.lichen_balance||0).toLocaleString()}, SPORE ${Number(tokens.spore_balance||0).toLocaleString()}
+      `.trim();
+
+      // Call Supabase Edge Function (API key stored server-side as secret)
+      const response = await fetch('https://vvlgaisfhhjvchequmhh.supabase.co/functions/v1/minister-dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username:         user.username,
+          arkis:            arkis,
+          unitCount:        unitCount,
+          forSaleCount:     forSale.length,
+          devCount:         devCount,
+          weeklyTax:        weeklyTax,
+          primaryTerritory: primaryTerritory,
+          plasm:            Number(tokens.plasm_balance  || 0),
+          wire:             Number(tokens.wire_balance   || 0),
+          lichen:           Number(tokens.lichen_balance || 0),
+          spore:            Number(tokens.spore_balance  || 0),
+          lastAlertType:    lastAlertType,
+        })
+      });
+
+      let message = '';
+      if (response.ok) {
+        const data = await response.json();
+        message   = data.message   || '';
+        if (data.shareText) shareText = data.shareText;
+        if (data.alertType) alertType = data.alertType;
+      }
+
+      if (!message) {
+        // Fallback message based on situation
+        if (monthsLeft <= 2) {
+          message = `${ministerName} of ${territoryName} speaks: Your treasury runs thin, pioneer. At your current tax rate you have roughly ${monthsLeft} month${monthsLeft===1?'':'s'} of funds remaining. Consider selling units 13-16 immediately — they cost you ${(weeklyTax).toLocaleString()} ARKIS weekly and that burden grows each week you wait.`;
+        } else if (devCount < 3 && unitCount > 4) {
+          message = `${ministerName} here. You hold ${unitCount} units but few developments. Every idle unit is a missed income stream. Build on your land and use those tokens to offset your ${weeklyTax.toLocaleString()} ARKIS weekly charge.`;
+        } else if (forSale.length > 0) {
+          message = `Your units in ${territoryName} are listed. Spread the word — every sale strengthens the market and returns funds to your treasury.`;
+        } else {
+          message = `${territoryName} is steady. Your ${unitCount} units and ${devCount} development${devCount===1?'':'s'} are holding ground. Keep building to offset your weekly charges.`;
+        }
+      }
+
+      // Store in minister_alerts
+      const alertPayload = {
+        user_id: user.id,
+        minister_space: primaryTerritory,
+        minister_name: ministerName,
+        alert_type: alertType,
+        message: message,
+        action_url: 'profile.html',
+        dismissed: false,
+        read: false,
+        ai_generated: true,
+        share_text: shareText
+      };
+      await client.from('minister_alerts').insert(alertPayload);
+
+      // Show the dispatch popup
+      showDispatchPopup({ ministerName, territoryName, primaryTerritory, message, alertType, shareText, forSale });
+      startDispatchClock();
+
+    } catch (err) {
+      console.warn('Minister dispatch error:', err);
+      // Just redirect on error
+      window.location.href = 'map.html';
+    }
+  }
+
+  let _clockInterval = null;
+  function startDispatchClock() {
+    const start = Date.now();
+    _clockInterval = setInterval(() => {
+      const el = document.getElementById('dispatchClock');
+      if (!el) { clearInterval(_clockInterval); return; }
+      const s = Math.floor((Date.now() - start) / 1000);
+      const mm = String(Math.floor(s/60)).padStart(2,'0');
+      const ss = String(s % 60).padStart(2,'0');
+      el.textContent = mm + ':' + ss;
+    }, 1000);
+  }
+
+  function showDispatchLoading() {
+    const popup = document.getElementById('ministerDispatchPopup');
+    if (popup) popup.style.display = 'flex';
+    const body = document.getElementById('dispatchBody');
+    if (body) body.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.4);">Receiving transmission…</div>';
+  }
+
+  function showDispatchPopup({ ministerName, territoryName, primaryTerritory, message, alertType, shareText, forSale }) {
+    const TYPE_LABELS = { financial:'💰 Financial Advisory', strategic:'⚡ Strategic Update', market:'🌐 Market Intelligence', general:'📋 General Dispatch' };
+    const typeLabel = TYPE_LABELS[alertType] || TYPE_LABELS.general;
+    const ministerId = (primaryTerritory || '').replace('LUM-', '').padStart(2, '0');
+
+    const tweetBtn = shareText
+      ? `<a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;
+                  background:rgba(29,161,242,0.1);border:1px solid rgba(29,161,242,0.3);
+                  color:rgba(29,161,242,0.9);font-size:12px;font-weight:700;letter-spacing:.04em;
+                  text-transform:uppercase;text-decoration:none;cursor:pointer;">
+           𝕏 Share Units for Sale
+         </a>`
+      : '';
+
+    const body = document.getElementById('dispatchBody');
+    if (body) {
+      body.innerHTML = `
+        <!-- Header row: label + badge + time -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div class="dispatch-transmit-label" style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:4px;">
+            <span class="dispatch-signal-dot"></span> Incoming Dispatch
+          </div>
+          <div style="flex:1;display:flex;justify-content:center;">
+            <div style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+                        background:rgba(255,224,138,0.08);border:1px solid rgba(255,224,138,0.25);color:rgba(255,224,138,0.85);">
+              ${typeLabel}
+            </div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.25);" id="dispatchClock">00:00</div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:18px;"></div>
+
+        <!-- Content: text left, video right -->
+        <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:20px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;color:rgba(255,255,255,0.8);line-height:1.75;">${
+              message
+                .replace(/\n/g, '<br>')
+                .replace(/([.!?]) +(?=[A-Z\u201C\u2018"])/g, '$1<br><br>')
+            }</div>
+          </div>
+          <div style="flex-shrink:0;width:160px;">
+            <video src="videos/${ministerName.toLowerCase()}.mp4" autoplay muted playsinline
+                 onended="this.pause()"
+                 style="width:100%;height:auto;display:block;border-radius:4px;"
+                 onerror="this.style.display='none'"></video>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${tweetBtn
+            ? `<a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener"
+                 style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:8px;
+                        background:rgba(29,161,242,0.1);border:1px solid rgba(29,161,242,0.3);
+                        color:rgba(29,161,242,0.9);font-size:11px;font-weight:700;letter-spacing:.04em;
+                        text-transform:uppercase;text-decoration:none;">𝕏 Share Units</a>`
+            : `<div></div>`}
+          <a href="alerts.html"
+             style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:8px;
+                    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+                    color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;letter-spacing:.04em;
+                    text-transform:uppercase;text-decoration:none;">
+            📡 Read All Alerts
+          </a>
+          <button onclick="showQuickSellPanel()"
+             style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:8px;
+                    background:rgba(96,255,171,0.08);border:1px solid rgba(96,255,171,0.25);
+                    color:rgba(96,255,171,0.9);font-size:11px;font-weight:700;letter-spacing:.04em;
+                    text-transform:uppercase;cursor:pointer;">
+            ⚡ Quick List Units
+          </button>
+          <button onclick="proceedToMap()"
+             style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:8px;
+                    background:rgba(255,224,138,0.12);border:1px solid rgba(255,224,138,0.35);
+                    color:#FFE08A;font-size:11px;font-weight:700;letter-spacing:.04em;
+                    text-transform:uppercase;cursor:pointer;">
+            Enter Luminaea →
+          </button>
+        </div>
+        <!-- Quick sell panel (hidden by default) -->
+        <div id="quickSellPanel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07);">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.35);margin-bottom:12px;">
+            ⚡ Quick List Units for Sale or Auction
+          </div>
+          <div id="quickSellUnits" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:12px;">
+            <div style="color:rgba(255,255,255,0.3);font-size:12px;">Loading your units…</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="flex:1;min-width:120px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.35);margin-bottom:4px;">Price (ARKIS)</div>
+              <input id="quickSellPrice" type="number" min="1" placeholder="e.g. 50000"
+                style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);
+                       border-radius:6px;color:#fff;font-size:13px;outline:none;">
+            </div>
+            <div style="flex:1;min-width:120px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.35);margin-bottom:4px;">List as</div>
+              <select id="quickSellType"
+                style="width:100%;padding:8px 10px;background:rgba(18,14,24,0.98);border:1px solid rgba(255,255,255,0.12);
+                       border-radius:6px;color:#fff;font-size:13px;outline:none;cursor:pointer;">
+                <option value="sale">For Sale</option>
+                <option value="auction">Auction</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="submitQuickList()" style="flex:1;padding:9px 0;border-radius:7px;
+               background:rgba(96,255,171,0.1);border:1px solid rgba(96,255,171,0.3);
+               color:rgba(96,255,171,0.9);font-size:11px;font-weight:700;letter-spacing:.05em;
+               text-transform:uppercase;cursor:pointer;">
+              List Selected Units
+            </button>
+            <button onclick="document.getElementById('quickSellPanel').style.display='none'"
+               style="padding:9px 16px;border-radius:7px;background:rgba(255,255,255,0.03);
+               border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);
+               font-size:11px;font-weight:700;cursor:pointer;">
+              Cancel
+            </button>
+          </div>
+          <div id="quickSellStatus" style="font-size:11px;margin-top:8px;min-height:16px;"></div>
+        </div>`;
+    }
+  }
+
+  function proceedToMap() {
+    if (_clockInterval) clearInterval(_clockInterval);
+    window.location.href = 'map.html';
+  }
+
+  // ── QUICK LIST UNITS ─────────────────────────────────────────────────────
+  let _quickSellUnits = [];
+
+  async function showQuickSellPanel() {
+    const panel = document.getElementById('quickSellPanel');
+    const container = document.getElementById('quickSellUnits');
+    panel.style.display = 'block';
+    container.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:12px;">Loading your units…</div>';
+
+    const client = window.supabaseClient || window.supabase;
+    const user = currentUser;
+    if (!client || !user?.id) { container.innerHTML = '<div style="color:#f87171;font-size:12px;">Not logged in.</div>'; return; }
+
+    const { data: units } = await client
+      .from('units')
+      .select('unit_code, for_sale, sale_price, auction_active')
+      .eq('owner_id', user.id)
+      .order('unit_code');
+
+    if (!units || !units.length) { container.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:12px;">No units found.</div>'; return; }
+
+    _quickSellUnits = units;
+    container.innerHTML = units.map((u, i) => {
+      const status = u.auction_active ? '🔨 Auction' : u.for_sale ? '💰 Listed' : '';
+      const statusColor = u.auction_active ? '#FF8C00' : u.for_sale ? '#60ffab' : 'rgba(255,255,255,0.2)';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;
+                background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);cursor:pointer;">
+        <input type="checkbox" data-idx="${i}" ${u.for_sale || u.auction_active ? '' : ''}
+               style="width:14px;height:14px;cursor:pointer;accent-color:#FFE08A;">
+        <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);flex:1;">${u.unit_code}</span>
+        ${status ? `<span style="font-size:10px;font-weight:700;color:${statusColor};">${status}</span>` : ''}
+      </label>`;
+    }).join('');
+  }
+
+  async function submitQuickList() {
+    const client = window.supabaseClient || window.supabase;
+    const user = currentUser;
+    if (!client || !user?.id) return;
+
+    const price = parseFloat(document.getElementById('quickSellPrice').value);
+    const type  = document.getElementById('quickSellType').value;
+    const status = document.getElementById('quickSellStatus');
+
+    if (!price || price < 1) { status.style.color = '#f87171'; status.textContent = 'Please enter a valid price.'; return; }
+
+    const checked = [...document.querySelectorAll('#quickSellUnits input[type=checkbox]:checked')];
+    if (!checked.length) { status.style.color = '#f87171'; status.textContent = 'Select at least one unit.'; return; }
+
+    status.style.color = 'rgba(255,255,255,0.4)';
+    status.textContent = `Listing ${checked.length} unit${checked.length > 1 ? 's' : ''}…`;
+
+    const codes = checked.map(cb => _quickSellUnits[parseInt(cb.dataset.idx)].unit_code);
+
+    const update = type === 'auction'
+      ? { auction_active: true, auction_min_bid: price, for_sale: false, sale_price: null }
+      : { for_sale: true, sale_price: price, auction_active: false, auction_min_bid: null };
+
+    const { error } = await client.from('units').update(update).in('unit_code', codes);
+
+    if (error) {
+      status.style.color = '#f87171';
+      status.textContent = 'Error: ' + error.message;
+    } else {
+      status.style.color = '#60ffab';
+      status.textContent = `✓ ${checked.length} unit${checked.length > 1 ? 's' : ''} listed successfully.`;
+      setTimeout(() => { document.getElementById('quickSellPanel').style.display = 'none'; }, 2000);
+    }
+  }
+  // ── END QUICK LIST ────────────────────────────────────────────────────────
+
+  // ── END MINISTER DISPATCH SYSTEM ──────────────────────────────────────────
+</script>
+
+
+<!-- Minister Dispatch Popup -->
+<style>
+  @keyframes dispatchGlitchIn {
+    0%   { opacity:0; transform:translateY(-8px) skewX(3deg); filter:brightness(2) blur(2px); }
+    15%  { opacity:1; transform:translateY(2px) skewX(-1deg); filter:brightness(1.4) blur(0); }
+    25%  { opacity:0.7; transform:translateY(0) skewX(2deg); filter:brightness(1.8); }
+    35%  { opacity:1; transform:translateY(0) skewX(0); filter:brightness(1); }
+    45%  { opacity:0.85; transform:skewX(-0.5deg); filter:brightness(1.2); }
+    100% { opacity:1; transform:none; filter:brightness(1); }
+  }
+  @keyframes transmitPulse {
+    0%,100% { opacity:1; text-shadow:0 0 8px rgba(255,255,255,0.6); }
+    40%      { opacity:0.35; text-shadow:none; }
+    60%      { opacity:0.9; text-shadow:0 0 12px rgba(255,255,255,0.9); }
+  }
+  @keyframes scanlineScroll {
+    0%   { background-position:0 0; }
+    100% { background-position:0 4px; }
+  }
+  @keyframes staticFlicker {
+    0%,100% { opacity:0.03; }
+    33%      { opacity:0.07; }
+    66%      { opacity:0.02; }
+  }
+
+  @keyframes signalDot {
+    0%,100% { opacity:1; box-shadow:0 0 6px #60ffab, 0 0 12px #60ffab; }
+    50%      { opacity:0.2; box-shadow:none; }
+  }
+  .dispatch-popup-inner {
+    animation: dispatchGlitchIn 0.55s ease forwards;
+    position:relative; overflow:hidden;
+  }
+  .dispatch-scanlines::before {
+    content:''; position:absolute; inset:0; border-radius:16px;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);
+    pointer-events:none; z-index:10;
+    animation:scanlineScroll 0.08s linear infinite;
+  }
+  .dispatch-scanlines::after {
+    content:''; position:absolute; inset:0; border-radius:16px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:0.04; pointer-events:none; z-index:11;
+    animation:staticFlicker 0.12s steps(1) infinite;
+  }
+
+  .dispatch-transmit-label { animation:transmitPulse 1.8s ease-in-out infinite; }
+  .dispatch-signal-dot {
+    width:6px; height:6px; border-radius:50%; background:#60ffab;
+    display:inline-block; flex-shrink:0;
+    animation:signalDot 1.2s ease-in-out infinite;
+  }
+</style>
+
+<div id="ministerDispatchPopup" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);
+  align-items:center;justify-content:center;padding:24px;">
+  <div class="dispatch-popup-inner dispatch-scanlines" style="
+    background:rgba(14,10,22,0.99);
+    border:1px solid rgba(255,224,138,0.2);
+    border-radius:16px;padding:24px 28px;
+    max-width:560px;width:100%;
+    box-shadow:0 24px 80px rgba(0,0,0,0.8), 0 0 40px rgba(255,224,138,0.05);
+    position:relative;overflow:hidden;">
+    <!-- Body (filled by JS — includes its own header) -->
+    <div id="dispatchBody"></div>
+  </div>
+</div>
+
+</body>
+</html>

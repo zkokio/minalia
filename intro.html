@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MINALIA - Welcome to Luminaea</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1520 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Planet background */
+    body::after {
+      content: "";
+      position: fixed;
+      bottom: -20%;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 80vh;
+      background: url('minalia.png') center bottom / cover no-repeat;
+      opacity: 0.35;
+      z-index: -1;
+      pointer-events: none;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 800px;
+      z-index: 1;
+    }
+    
+    .logo {
+      font-size: 72px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      animation: glow 3s ease-in-out infinite;
+    }
+    
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(255,224,138,0.3)); }
+      50% { filter: drop-shadow(0 0 40px rgba(255,224,138,0.6)); }
+    }
+    
+    .subtitle {
+      font-size: 28px;
+      color: rgba(255,224,138,0.7);
+      margin-bottom: 48px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    
+    .description {
+      font-size: 18px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 48px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 18px 48px;
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(255,224,138,0.3), rgba(255,224,138,0.2));
+      border: 2px solid rgba(255,224,138,0.5);
+      color: #FFE08A;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, rgba(255,224,138,0.4), rgba(255,224,138,0.3));
+      border-color: rgba(255,224,138,0.7);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255,224,138,0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.9);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-2px);
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 32px;
+      margin-top: 80px;
+      text-align: left;
+    }
+    
+    .feature {
+      padding: 24px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      transition: all 0.3s;
+    }
+    
+    .feature:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,224,138,0.3);
+      transform: translateY(-4px);
+    }
+    
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .feature h3 {
+      font-size: 20px;
+      color: #FFE08A;
+      margin-bottom: 12px;
+    }
+    
+    .feature p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">MINALIA</div>
+    <div class="subtitle">Luminaea</div>
+    
+    <p class="description">
+      A blockchain-based territory game on the Mina Protocol. 
+      Own virtual land, develop territories, and participate in a decentralized economy.
+    </p>
+    
+    <div class="cta-buttons">
+      <a href="login.html" class="btn btn-primary">Enter Luminaea</a>
+      <a href="map.html" class="btn btn-secondary">Explore Map</a>
+    </div>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🗺️</div>
+        <h3>320 Territories</h3>
+        <p>Explore 20 unique territories across Luminaea, each with 16 hexagonal units available for ownership.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">⛓️</div>
+        <h3>Mina Blockchain</h3>
+        <p>True ownership powered by the Mina Protocol. Connect your Auro wallet to claim and manage your assets.</p>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">🏗️</div>
+        <h3>Development System</h3>
+        <p>Develop your units, earn passive income, and consult with AI Ministers for strategic guidance.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

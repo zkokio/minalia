@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minaliens — All 20 Ministers — MINALIA</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── PAGE LAYOUT ── */
+    body { padding-top: 92px; }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 28px;
+    }
+    .breadcrumb a {
+      color: rgba(255,224,138,0.6);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .breadcrumb a:hover { color: #FFE08A; }
+
+    /* ── PAGE HERO ── */
+    .page-hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .page-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,224,138,0.55);
+      margin-bottom: 12px;
+    }
+    .page-title {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+    .page-title span {
+      background: linear-gradient(135deg, #FFE08A, #FFC840);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .page-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.5);
+      max-width: 640px;
+      margin: 0 auto 28px;
+      line-height: 1.65;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 6px 16px;
+    }
+    .stat-pill-num {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFE08A;
+    }
+    .stat-pill-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      border-color: rgba(255,224,138,0.3);
+      color: rgba(255,224,138,0.9);
+      background: rgba(255,224,138,0.06);
+    }
+    .filter-btn.active {
+      background: rgba(255,224,138,0.12);
+      border-color: rgba(255,224,138,0.45);
+      color: #FFE08A;
+    }
+    .filter-sep {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 4px;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    /* ── MCARD ── */
+    .mcard {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      cursor: pointer;
+      background: rgba(20,15,30,0.85);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .mcard:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,224,138,0.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .mcard.rarity-legendary {
+      border-color: rgba(96,223,255,0.3);
+      background: rgba(15,25,40,0.9);
+    }
+    .mcard.rarity-legendary:hover { border-color: rgba(96,223,255,0.6); box-shadow: 0 12px 40px rgba(96,223,255,0.15); }
+    .mcard.rarity-rare {
+      border-color: rgba(206,147,216,0.3);
+      background: rgba(22,15,35,0.9);
+    }
+    .mcard.rarity-rare:hover { border-color: rgba(206,147,216,0.6); box-shadow: 0 12px 40px rgba(206,147,216,0.15); }
+    .mcard.rarity-ethereal {
+      border-color: rgba(255,167,38,0.4);
+      background: rgba(30,20,10,0.9);
+    }
+    .mcard.rarity-ethereal:hover { border-color: rgba(255,167,38,0.7); box-shadow: 0 12px 40px rgba(255,167,38,0.2); }
+
+    /* ── CARD IMAGE ── */
+    .mcard-img-wrap {
+      position: relative;
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+    }
+    .mcard-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s;
+    }
+    .mcard:hover .mcard-img { transform: scale(1.02); }
+    .mcard-img-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(10,6,20,0.95) 100%);
+    }
+
+    /* ── CARD BODY ── */
+    .mcard-body {
+      padding: 14px 14px 16px;
+    }
+    .mcard-territory {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 5px;
+    }
+    .mcard-territory a {
+      color: rgba(255,224,138,0.6);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .mcard-territory a:hover {
+      color: #FFE08A;
+      text-decoration: underline;
+    }
+    .mcard-name-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .mcard-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .mcard-token {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.25);
+      font-family: monospace;
+    }
+    .mcard-superpower {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.4;
+      margin-bottom: 10px;
+      min-height: 30px;
+    }
+
+    /* ── STARS ── */
+    .mcard-stars {
+      display: flex;
+      gap: 1px;
+      margin-bottom: 10px;
+      font-size: 11px;
+    }
+    .star-on  { color: #FFE08A; }
+    .star-off { color: rgba(255,255,255,0.12); }
+
+    /* ── SCORE ROW ── */
+    .mcard-score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .mcard-score-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      white-space: nowrap;
+    }
+    .mcard-score-bar {
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .mcard-score-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FFE08A, #FFC840);
+      border-radius: 2px;
+    }
+    .mcard.rarity-legendary .mcard-score-fill { background: linear-gradient(90deg, #60DFFF, #30B8E8); }
+    .mcard.rarity-rare      .mcard-score-fill { background: linear-gradient(90deg, #CE93D8, #AB47BC); }
+    .mcard.rarity-ethereal  .mcard-score-fill { background: linear-gradient(90deg, #FFA726, #FF7043); }
+    .mcard-score-num {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFE08A;
+      min-width: 26px;
+      text-align: right;
+    }
+
+    /* ── OWNER STRIP ── */
+    .mcard-owner {
+      display: flex;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      min-height: 36px;
+    }
+    .mcard-owner-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(255,224,138,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFE08A;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .mcard-owner-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .mcard-owner-info { margin-left: 8px; }
+    .mcard-owner-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+    }
+    .mcard-owner-sub {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 1px;
+    }
+    .mcard-owner-badge {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: rgba(255,224,138,0.1);
+      border: 1px solid rgba(255,224,138,0.2);
+      color: rgba(255,224,138,0.7);
+    }
+    .mcard-unclaimed {
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      font-style: italic;
+    }
+
+    /* ── SKELETON LOADING ── */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .mcard-skeleton {
+      background: rgba(20,15,30,0.85);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .skeleton-img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .skeleton-body { padding: 14px; }
+    .skeleton-line {
+      height: 12px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .skeleton-line.wide  { width: 80%; }
+    .skeleton-line.narrow { width: 50%; }
+
+    /* ── NO RESULTS ── */
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.3);
+      font-size: 15px;
+    }
+
+    /* ── EARTH FOOTER ── */
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .earth-footer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      opacity: 0.2;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    }
+
+    /* ── CANCEL SHARED body::after (earth-footer handles it) ── */
+    body::after { display: none !important; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .cards-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+      .mcard-name { font-size: 17px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+
+<script src="load-nav.js"></script>
+
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="map.html">MAP</a>
+      <span>›</span>
+      <span style="color:rgba(255,255,255,0.7)">MINALIENS</span>
+    </div>
+
+    <div class="page-hero">
+      <div class="page-eyebrow">Luminaea's Council of 20</div>
+      <div class="page-title">The <span>Baby Minaliens</span></div>
+      <div class="page-sub">Each territory in Luminaea is governed by a Minalien minister — a unique NFT character with attributes, superpowers, and their own personality. Explore all 20 ministers and their territories.</div>
+      <div class="stats-bar">
+        <div class="stat-pill"><span class="stat-pill-num">20</span><span class="stat-pill-lbl">Ministers</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-legendary">1</span><span class="stat-pill-lbl">Legendary</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-rare">2</span><span class="stat-pill-lbl">Rare</span></div>
+        <div class="stat-pill"><span class="stat-pill-num" id="stat-owners">—</span><span class="stat-pill-lbl">Territory Owners</span></div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All 20</button>
+      <button class="filter-btn" onclick="setFilter('legendary',this)">⭐ Legendary</button>
+      <button class="filter-btn" onclick="setFilter('rare',this)">💜 Rare</button>
+      <div class="filter-sep"></div>
+      <button class="filter-btn sort-btn" id="sort-territory" onclick="setSort('territory',this)">↓ Territory</button>
+      <button class="filter-btn sort-btn" id="sort-score" onclick="setSort('score',this)">↓ Score</button>
+      <button class="filter-btn sort-btn" id="sort-stars" onclick="setSort('stars',this)">↓ Stars</button>
+    </div>
+
+    <div class="cards-grid" id="cards-grid">
+      <!-- Skeletons shown while loading -->
+      ${Array(8).fill('<div class="mcard-skeleton"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line wide"></div><div class="skeleton-line narrow"></div><div class="skeleton-line wide"></div></div></div>').join('')}
+    </div>
+    <div class="no-results" id="no-results" style="display:none">No Minaliens match this filter.</div>
+  </div>
+
+  <div class="earth-footer"><img src="images/minalia.png" alt="" /></div>
+
+  <audio id="bgAudio" preload="auto" style="display:none"><source src="audio/minalia.mp3" type="audio/mpeg"></audio>
+
+  <script>
+  // ── ALL 20 MINALIENS — single source of truth ──
+  const MINALIENS = [
+    { token:'13', name:'Nova',  lum:1,  area:'LUM-01', stars:8, overall:81, rarity:'uncommon', signed:true,  superpower:'Enhances telescope clarity for stargazing',            food:'Chicken Quesadilla',  hobbies:'Astronomy, Mapping constellations',             territory:'Aurellia',     color:'#FFE08A', biography:'Nova is an astronomer who maps the constellations of distant galaxies. Their superpower to enhance telescope clarity allows them to discover stars invisible to others. They often collaborate with Orbit, sharing their celestial findings. Related to Lush and Orbit.',   strength:80, intelligence:70, creativity:81, kindness:99, humour:99, spirituality:69, speed:91, fame:81, eco:62, personality:'TBD' },
+    { token:'2',  name:'Faze',  lum:2,  area:'LUM-02', stars:8, overall:92, rarity:'legendary',signed:true,  superpower:'Summons Fireflies',                                   food:'Gourmet Pasta',       hobbies:'Culinary Arts, Hosting Dinners',                territory:'Celestara',    color:'#60DFFF', biography:'Faze is a culinary artist specializing in intergalactic cuisine, experimenting with rare cosmic spices to craft dishes that surprise and delight. They often collaborate with Talha, sharing recipes and laughter over new creations. Related to Talha and Luma.',      strength:82, intelligence:93, creativity:93, kindness:89, humour:87, spirituality:90, speed:94, fame:97, eco:86, personality:'Friendly, Outgoing' },
+    { token:'8',  name:'Luma',  lum:3,  area:'LUM-03', stars:8, overall:82, rarity:'uncommon', signed:true,  superpower:'Summons meteors with a whistle',                      food:'TBD',                 hobbies:'Cultivating glowing alien plants, Gardening',   territory:'Willow Head',  color:'#B388FF', biography:'Luma spends their time cultivating glowing alien plants in their garden, creating a breathtaking display of colors under the stars. Their ability to summon meteors enriches their garden with rare minerals. Related to Drip and Faze.',                            strength:90, intelligence:80, creativity:82, kindness:55, humour:68, spirituality:58, speed:92, fame:63, eco:60, personality:'TBD' },
+    { token:'1',  name:'Talha', lum:4,  area:'LUM-04', stars:8, overall:72, rarity:'uncommon', signed:false, superpower:'Gravity Manipulation',                                food:'Spaghetti Bolognese', hobbies:'Stargazing, Mapping Constellations',            territory:'Emberveil',    color:'#FF6B35', biography:'Talha enjoys stargazing on alien planets, tracing new constellations, and creating maps that others use to navigate the stars. They often share this hobby with Faze and Zeal, discussing the mysteries of the cosmos. Related to Faze and Zeal.',               strength:90, intelligence:80, creativity:82, kindness:55, humour:68, spirituality:58, speed:92, fame:63, eco:60, personality:'Mysterious, Thoughtful' },
+    { token:'38', name:'Wisp',  lum:5,  area:'LUM-05', stars:8, overall:82, rarity:'uncommon', signed:true,  superpower:'Knows the thoughts of nearby plants',                food:'TBD',                 hobbies:'Crafting stardust sculptures, Art',             territory:'Fenwild',      color:'#80DEEA', biography:"Wisp enjoys crafting delicate sculptures out of stardust, their work shimmering beautifully under alien skies. Their ability to know the thoughts of nearby plants often inspires their creations, incorporating patterns from alien flora. Lush frequently showcases Wisp's work during galactic parties. Related to Lush and Opal.", strength:97, intelligence:83, creativity:84, kindness:67, humour:93, spirituality:60, speed:76, fame:78, eco:97, personality:'TBD' },
+    { token:'47', name:'Halo',  lum:6,  area:'LUM-06', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Grows flowers with a clap of their hands',           food:'Goulash',             hobbies:'Painting, Floral art',                         territory:'Firesky',      color:'#F06292', biography:'Halo is a celestial artist, painting scenes inspired by distant galaxies. Their power to grow flowers with a clap of their hands often adds a vibrant touch to their exhibitions. They collaborate with Grit and Glim to source unique materials for their art. Related to Grit and Glim.', strength:91, intelligence:65, creativity:70, kindness:99, humour:91, spirituality:77, speed:84, fame:61, eco:76, personality:'TBD' },
+    { token:'84', name:'Gaze',  lum:7,  area:'LUM-07', stars:9, overall:81, rarity:'rare',     signed:true,  superpower:'Sees distant objects in extreme detail',             food:'Baklava',             hobbies:'Landscape painting, Extracting natural pigments', territory:'Pieve',        color:'#CE93D8', biography:'Gaze is an artist who paints breathtaking landscapes of alien worlds using colors extracted from natural elements. Their superpower to see far-off objects in high detail allows them to capture even the smallest features. They often collaborate with Brim to bring these worlds to life in their art. Related to Brim and Wavy.', strength:78, intelligence:78, creativity:91, kindness:78, humour:83, spirituality:66, speed:100, fame:77, eco:79, personality:'TBD' },
+    { token:'16', name:'Blip',  lum:8,  area:'LUM-08', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Creates harmonic sound frequencies that calm emotions', food:'Miso Ramen',         hobbies:'Sound engineering, Music composition',          territory:'Oakland',      color:'#4FC3F7', biography:'Blip is a curious signal-hopper who travels across tiny bursts of space-time, collecting fragments of lost sounds and forgotten messages from the cosmos. They stitch these echoes into rhythmic pulses that can guide travelers safely through unfamiliar galaxies. Blip often shares discoveries with Luma and Faze, who help interpret the cosmic patterns hidden within each signal.', strength:83, intelligence:78, creativity:85, kindness:76, humour:82, spirituality:75, speed:81, fame:77, eco:76, personality:'Calm, Analytical' },
+    { token:'3',  name:'Drip',  lum:9,  area:'LUM-09', stars:8, overall:80, rarity:'uncommon', signed:false, superpower:'Water Control',                                       food:'Sushi',               hobbies:'Fashion, Art Galleries',                       territory:'Jadehollow',   color:'#4ade80', biography:'Drip spends hours molding alien pottery from unique clays harvested on distant planets. Their ability to control the patterns of stars is often reflected in the intricate designs of their creations. Related to Luma and Raze.',                                     strength:85, intelligence:78, creativity:91, kindness:68, humour:82, spirituality:75, speed:88, fame:79, eco:72, personality:'Stylish, Creative' },
+    { token:'42', name:'Opal',  lum:10, area:'LUM-10', stars:8, overall:80, rarity:'uncommon', signed:true,  superpower:'Reflects and redirects light to create illusions',   food:'Crystal Fruit Salad', hobbies:'Meditation, Light sculpture',                   territory:'Astral Peaks', color:'#80CBC4', biography:'Opal is a jeweler who designs intricate pieces from rare alien gems. Their superpower to form shapes in clouds for entertainment often inspires the unique patterns in their jewelry. They frequently work with Halo, combining their talents to create cosmic masterpieces. Related to Halo and Wisp.', strength:83, intelligence:78, creativity:85, kindness:80, humour:82, spirituality:79, speed:81, fame:77, eco:76, personality:'Serene, Reflective' },
+    { token:'25', name:'Frog',  lum:11, area:'LUM-11', stars:8, overall:80, rarity:'uncommon', signed:true,  superpower:'Leaps across vast distances using energy springs',    food:'Grilled Vegetables',  hobbies:'Parkour, Exploring new heights',                territory:'Lumenvast',    color:'#AED581', biography:'Frog loves amphibious races on planets with lush wetlands, where they test their speed and agility. Their ability to make objects levitate often gives them an edge during challenges. They frequently race against Volt, pushing each other to their limits in friendly competition. Related to Kelp and Volt.', strength:83, intelligence:78, creativity:85, kindness:80, humour:82, spirituality:75, speed:81, fame:77, eco:76, personality:'Energetic, Adventurous' },
+    { token:'18', name:'Quip',  lum:12, area:'LUM-12', stars:8, overall:85, rarity:'uncommon', signed:true,  superpower:'Amplifies the laughter of nearby individuals',       food:'Stuffed Zucchini',    hobbies:'Comedy, Wordplay',                              territory:'Mirewood',     color:'#FFD54F', biography:'Quip is a humorist, spreading joy through their clever wordplay and jokes. Their ability to amplify the laughter of others makes their performances unforgettable. They often collaborate with Zoro and Mino to entertain large crowds. Related to Zoro and Mino.',  strength:86, intelligence:77, creativity:94, kindness:99, humour:81, spirituality:70, speed:90, fame:69, eco:95, personality:'TBD' },
+    { token:'69', name:'Vale',  lum:13, area:'LUM-13', stars:8, overall:85, rarity:'uncommon', signed:false, superpower:'Reshapes materials with her mind',                    food:'Fennel Salad',        hobbies:'Cosmic architecture, Designing adaptive structures', territory:'Northfen',    color:'#FF8A65', biography:'Vale is a cosmic architect with a heart of gold; she designs futuristic structures that adapt to alien environments. Her power to reshape materials with her mind often results in creations that are both functional and beautiful. She is the owner of a MinAnimal. Vale often collaborates with Zero to calculate the feasibility of her designs. Related to Zero and Cris.', strength:99, intelligence:80, creativity:90, kindness:98, humour:88, spirituality:75, speed:81, fame:85, eco:70, personality:'TBD' },
+    { token:'60', name:'Angel', lum:14, area:'LUM-14', stars:8, overall:81, rarity:'uncommon', signed:true,  superpower:'Creates temporary protective shields',                food:'Ceviche',             hobbies:'Exploring alien ruins, Artifact hunting',       territory:'Oldmarch',     color:'#F48FB1', biography:'Angel loves exploring alien ruins, searching for artifacts and clues about ancient civilizations. Their ability to create temporary protective shields makes them invaluable on dangerous expeditions. They often work with Halt, who documents their discoveries in intricate detail. Related to Wise and Ali.',  strength:70, intelligence:66, creativity:92, kindness:95, humour:78, spirituality:82, speed:64, fame:92, eco:88, personality:'TBD' },
+    { token:'59', name:'Wise',  lum:15, area:'LUM-15', stars:8, overall:72, rarity:'uncommon', signed:true,  superpower:'Projects holograms from their hands',                food:'Chicken Couscous',    hobbies:'Philosophy, Storytelling',                      territory:'Mugugno',    color:'#80DEEA', biography:'Wise is a philosopher and storyteller, weaving intricate tales that captivate audiences across the galaxy. Their superpower to project holograms from their hands enhances their storytelling, bringing characters and scenes to life. They frequently share their narratives with Wine, making their performances unforgettable. Related to Krew and Wine.', strength:66, intelligence:65, creativity:66, kindness:86, humour:73, spirituality:88, speed:71, fame:73, eco:62, personality:'TBD' },
+    { token:'82', name:'Yasin', lum:16, area:'LUM-16', stars:9, overall:81, rarity:'rare',     signed:true,  superpower:'Charges objects with energy by touch',               food:'Eggs Benedict',       hobbies:'Engineering, Crafting energy-efficient devices', territory:'Bauscia', color:'#CE93D8', biography:'Yasin is a celestial engineer, crafting energy-efficient devices that run on cosmic energy. Their superpower to charge objects with energy by touch makes them a favorite collaborator in large-scale projects. They often partner with Zkon to explore alien technologies. Related to Zkon and Brim.', strength:86, intelligence:67, creativity:97, kindness:72, humour:92, spirituality:99, speed:64, fame:70, eco:84, personality:'TBD' },
+    { token:'61', name:'Ali',   lum:17, area:'LUM-17', stars:8, overall:77, rarity:'uncommon', signed:true,  superpower:'Detects ingredients with a single sniff',            food:'Sushi Platter',       hobbies:'Cooking, Galactic banquets',                    territory:'Ravenholm',    color:'#FFCC80', biography:'Ali is an intergalactic chef, known for their ability to blend the most exotic flavors from across the cosmos. Their superpower to detect ingredients with a single sniff makes them a culinary legend. They frequently collaborate with Zoro to create themed galactic banquets. Related to Angel and Zoro.', strength:62, intelligence:84, creativity:70, kindness:74, humour:93, spirituality:68, speed:67, fame:82, eco:93, personality:'TBD' },
+    { token:'19', name:'Mino',  lum:18, area:'LUM-18', stars:8, overall:76, rarity:'uncommon', signed:true,  superpower:'Can mimic the abilities of nearby Minaliens',        food:'Chili Con Carne',     hobbies:'Collecting rare minerals, Expeditions',         territory:'Stormgate',    color:'#A5D6A7', biography:'Mino is a collector of rare minerals from alien planets, fascinated by the unique properties of each find. Their superpower to mimic the abilities of nearby Minaliens often surprises their companions during expeditions. They frequently partner with Flux and Quip. Related to Flux and Quip.', strength:89, intelligence:74, creativity:79, kindness:70, humour:65, spirituality:100, speed:63, fame:73, eco:72, personality:'TBD' },
+    { token:'17', name:'Zoro',  lum:19, area:'LUM-19', stars:10, overall:82, rarity:'ethereal', signed:true,  superpower:'Creates holographic images to illustrate stories',   food:'Bibimbap',            hobbies:'Storytelling, Performing',                      territory:'The Spine',    color:'#FFA726', biography:'Zoro is a cosmic storyteller, weaving tales inspired by their adventures. Their ability to create temporary holographic images brings their stories to life, captivating audiences. They often perform alongside Blip and Quip. Related to Blip and Quip.', strength:73, intelligence:99, creativity:100, kindness:64, humour:70, spirituality:72, speed:85, fame:100, eco:76, personality:'TBD' },
+    { token:'37', name:'Sike',  lum:20, area:'LUM-20', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Converts sound waves into heat energy',              food:'TBD',                 hobbies:'Pranks, Comedy setups',                         territory:'Umbralia',     color:'#EF9A9A', biography:'Sike is a master of pranks and quick wit, always keeping others on their toes. Their superpower to convert sound waves into heat energy has created some unforgettable comedic setups. Quip often collaborates with Sike to craft elaborate scenarios that leave everyone laughing. Related to Plop and Quip.', strength:88, intelligence:82, creativity:86, kindness:97, humour:87, spirituality:65, speed:70, fame:71, eco:66, personality:'TBD' },
+  ];
+
+  // ── DEMO PLAYERS — same as used across all pages ──
+  const DEMO_PLAYERS = [
+    { username:'explorer_dev_001', avatar:'images/profile_icons/demo_me.jpg', spaces:['LUM-01','LUM-04'] },
+    { username:'moonveil',         avatar:'images/profile_icons/demo1.jpg',   spaces:['LUM-03'] },
+    { username:'stellar_wanderer', avatar:'images/profile_icons/demo2.jpg',   spaces:['LUM-05'] },
+    { username:'nightbloom_kai',   avatar:'images/profile_icons/demo3.jpg',   spaces:['LUM-06'] },
+    { username:'cosmic_trader',    avatar:'images/profile_icons/demo5.jpg',   spaces:['LUM-02'] },
+    { username:'canopy_sage',      avatar:'images/profile_icons/demo6.jpg',   spaces:['LUM-12'] },
+    { username:'forest_dweller',   avatar:'images/profile_icons/demo7.jpg',   spaces:['LUM-07','LUM-20'] },
+  ];
+
+  // Territory owners populated from DB + demo fallback
+  const TERRITORY_OWNERS = {};
+  let currentFilter = 'all';
+  let currentSort = 'territory';
+  let currentSortDir = 'asc'; // 'asc' or 'desc'
+
+  function stars(n, max=10) {
+    let h = '';
+    for(let i=1;i<=max;i++) h += `<span class="${i<=n?'star-on':'star-off'}">${i<=n?'★':'☆'}</span>`;
+    return h;
+  }
+
+  function ownerHtml(area) {
+    const cu = window.currentUser || window._sessionUser;
+    const owners = TERRITORY_OWNERS[area] || [];
+
+    if (!owners.length) {
+      return `<span class="mcard-unclaimed">No owner yet — claim a unit!</span>`;
+    }
+
+    if (owners.length > 1) {
+      const avatars = owners.slice(0,3).map(o => {
+        const inner = o.avatar
+          ? `<img src="${o.avatar}" alt="" onerror="this.parentElement.textContent='${(o.name||'?')[0].toUpperCase()}'">` 
+          : (o.name||'?')[0].toUpperCase();
+        return `<div class="mcard-owner-avatar" style="margin-left:-8px;border:2px solid #0f0c14">${inner}</div>`;
+      }).join('');
+      const isSelf = cu && owners.some(o => o.name === cu.username);
+      return `
+        <div style="display:flex;align-items:center;margin-left:8px">${avatars}</div>
+        <div class="mcard-owner-info" style="margin-left:10px">
+          <div class="mcard-owner-name">${owners.map(o=>`<span>${o.name}${cu&&cu.username===o.name?' (You)':''}</span>`).join(', ')}</div>
+          <div class="mcard-owner-sub">${owners.length} co-owners</div>
+        </div>`;
+    }
+
+    const owner = owners[0];
+    const isSelf = cu && cu.username === owner.name;
+    const inner = owner.avatar
+      ? `<img src="${owner.avatar}" alt="" onerror="this.parentElement.textContent='${(owner.name||'?')[0].toUpperCase()}'">` 
+      : (owner.name||'?')[0].toUpperCase();
+    return `
+      <div class="mcard-owner-avatar">${inner}</div>
+      <div class="mcard-owner-info">
+        <div class="mcard-owner-name">${owner.name}${isSelf?' <span style="color:#60FFAB;font-size:10px">(You)</span>':''}</div>
+        <div class="mcard-owner-sub">Territory owner</div>
+      </div>
+      <span class="mcard-owner-badge">Owner</span>`;
+  }
+
+  function renderCard(m) {
+    return `
+      <div class="mcard rarity-${m.rarity}" style="display:flex;flex-direction:column;" onclick="location.href='minalien.html?id=${m.name.toLowerCase()}'" data-rarity="${m.rarity}" data-lum="${m.lum}" data-score="${m.overall}" data-stars="${m.stars}">
+        <div class="mcard-img-wrap">
+          <img class="mcard-img" src="/nfts/${m.token}_${m.name.toUpperCase()}.png" alt="${m.name}" loading="lazy" onerror="this.src='images/profile_icons/demo_me.jpg'">
+          <div class="mcard-img-overlay"></div>
+        </div>
+        <div class="mcard-body">
+          <div class="mcard-territory">${m.area} · <a href="district.html?id=${m.area}" onclick="event.stopPropagation()">${m.territory}</a></div>
+          <div class="mcard-name-row">
+            <span class="mcard-name">${m.name}</span>
+            <span class="mcard-token">#${String(m.token).padStart(2,'0')}</span>
+          </div>
+          <div class="mcard-superpower">${m.superpower}</div>
+          <div class="mcard-stars">${stars(m.stars)}</div>
+          <div class="mcard-score-row">
+            <span class="mcard-score-lbl">Score</span>
+            <div class="mcard-score-bar"><div class="mcard-score-fill" style="width:${m.overall}%"></div></div>
+            <span class="mcard-score-num">${m.overall}</span>
+          </div>
+          <div class="mcard-owner">${ownerHtml(m.area)}</div>
+        </div>
+      </div>`;
+  }
+
+  function getSorted(data) {
+    const arr = [...data];
+    const d = currentSortDir === 'asc' ? 1 : -1;
+    if (currentSort === 'score')      arr.sort((a,b) => (a.overall - b.overall) * d);
+    else if (currentSort === 'stars') arr.sort((a,b) => (a.stars - b.stars) * d);
+    else                              arr.sort((a,b) => (a.lum - b.lum) * d);
+    return arr;
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('cards-grid');
+    const noRes = document.getElementById('no-results');
+    let data = [...MINALIENS];
+    if (currentFilter === 'legendary') data = data.filter(m => m.rarity === 'legendary');
+    else if (currentFilter === 'rare') data = data.filter(m => m.rarity === 'rare');
+    data = getSorted(data);
+    if (!data.length) {
+      grid.innerHTML = '';
+      noRes.style.display = 'block';
+    } else {
+      noRes.style.display = 'none';
+      grid.innerHTML = data.map(renderCard).join('');
+    }
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    // Only clear active on filter buttons (not sort buttons)
+    document.querySelectorAll('.filter-bar .filter-btn:not(.sort-btn)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGrid();
+  }
+  function setSort(s, btn) {
+    if (currentSort === s) {
+      // Same sort — toggle direction
+      currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      // New sort — default desc (highest first) for score/stars, asc for territory
+      currentSort = s;
+      currentSortDir = (s === 'territory') ? 'asc' : 'desc';
+    }
+    // Update all sort button arrows
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      const id = b.id.replace('sort-', '');
+      const arrow = currentSort === id ? (currentSortDir === 'asc' ? '↑' : '↓') : '↕';
+      b.textContent = arrow + ' ' + id.charAt(0).toUpperCase() + id.slice(1);
+      b.classList.toggle('active', currentSort === id);
+    });
+    // Keep filter buttons unaffected
+    renderGrid();
+  }
+
+  // ── Load real owners from Supabase ──
+  async function loadOwners() {
+    try {
+      // Wait for supabase to be ready
+      let db = null;
+      for (let i = 0; i < 30; i++) {
+        if (window.supabase && typeof window.supabase.from === 'function') { db = window.supabase; break; }
+        if (window.supabaseClient && typeof window.supabaseClient.from === 'function') { db = window.supabaseClient; break; }
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (!db) { console.warn('Supabase not ready, showing demo data'); renderGrid(); return; }
+
+      const { data: units } = await db
+        .from('units')
+        .select('unit_code, owner_id')
+        .not('owner_id', 'is', null);
+
+      if (!units || !units.length) { renderGrid(); return; }
+
+      const ownerIds = [...new Set(units.map(r => r.owner_id))];
+      const { data: users } = await db
+        .from('users')
+        .select('id, username, avatar_url, avatar')
+        .in('id', ownerIds);
+
+      if (!users) { renderGrid(); return; }
+
+      const OG_AVATARS = {
+        'MutenRoshi7777':  'images/profile_icons/og_mutenroshi7777.jpg',
+        'crypto8519':      'images/profile_icons/og_crypto8519.jpg',
+        'Backwoodbr':      'images/profile_icons/og_backwoodbr88471.jpg',
+        'MinaPunksNFT':    'images/profile_icons/og_minapunksnft.jpg',
+        'NeilFurn':        'images/profile_icons/og_neilfurn.jpg',
+        'FlushtheFashion': 'images/profile_icons/og_flushthefashion.jpg',
+        'kalkillas':       'images/profile_icons/og_kalkillas.jpg',
+      };
+      function resolveAvatar(av, xUsername, username, avatarUrl) {
+        if (username && OG_AVATARS[username]) return OG_AVATARS[username];
+        if (avatarUrl && (avatarUrl.startsWith('http') || avatarUrl.startsWith('/'))) return avatarUrl;
+        if (av && (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/'))) return av;
+        if (av && av.length > 8 && !/\p{Emoji}/u.test(av)) return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+        if (xUsername) return 'https://unavatar.io/twitter/' + xUsername.replace(/^@/, '');
+        return null;
+      }
+
+      const userMap = {};
+      users.forEach(u => { userMap[u.id] = u; });
+
+      // Build territory → unique owners
+      const tempMap = {};
+      units.forEach(r => {
+        if (!r.owner_id || !userMap[r.owner_id]) return;
+        const parts = r.unit_code.split('-');
+        const territory = parts[0] + '-' + parts[1];
+        if (!tempMap[territory]) tempMap[territory] = {};
+        if (!tempMap[territory][r.owner_id]) {
+          const u = userMap[r.owner_id];
+          const av = resolveAvatar(u.avatar, u.x_username, u.username, u.avatar_url);
+          tempMap[territory][r.owner_id] = { name: u.username, avatar: av };
+        }
+      });
+
+      Object.entries(tempMap).forEach(([t, ownersById]) => {
+        TERRITORY_OWNERS[t] = Object.values(ownersById);
+      });
+
+      // Update owner count stat
+      const uniqueOwners = new Set(Object.values(TERRITORY_OWNERS).flat().map(o => o.name)).size;
+      const el = document.getElementById('stat-owners');
+      if (el) el.textContent = uniqueOwners;
+
+      renderGrid();
+    } catch(e) {
+      console.warn('Owner load error:', e.message);
+      renderGrid();
+    }
+  }
+
+  // ── Ticker ──
+  const tickerItems = [
+    { icon:'👥', color:'info',    text:'20 Minalien ministers govern the territories of Luminaea' },
+    { icon:'⭐', color:'sale',    text:'Faze (LUM-02) is the rarest Minalien with Legendary status' },
+    { icon:'⚡', color:'alert',   text:'Consult your territory minister for development strategy' },
+    { icon:'🏗️', color:'development', text:'Each Minalien NFT governs 16 land units in their territory' },
+    { icon:'🗺️', color:'info',    text:'320 units across 20 territories — explore Luminaea today' },
+  ];
+  const scroll = document.getElementById('ticker-scroll');
+  if (scroll) {
+    const doubled = [...tickerItems, ...tickerItems];
+    scroll.innerHTML = doubled.map(i =>
+      `<div class="ticker-item"><span class="ticker-icon ${i.color}">${i.icon}</span><span>${i.text}</span></div>`
+    ).join('');
+  }
+
+  // ── Init: show grid immediately with demo data, then refresh once DB loads ──
+  renderGrid();
+  loadOwners();
+  </script>
+
+  <script src="lum-time.js"></script>
+  <script>startLumClock();</script>
+  <script src="nav-audio.js"></script>
+<script>
+  // Audio button: nav loads async, wait for navLoaded
+  document.addEventListener('navLoaded', function() {
+    if (window.initNavAudio) window.initNavAudio();
+  });
+</script>
+
+  <script>
+    // ── AUTH GATE ── Redirect to login if not connected with Auro wallet
+    (function() {
+      var session = null;
+      try { session = JSON.parse(localStorage.getItem('minalia_session')); } catch(e) {}
+      if (!session || !session.wallet_address) {
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
+</body>
+</html>

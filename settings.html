@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings — MINALIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260317a">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+  <style>
+    body { background:#07040f; color:rgba(255,255,255,0.88); font-family:'Inter',sans-serif; margin:0; min-height:100vh; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+
+    .page-wrap { max-width:860px; margin:0 auto; padding:100px 32px 80px; position:relative; z-index:1; }
+
+    /* PAGE HEADER */
+    .page-header { margin-bottom:40px; }
+    .page-breadcrumb { font-family:'Share Tech Mono',monospace; font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:.08em; margin-bottom:14px; }
+    .page-breadcrumb a { color:rgba(255,255,255,0.3); text-decoration:none; }
+    .page-breadcrumb a:hover { color:rgba(255,224,138,0.6); }
+    .page-title { font-family:'Orbitron',monospace; font-size:26px; font-weight:700; color:#FFE08A; margin-bottom:6px; }
+    .page-sub { font-size:13px; color:rgba(255,255,255,0.35); }
+
+    /* SECTIONS */
+    .settings-section { margin-bottom:32px; }
+    .section-heading {
+      font-family:'Orbitron',monospace; font-size:11px; font-weight:700;
+      letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,0.4);
+      margin-bottom:14px; padding-bottom:8px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      display:flex; align-items:center; gap:8px;
+    }
+    .section-heading-icon { font-size:14px; }
+
+    /* CARDS */
+    .settings-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px; overflow:hidden; margin-bottom:12px;
+    }
+
+    /* ROW */
+    .setting-row {
+      display:flex; align-items:center; gap:16px;
+      padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.04);
+      transition:background .15s;
+    }
+    .setting-row:last-child { border-bottom:none; }
+    .setting-row:hover { background:rgba(255,255,255,0.02); }
+    .setting-row-icon { font-size:18px; flex-shrink:0; width:28px; text-align:center; }
+    .setting-row-text { flex:1; min-width:0; }
+    .setting-row-label { font-size:13px; font-weight:500; color:rgba(255,255,255,0.8); margin-bottom:2px; }
+    .setting-row-desc { font-size:11px; color:rgba(255,255,255,0.3); line-height:1.4; }
+    .setting-row-control { flex-shrink:0; }
+
+    /* TOGGLE */
+    .toggle { position:relative; width:42px; height:22px; cursor:pointer; display:inline-block; }
+    .toggle input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position:absolute; inset:0; border-radius:11px;
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+      transition:background .2s, border-color .2s;
+    }
+    .toggle input:checked ~ .toggle-track {
+      background:rgba(96,255,171,0.25); border-color:rgba(96,255,171,0.45);
+    }
+    .toggle-thumb {
+      position:absolute; top:3px; left:3px;
+      width:14px; height:14px; border-radius:50%;
+      background:rgba(255,255,255,0.3);
+      transition:transform .2s, background .2s;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform:translateX(20px); background:#60FFab; }
+
+    /* INPUT FIELDS */
+    .setting-input {
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:7px; padding:9px 12px; color:rgba(255,255,255,0.8);
+      font-size:13px; font-family:inherit; width:100%;
+      transition:border-color .2s;
+      outline:none;
+    }
+    .setting-input:focus { border-color:rgba(255,224,138,0.4); }
+    .setting-input::placeholder { color:rgba(255,255,255,0.2); }
+    .input-prefix {
+      display:flex; align-items:center;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:7px; overflow:hidden;
+    }
+    .input-prefix-label {
+      padding:9px 10px 9px 12px; font-size:13px; color:rgba(255,255,255,0.3);
+      font-family:'Share Tech Mono',monospace; letter-spacing:.04em; white-space:nowrap;
+      border-right:1px solid rgba(255,255,255,0.08); flex-shrink:0;
+    }
+    .input-prefix input {
+      flex:1; background:transparent; border:none; padding:9px 12px;
+      color:rgba(255,255,255,0.8); font-size:13px; font-family:inherit;
+      outline:none; min-width:0;
+    }
+    .input-prefix input::placeholder { color:rgba(255,255,255,0.2); }
+
+    /* SELECT */
+    .setting-select {
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:7px; padding:9px 12px; color:rgba(255,255,255,0.8);
+      font-size:13px; font-family:inherit;
+      outline:none; cursor:pointer; transition:border-color .2s;
+      appearance:none; padding-right:28px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 10px center;
+    }
+    .setting-select:focus { border-color:rgba(255,224,138,0.4); }
+    .setting-select option { background:#0d0820; }
+
+    /* AVATAR UPLOAD */
+    .avatar-row { display:flex; align-items:center; gap:16px; padding:16px 20px; }
+    .avatar-preview {
+      width:60px; height:60px; border-radius:10px;
+      background:rgba(255,224,138,0.1); border:2px solid rgba(255,224,138,0.2);
+      display:flex; align-items:center; justify-content:center;
+      font-size:24px; flex-shrink:0; overflow:hidden; cursor:pointer;
+      transition:border-color .2s; position:relative;
+    }
+    .avatar-preview:hover { border-color:rgba(255,224,138,0.5); }
+    .avatar-preview:hover::after {
+      content:'📷'; position:absolute; inset:0;
+      background:rgba(0,0,0,0.6); display:flex; align-items:center;
+      justify-content:center; font-size:20px; border-radius:8px;
+    }
+    .avatar-preview img { width:100%; height:100%; object-fit:cover; border-radius:8px; }
+    .avatar-info { flex:1; }
+    .avatar-info-title { font-size:13px; font-weight:500; color:rgba(255,255,255,0.8); margin-bottom:4px; }
+    .avatar-info-desc { font-size:11px; color:rgba(255,255,255,0.3); line-height:1.5; margin-bottom:10px; }
+    .avatar-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 14px; background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12); border-radius:6px;
+      font-size:12px; color:rgba(255,255,255,0.6); cursor:pointer;
+      transition:background .2s, border-color .2s;
+    }
+    .avatar-btn:hover { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.85); }
+    #avatarFileInput { display:none; }
+
+    /* COLOUR PICKER ROW */
+    .colour-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; max-width:320px; }
+    .colour-swatch {
+      width:22px; height:22px; border-radius:5px; cursor:pointer;
+      border:2px solid transparent; transition:transform .15s, border-color .15s;
+      flex-shrink:0;
+    }
+    .colour-swatch:hover { transform:scale(1.15); }
+    .colour-swatch.selected { border-color:rgba(255,255,255,0.8); transform:scale(1.1); }
+
+    /* SAVE BUTTON */
+    .save-bar {
+      position:fixed; bottom:0; left:0; right:0; z-index:50;
+      background:rgba(7,4,15,0.95); backdrop-filter:blur(12px);
+      border-top:1px solid rgba(255,255,255,0.06);
+      padding:14px 32px; display:flex; align-items:center;
+      justify-content:space-between; gap:16px;
+    }
+    .save-status { font-size:12px; color:rgba(255,255,255,0.3); font-family:'Share Tech Mono',monospace; }
+    .save-status.saved { color:rgba(96,255,171,0.7); }
+    .save-status.saving { color:rgba(255,224,138,0.7); }
+    .save-status.error { color:rgba(255,107,107,0.7); }
+    .save-btns { display:flex; gap:10px; }
+    .btn-save {
+      padding:9px 24px; background:#FFE08A; color:#07040f;
+      font-family:'Orbitron',monospace; font-size:10px; font-weight:700;
+      letter-spacing:.08em; border:none; border-radius:6px; cursor:pointer;
+      transition:opacity .2s;
+    }
+    .btn-save:hover { opacity:.85; }
+    .btn-save:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-cancel {
+      padding:9px 18px; background:transparent; color:rgba(255,255,255,0.4);
+      font-family:'Orbitron',monospace; font-size:10px; font-weight:600;
+      letter-spacing:.08em; border:1px solid rgba(255,255,255,0.1);
+      border-radius:6px; cursor:pointer; transition:border-color .2s;
+    }
+    .btn-cancel:hover { border-color:rgba(255,255,255,0.22); color:rgba(255,255,255,0.65); }
+
+    /* DANGER ZONE */
+    .danger-card {
+      background:rgba(255,107,107,0.04); border:1px solid rgba(255,107,107,0.15);
+      border-radius:12px; padding:18px 20px;
+    }
+    .danger-card-title { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:rgba(255,107,107,0.7); margin-bottom:4px; letter-spacing:.08em; }
+    .danger-card-desc { font-size:12px; color:rgba(255,255,255,0.3); margin-bottom:12px; line-height:1.5; }
+    .btn-danger {
+      padding:8px 16px; background:transparent; color:rgba(255,107,107,0.7);
+      border:1px solid rgba(255,107,107,0.3); border-radius:6px;
+      font-size:12px; cursor:pointer; transition:background .2s;
+    }
+    .btn-danger:hover { background:rgba(255,107,107,0.1); }
+
+    /* LINK ROW */
+    .link-row { display:flex; align-items:center; gap:8px; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .link-row:last-child { border-bottom:none; }
+    .link-row-icon { font-size:15px; width:22px; text-align:center; flex-shrink:0; }
+    .link-row a { font-size:13px; color:rgba(255,224,138,0.6); text-decoration:none; }
+    .link-row a:hover { color:rgba(255,224,138,0.9); text-decoration:underline; }
+    .link-row-desc { font-size:11px; color:rgba(255,255,255,0.25); margin-left:auto; }
+
+    /* VOLUME SLIDER */
+    .volume-row { display:flex; align-items:center; gap:12px; padding:14px 20px; }
+    .volume-icon { font-size:16px; flex-shrink:0; }
+    .volume-slider {
+      flex:1; -webkit-appearance:none; height:4px;
+      background:rgba(255,255,255,0.1); border-radius:2px; outline:none; cursor:pointer;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; width:16px; height:16px;
+      border-radius:50%; background:#FFE08A; cursor:pointer; border:none;
+    }
+    .volume-pct { font-family:'Share Tech Mono',monospace; font-size:11px; color:rgba(255,255,255,0.4); width:32px; text-align:right; }
+
+    /* UNSAVED indicator */
+    .unsaved-dot {
+      width:6px; height:6px; border-radius:50%; background:#FFE08A;
+      display:inline-block; margin-left:8px; opacity:0;
+      transition:opacity .2s;
+    }
+    .unsaved-dot.visible { opacity:1; }
+  </style>
+</head>
+<body>
+
+<script>
+  // Inject nav
+  document.addEventListener('navLoaded', () => {});
+</script>
+<script src="load-nav.js"></script>
+<script src="ticker.js?v=20260317a"></script>
+<script src="lum-time.js?v=20260302a"></script>
+
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="page-breadcrumb">
+      <a href="profile.html">← Profile</a> &nbsp;/&nbsp; Settings
+    </div>
+    <div class="page-title">⚙️ Settings</div>
+    <div class="page-sub">Manage your account, privacy, appearance and notifications</div>
+  </div>
+
+  <!-- ── PROFILE ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">👤</span> Profile</div>
+    <div class="settings-card">
+
+      <!-- Avatar -->
+      <div class="avatar-row">
+        <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('avatarFileInput').click()">
+          <span id="avatarEmoji">😎</span>
+        </div>
+        <div class="avatar-info">
+          <div class="avatar-info-title">Profile Image</div>
+          <div class="avatar-info-desc">Upload a photo or use an emoji. Recommended size: 200×200px. JPG, PNG or GIF.</div>
+          <button class="avatar-btn" onclick="document.getElementById('avatarFileInput').click()">📷 Change Image</button>
+          <input type="file" id="avatarFileInput" accept="image/*" onchange="handleAvatarUpload(this)"/>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="setting-row">
+        <div class="setting-row-icon">🏷️</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Username</div>
+          <div class="setting-row-desc">Your display name across Luminaea</div>
+        </div>
+        <div class="setting-row-control" style="width:200px;">
+          <input class="setting-input" id="settingUsername" type="text" placeholder="Your username" oninput="markDirty()"/>
+        </div>
+      </div>
+
+      <!-- Territory colour -->
+      <div class="setting-row">
+        <div class="setting-row-icon">🎨</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Territory Colour</div>
+          <div class="setting-row-desc">How your units appear on the map</div>
+        </div>
+        <div class="setting-row-control">
+          <div class="colour-row" id="colourSwatches"></div>
+        </div>
+      </div>
+
+      <!-- Backup email -->
+      <div class="setting-row">
+        <div class="setting-row-icon">📧</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Backup Email <span style="font-size:10px;color:rgba(255,255,255,0.25);font-weight:400;">(optional)</span></div>
+          <div class="setting-row-desc">For important game notifications only — stored privately, never visible to other players, never shared or used for marketing</div>
+        </div>
+        <div class="setting-row-control" style="width:220px;">
+          <input class="setting-input" id="settingEmail" type="email" placeholder="you@example.com" oninput="markDirty()"/>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SOCIAL LINKS ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">🔗</span> Social Links</div>
+    <div class="settings-card">
+
+      <div class="setting-row">
+        <div class="setting-row-icon">𝕏</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">X / Twitter</div>
+          <div class="setting-row-desc">Shown on your public profile</div>
+        </div>
+        <div class="setting-row-control" style="width:220px;">
+          <div class="input-prefix">
+            <span class="input-prefix-label">@</span>
+            <input id="settingX" type="text" placeholder="username" oninput="markDirty()"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">💬</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Telegram</div>
+          <div class="setting-row-desc">Connect with other players</div>
+        </div>
+        <div class="setting-row-control" style="width:220px;">
+          <div class="input-prefix">
+            <span class="input-prefix-label">@</span>
+            <input id="settingTelegram" type="text" placeholder="username" oninput="markDirty()"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🎮</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Discord</div>
+          <div class="setting-row-desc">Join the MINALIA community server</div>
+        </div>
+        <div class="setting-row-control" style="width:220px;">
+          <div class="input-prefix">
+            <span class="input-prefix-label">@</span>
+            <input id="settingDiscord" type="text" placeholder="username" oninput="markDirty()"/>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PRIVACY ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">🔒</span> Privacy <span class="unsaved-dot" id="privacyDot"></span></div>
+    <div class="settings-card">
+
+      <div class="setting-row">
+        <div class="setting-row-icon">👤</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Public Profile</div>
+          <div class="setting-row-desc">Allow other players to view your profile page</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingProfilePublic" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🏠</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Unit Count</div>
+          <div class="setting-row-desc">Display how many units you own on your profile</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowUnits" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🏅</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Badges</div>
+          <div class="setting-row-desc">Display your earned badges publicly</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowBadges" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">👛</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Wallet Address</div>
+          <div class="setting-row-desc">Display truncated wallet address on your public profile</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowWallet" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">📊</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Trade History</div>
+          <div class="setting-row-desc">Allow others to see your completed trades</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowTrades" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🎵</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Tune Scores</div>
+          <div class="setting-row-desc">Display your tune score history on your profile</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowTuneScores" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🏦</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Treasury Activity</div>
+          <div class="setting-row-desc">Allow others to see your treasury transaction history</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingTreasuryPublic" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">📋</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Tax History</div>
+          <div class="setting-row-desc">Allow others to see your holding tax records</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingTaxPublic" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🌀</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Gate Network Ownership</div>
+          <div class="setting-row-desc">Display your Teleportation Gate holdings on your public profile</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowGateHoldings" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🤝</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Show Collaboration Projects</div>
+          <div class="setting-row-desc">Display your special building collaborations on your public profile</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingShowCollabs" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">👤</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Default Bidding Identity</div>
+          <div class="setting-row-desc">Sets your default when joining gate collaborations. You can always override per project.</div>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.55);">
+              <input type="radio" name="biddingIdentity" id="biddingPublic" value="public" onchange="markDirty()" style="accent-color:#FFE08A;">
+              <span>Public <span style="color:rgba(255,255,255,0.3);font-size:11px;">— your username is shown</span></span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(190,90,255,0.8);">
+              <input type="radio" name="biddingIdentity" id="biddingAnonymous" value="anonymous" onchange="markDirty()" style="accent-color:#BE5AFF;">
+              <span>Anonymous Investor <span style="color:rgba(255,255,255,0.3);font-size:11px;">— hidden until build starts</span></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SOUND & AUDIO ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">🔊</span> Sound &amp; Audio</div>
+    <div class="settings-card">
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🎵</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Background Music</div>
+          <div class="setting-row-desc">Ambient soundtrack throughout the game</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingMusic" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-icon">🔔</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Sound Effects</div>
+          <div class="setting-row-desc">UI clicks, wallet connect, auction alerts</div>
+        </div>
+        <div class="setting-row-control">
+          <label class="toggle"><input type="checkbox" id="settingSfx" onchange="markDirty()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+
+      <!-- Volume slider -->
+      <div class="volume-row" style="border-top:1px solid rgba(255,255,255,0.04);">
+        <div class="volume-icon">🔈</div>
+        <input type="range" class="volume-slider" id="settingVolume" min="0" max="100" value="50" oninput="updateVolLabel(); markDirty()"/>
+        <div class="volume-icon">🔊</div>
+        <div class="volume-pct" id="volumeLabel">50%</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── LANGUAGE ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">🌐</span> Language</div>
+    <div class="settings-card">
+      <div class="setting-row">
+        <div class="setting-row-icon">💬</div>
+        <div class="setting-row-text">
+          <div class="setting-row-label">Interface Language</div>
+          <div class="setting-row-desc">More languages coming soon — French, Spanish, Turkish planned</div>
+        </div>
+        <div class="setting-row-control">
+          <select class="setting-select" id="settingLanguage" onchange="markDirty()">
+            <option value="en">🇬🇧 English</option>
+            <option value="fr" disabled>🇫🇷 French (coming soon)</option>
+            <option value="es" disabled>🇪🇸 Spanish (coming soon)</option>
+            <option value="tr" disabled>🇹🇷 Turkish (coming soon)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LINKS ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">📖</span> Legal &amp; Info</div>
+    <div class="settings-card">
+      <div class="link-row">
+        <span class="link-row-icon">🔒</span>
+        <a href="privacy.html">Privacy Policy</a>
+        <span class="link-row-desc">How we handle your data</span>
+      </div>
+      <div class="link-row">
+        <span class="link-row-icon">📄</span>
+        <a href="terms.html">Terms of Service</a>
+        <span class="link-row-desc">Game rules and conditions</span>
+      </div>
+      <div class="link-row">
+        <span class="link-row-icon">❓</span>
+        <a href="faq.html">Help &amp; FAQ</a>
+        <span class="link-row-desc">Game mechanics and guides</span>
+      </div>
+      <div class="link-row">
+        <span class="link-row-icon">📖</span>
+        <a href="about.html">About &amp; Lore</a>
+        <span class="link-row-desc">The story of Luminaea</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DANGER ZONE ── -->
+  <div class="settings-section">
+    <div class="section-heading"><span class="section-heading-icon">⚠️</span> Account</div>
+    <div class="danger-card">
+      <div class="danger-card-title">🚪 Log Out</div>
+      <div class="danger-card-desc">End your current session. You'll need to reconnect your Auro wallet to log back in.</div>
+      <button class="btn-danger" onclick="confirmLogout()">Log Out</button>
+    </div>
+  </div>
+
+  <!-- bottom padding for save bar -->
+  <div style="height:60px;"></div>
+
+</div><!-- /page-wrap -->
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <div class="save-status" id="saveStatus">No unsaved changes</div>
+  <div class="save-btns">
+    <button class="btn-cancel" onclick="loadSettings()" id="cancelBtn">Cancel</button>
+    <button class="btn-save" onclick="saveSettings()" id="saveBtn" disabled>Save Changes</button>
+  </div>
+</div>
+
+<script>
+// ── Colour swatches ──────────────────────────────────────────────────────────
+const COLOURS = [
+  // Golds & Warm Yellows
+  '#FFE08A','#FFD600','#FFEE58','#FFCC80',
+  // Oranges
+  '#FFA726','#FF8A65','#FF6F00','#FF6D00',
+  // Reds
+  '#FF6B6B','#EF5350','#D32F2F','#FF1744',
+  // Pinks
+  '#F48FB1','#FF4081','#FF80AB','#F06292',
+  // Purples — light
+  '#CE93D8','#B388FF','#EA80FC','#E040FB',
+  // Purples — mid & dark
+  '#AB47BC','#7C4DFF','#651FFF','#6A1B9A',
+  // Blues — bright
+  '#00E5FF','#40C4FF','#80D8FF','#4DD0E1',
+  // Blues — mid
+  '#90CAF9','#42A5F5','#1E88E5','#1565C0',
+  // Teals
+  '#80CBC4','#4DB6AC','#00BFA5','#00897B',
+  // Greens — bright
+  '#60FFAB','#76FF03','#69F0AE','#00E676',
+  // Greens — mid
+  '#A5D6A7','#66BB6A','#43A047','#CCFF90',
+  // Lime / Yellow-Green
+  '#E6EE9C','#D4E157','#C6FF00','#F4FF81',
+  // Silvers & Whites
+  '#E0E0E0','#B0BEC5','#CFD8DC','#ECEFF1',
+  // Dark & Moody
+  '#37474F','#4E342E','#1A237E','#880E4F',
+];
+let selectedColour = '#FFE08A';
+
+function buildSwatches() {
+  const wrap = document.getElementById('colourSwatches');
+  wrap.innerHTML = COLOURS.map(c => `
+    <div class="colour-swatch ${c === selectedColour ? 'selected' : ''}"
+         style="background:${c};"
+         onclick="selectColour('${c}')"
+         title="${c}"></div>
+  `).join('');
+}
+
+function selectColour(c) {
+  selectedColour = c;
+  buildSwatches();
+  markDirty();
+}
+
+// ── Volume label ─────────────────────────────────────────────────────────────
+function updateVolLabel() {
+  const v = document.getElementById('settingVolume').value;
+  document.getElementById('volumeLabel').textContent = v + '%';
+}
+
+// ── Dirty tracking ───────────────────────────────────────────────────────────
+let isDirty = false;
+function markDirty() {
+  isDirty = true;
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveStatus').textContent = 'You have unsaved changes';
+  document.getElementById('saveStatus').className = 'save-status saving';
+  document.getElementById('privacyDot').classList.add('visible');
+}
+function clearDirty() {
+  isDirty = false;
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('saveStatus').textContent = 'All changes saved ✓';
+  document.getElementById('saveStatus').className = 'save-status saved';
+  document.getElementById('privacyDot').classList.remove('visible');
+  setTimeout(() => {
+    if (!isDirty) {
+      document.getElementById('saveStatus').textContent = 'No unsaved changes';
+      document.getElementById('saveStatus').className = 'save-status';
+    }
+  }, 3000);
+}
+
+// ── Load settings from DB ────────────────────────────────────────────────────
+async function loadSettings() {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  const wallet = session?.wallet_address;
+  if (!sb || (!userId && !wallet)) return;
+
+  try {
+    const query = userId
+      ? sb.from('users').select('*').eq('id', userId).single()
+      : sb.from('users').select('*').eq('mina_wallet_address', wallet).single();
+    const { data, error } = await query;
+    if (error || !data) return;
+
+    document.getElementById('settingUsername').value    = data.username || '';
+    document.getElementById('settingEmail').value       = data.email || '';
+    document.getElementById('settingX').value           = data.x_username || '';
+    document.getElementById('settingTelegram').value    = data.telegram_username || '';
+    document.getElementById('settingDiscord').value     = data.discord_username || '';
+    document.getElementById('settingLanguage').value    = data.language || 'en';
+
+    // Toggles
+    document.getElementById('settingProfilePublic').checked  = data.profile_public ?? true;
+    document.getElementById('settingShowUnits').checked      = data.show_units ?? true;
+    document.getElementById('settingShowBadges').checked     = data.show_badges ?? true;
+    document.getElementById('settingShowWallet').checked     = data.show_wallet ?? true;
+    document.getElementById('settingShowTrades').checked     = data.show_trade_history ?? true;
+    document.getElementById('settingShowTuneScores').checked = data.show_tune_scores ?? true;
+    document.getElementById('settingShowGateHoldings').checked = data.show_gate_holdings ?? true;
+    document.getElementById('settingShowCollabs').checked = data.show_collabs ?? true;
+    // Bidding identity radio
+    const anonPref = data.default_anonymous_investor ?? false;
+    document.getElementById(anonPref ? 'biddingAnonymous' : 'biddingPublic').checked = true;
+    document.getElementById('settingTreasuryPublic').checked = data.treasury_public ?? true;
+    document.getElementById('settingTaxPublic').checked      = data.tax_history_public ?? true;
+    document.getElementById('settingMusic').checked          = data.music_enabled ?? true;
+    document.getElementById('settingSfx').checked            = data.sfx_enabled ?? true;
+
+    // Volume
+    const vol = Math.round((data.audio_volume || 0.5) * 100);
+    document.getElementById('settingVolume').value = vol;
+    document.getElementById('volumeLabel').textContent = vol + '%';
+
+    // Avatar
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarEmoji   = document.getElementById('avatarEmoji');
+    if (data.avatar_url) {
+      avatarEmoji.style.display = 'none';
+      const img = document.createElement('img');
+      img.src = data.avatar_url + '?t=' + Date.now();
+      img.onerror = () => { img.remove(); avatarEmoji.style.display = ''; };
+      avatarPreview.appendChild(img);
+    } else if (data.avatar && !data.avatar.startsWith('http')) {
+      avatarEmoji.textContent = data.avatar;
+    }
+
+    // Colour
+    selectedColour = data.territory_color || '#FFE08A';
+    buildSwatches();
+
+    isDirty = false;
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('saveStatus').textContent = 'No unsaved changes';
+    document.getElementById('saveStatus').className = 'save-status';
+
+  } catch(e) {
+    console.warn('Could not load settings:', e);
+  }
+}
+
+// ── Save settings to DB ──────────────────────────────────────────────────────
+async function saveSettings() {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  const wallet = session?.wallet_address;
+  const username = session?.user?.username;
+  console.log('💾 Save attempt — userId:', userId, 'wallet:', wallet, 'sb:', !!sb);
+  if (!sb) { alert('Database not ready — please wait a moment and try again.'); return; }
+  if (!userId && !wallet) { alert('Session error — please log out and reconnect your wallet.'); return; }
+
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  document.getElementById('saveStatus').textContent = 'Saving…';
+  document.getElementById('saveStatus').className = 'save-status saving';
+
+  try {
+    // Validate email format if provided
+    const emailVal = document.getElementById('settingEmail').value.trim();
+    if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      document.getElementById('saveStatus').textContent = 'Please enter a valid email address.';
+      document.getElementById('saveStatus').className = 'save-status error';
+      saveBtn.disabled = false; saveBtn.textContent = 'Save Settings';
+      return;
+    }
+
+    const updates = {
+      username:           document.getElementById('settingUsername').value.trim() || null,
+      email:              emailVal || null,
+      x_username:         document.getElementById('settingX').value.trim() || null,
+      telegram_username:  document.getElementById('settingTelegram').value.trim() || null,
+      discord_username:   document.getElementById('settingDiscord').value.trim() || null,
+      language:           document.getElementById('settingLanguage').value,
+      territory_color:    selectedColour,
+      profile_public:     document.getElementById('settingProfilePublic').checked,
+      show_units:         document.getElementById('settingShowUnits').checked,
+      show_badges:        document.getElementById('settingShowBadges').checked,
+      show_wallet:        document.getElementById('settingShowWallet').checked,
+      show_trade_history: document.getElementById('settingShowTrades').checked,
+      show_tune_scores:           document.getElementById('settingShowTuneScores').checked,
+      show_gate_holdings: document.getElementById('settingShowGateHoldings').checked,
+      show_collabs:       document.getElementById('settingShowCollabs').checked,
+      default_anonymous_investor: document.getElementById('biddingAnonymous').checked,
+      treasury_public:    document.getElementById('settingTreasuryPublic').checked,
+      tax_history_public: document.getElementById('settingTaxPublic').checked,
+      music_enabled:      document.getElementById('settingMusic').checked,
+      sfx_enabled:        document.getElementById('settingSfx').checked,
+      audio_enabled:      document.getElementById('settingMusic').checked || document.getElementById('settingSfx').checked,
+      audio_volume:       parseFloat(document.getElementById('settingVolume').value) / 100,
+      updated_at:         new Date().toISOString(),
+    };
+
+    let updateQuery;
+    if (userId) {
+      updateQuery = sb.from('users').update(updates).eq('id', userId);
+    } else if (wallet) {
+      updateQuery = sb.from('users').update(updates).eq('mina_wallet_address', wallet);
+    } else {
+      alert('Session error — please log out and reconnect your wallet.'); return;
+    }
+    const { error } = await updateQuery;
+    if (error) throw error;
+
+    // Update session cache
+    const sess = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+    if (sess.user) { Object.assign(sess.user, updates); localStorage.setItem('minalia_session', JSON.stringify(sess)); }
+
+    saveBtn.textContent = 'Save Changes';
+    clearDirty();
+
+  } catch(e) {
+    console.error('Save error:', e);
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+    document.getElementById('saveStatus').textContent = 'Save failed — please try again';
+    document.getElementById('saveStatus').className = 'save-status error';
+  }
+}
+
+// ── Avatar upload ────────────────────────────────────────────────────────────
+async function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB.'); return; }
+
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  const wallet = session?.wallet_address;
+  if (!sb || (!userId && !wallet)) return;
+
+  const ext = file.name.split('.').pop();
+  const fileKey = (userId || wallet || 'user').replace(/[^a-zA-Z0-9]/g, '_');
+  const fileName = fileKey + '_' + Date.now() + '.' + ext;
+
+  document.getElementById('saveStatus').textContent = 'Uploading image…';
+  document.getElementById('saveStatus').className = 'save-status saving';
+
+  try {
+    const { error: upErr } = await sb.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    if (upErr) throw upErr;
+
+    const { data: urlData } = sb.storage.from('avatars').getPublicUrl(fileName);
+    const avatarUrl = urlData.publicUrl;
+
+    if (userId) {
+      await sb.from('users').update({ avatar_url: avatarUrl }).eq('id', userId);
+    } else {
+      await sb.from('users').update({ avatar_url: avatarUrl }).eq('mina_wallet_address', wallet);
+    }
+
+    // Update preview
+    const preview = document.getElementById('avatarPreview');
+    document.getElementById('avatarEmoji').style.display = 'none';
+    preview.querySelectorAll('img').forEach(i => i.remove());
+    const img = document.createElement('img');
+    img.src = avatarUrl + '?t=' + Date.now();
+    preview.appendChild(img);
+
+    const sess = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+    if (sess.user) { sess.user.avatar_url = avatarUrl; localStorage.setItem('minalia_session', JSON.stringify(sess)); }
+
+    document.getElementById('saveStatus').textContent = 'Avatar updated ✓';
+    document.getElementById('saveStatus').className = 'save-status saved';
+    setTimeout(() => { if (!isDirty) { document.getElementById('saveStatus').textContent = 'No unsaved changes'; document.getElementById('saveStatus').className = 'save-status'; } }, 2500);
+
+  } catch(e) {
+    console.error('Avatar upload error:', e);
+    document.getElementById('saveStatus').textContent = 'Upload failed — please try again';
+    document.getElementById('saveStatus').className = 'save-status error';
+  }
+}
+
+// ── Logout ───────────────────────────────────────────────────────────────────
+function confirmLogout() {
+  if (confirm('Log out of MINALIA?\n\nYou will need to reconnect your Auro wallet to log back in.')) {
+    localStorage.removeItem('minalia_session');
+    window.location.href = 'login.html';
+  }
+}
+
+// ── Warn on unsaved changes ──────────────────────────────────────────────────
+window.addEventListener('beforeunload', (e) => {
+  if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+buildSwatches();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadSettings);
+} else {
+  setTimeout(loadSettings, 600); // wait for supabase to init
+}
+</script>
+
+</body>
+</html>

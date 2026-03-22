@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minister Dispatches — MINALIA</title>
+  <link rel="stylesheet" href="style.css?v=20260316a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260316a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+  <style>
+    body {
+      overflow-x: hidden;
+      padding-top: 92px;
+    }
+    body::after { display: none; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 24px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+    .page-header-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .page-icon {
+      font-size: 28px;
+    }
+    .page-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #FFE08A;
+    }
+    .page-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: .04em;
+    }
+
+    /* Filters */
+    .alert-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filter-btn:hover { border-color: rgba(255,224,138,0.3); color: rgba(255,224,138,0.7); }
+    .filter-btn.active { border-color: rgba(255,224,138,0.5); background: rgba(255,224,138,0.08); color: #FFE08A; }
+
+    /* Alert cards */
+    .alerts-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .alert-card {
+      background: rgba(25,20,30,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px 22px;
+      position: relative;
+      transition: border-color .2s;
+    }
+    .alert-card:hover { border-color: rgba(255,255,255,0.14); }
+    .alert-card.unread {
+      border-color: rgba(255,224,138,0.2);
+      background: rgba(255,224,138,0.02);
+    }
+    .alert-card.unread::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 60%; border-radius: 0 3px 3px 0;
+      background: #FFE08A;
+    }
+
+    /* New layout: content left, minister video right */
+    .alert-card-inner {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .alert-content { flex: 1; min-width: 0; }
+    .alert-minister-col {
+      flex-shrink: 0;
+      width: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
+    }
+    .alert-minister-col img {
+      width: 140px;
+      height: auto;
+      display: block;
+      border-radius: 0;
+      object-fit: contain;
+    }
+    .alert-minister-col video { display: none; }
+    .alert-minister-col .alert-minister-fallback {
+      width: 100%; aspect-ratio: 3/4;
+      background: rgba(255,224,138,0.06);
+      border: 1px solid rgba(255,224,138,0.15);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+    }
+    .alert-header-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .alert-minister-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700;
+      color: #FFE08A; letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .alert-territory {
+      font-size: 10px; color: rgba(255,255,255,0.35);
+      letter-spacing: .04em;
+    }
+    .alert-time {
+      font-size: 10px; color: rgba(255,255,255,0.25);
+      font-family: 'Share Tech Mono', monospace;
+      margin-left: auto;
+    }
+
+    .alert-type-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 9px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .badge-financial { background: rgba(255,200,80,0.1); border: 1px solid rgba(255,200,80,0.25); color: rgba(255,200,80,0.9); }
+    .badge-strategic { background: rgba(80,160,255,0.1); border: 1px solid rgba(80,160,255,0.25); color: rgba(80,160,255,0.9); }
+    .badge-market    { background: rgba(96,255,171,0.1); border: 1px solid rgba(96,255,171,0.25); color: rgba(96,255,171,0.9); }
+    .badge-general   { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
+
+    .alert-message {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    .alert-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .alert-btn {
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .04em; text-transform: uppercase;
+      cursor: pointer; border: none; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: all .15s;
+    }
+    .alert-btn-primary {
+      background: rgba(255,224,138,0.12);
+      border: 1px solid rgba(255,224,138,0.3);
+      color: #FFE08A;
+    }
+    .alert-btn-primary:hover {
+      background: rgba(255,224,138,0.2);
+      border-color: rgba(255,224,138,0.5);
+    }
+    .alert-btn-twitter {
+      background: rgba(29,161,242,0.1);
+      border: 1px solid rgba(29,161,242,0.25);
+      color: rgba(29,161,242,0.9);
+    }
+    .alert-btn-twitter:hover {
+      background: rgba(29,161,242,0.18);
+      border-color: rgba(29,161,242,0.4);
+    }
+    .alert-btn-dismiss {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.3);
+    }
+    .alert-btn-dismiss:hover {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.5);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: rgba(255,255,255,0.25);
+    }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .empty-state-sub { font-size: 13px; }
+
+    .loading-state {
+      text-align: center; padding: 60px 20px;
+      color: rgba(255,255,255,0.3); font-size: 13px;
+    }
+
+    /* Planet footer */
+    .earth-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 45vh; pointer-events: none; z-index: 1;
+    }
+    .earth-footer img {
+      width: 100%; height: 100%; object-fit: cover;
+      object-position: center 60%; opacity: 0.15; display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    }
+
+    /* ── Main tabs ── */
+    .main-tabs {
+      display: flex; gap: 8px; margin-bottom: 24px;
+    }
+    .main-tab {
+      position: relative;
+      padding: 10px 20px; border-radius: 8px;
+      font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.4); transition: all .15s;
+    }
+    .main-tab:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+    .main-tab.active { background: rgba(255,224,138,0.08); border-color: rgba(255,224,138,0.35); color: #FFE08A; }
+    .msg-unread-badge {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 16px; height: 16px; border-radius: 8px;
+      background: #ff6b6b; color: #fff; font-size: 9px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; padding: 0 4px;
+      font-family: system-ui, sans-serif;
+    }
+
+    /* ── Message cards ── */
+    .msg-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 18px 20px;
+      margin-bottom: 12px; transition: border-color .2s;
+    }
+    .msg-card.unread { border-left: 3px solid rgba(255,224,138,0.5); }
+    .msg-card:hover { border-color: rgba(255,255,255,0.12); }
+    .msg-card-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .msg-avatar {
+      width: 36px; height: 36px; border-radius: 8px; overflow: hidden;
+      background: rgba(255,255,255,0.08); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .msg-from { flex: 1; min-width: 0; }
+    .msg-from-name {
+      font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+      color: #FFE08A; letter-spacing: .04em;
+    }
+    .msg-from-name a { color: inherit; text-decoration: none; }
+    .msg-from-name a:hover { text-decoration: underline; }
+    .msg-direction {
+      font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 2px;
+    }
+    .msg-time { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.25); flex-shrink: 0; }
+    .msg-template-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px; margin-bottom: 10px;
+      background: rgba(180,140,255,0.08); color: rgba(180,140,255,0.8);
+      border: 1px solid rgba(180,140,255,0.2);
+    }
+    .msg-body {
+      font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .msg-context {
+      font-size: 11px; color: rgba(255,224,138,0.5); margin-bottom: 12px;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .msg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .msg-btn {
+      padding: 7px 14px; border-radius: 6px; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all .15s; border: 1px solid;
+      font-family: 'Orbitron', monospace; letter-spacing: .06em; text-transform: uppercase;
+    }
+    .msg-btn-reply { background: rgba(180,140,255,0.08); color: rgba(180,140,255,0.9); border-color: rgba(180,140,255,0.25); }
+    .msg-btn-reply:hover { background: rgba(180,140,255,0.16); }
+    .msg-btn-dismiss { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.1); }
+    .msg-btn-dismiss:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55); }
+    .msg-thread-indent {
+      margin-left: 20px; padding-left: 16px;
+      border-left: 2px solid rgba(180,140,255,0.15);
+      margin-top: 10px;
+    }
+
+    /* ── Send message modal ── */
+    #sendMsgModal {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #sendMsgModal.open { display: flex; }
+    .send-msg-box {
+      background: rgba(14,12,22,0.98); border: 1px solid rgba(180,140,255,0.25);
+      border-radius: 16px; padding: 28px 24px; max-width: 460px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .send-msg-title {
+      font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: rgba(180,140,255,0.9);
+      margin-bottom: 4px;
+    }
+    .send-msg-to {
+      font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 20px;
+      padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .send-msg-to strong { color: #FFE08A; }
+    .send-msg-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+      color: rgba(255,255,255,0.4); font-weight: 600; margin-bottom: 8px; display: block;
+    }
+    .msg-template-option {
+      padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      transition: all .15s;
+    }
+    .msg-template-option:hover { background: rgba(180,140,255,0.08); border-color: rgba(180,140,255,0.2); }
+    .msg-template-option.selected { background: rgba(180,140,255,0.1); border-color: rgba(180,140,255,0.35); }
+    .msg-template-text { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+    .msg-template-key { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 3px; font-family: 'Share Tech Mono', monospace; }
+    .send-msg-btns { display: flex; gap: 10px; margin-top: 20px; }
+    .send-msg-btns button { flex: 1; padding: 11px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border: 1px solid; transition: all .15s; }
+    .send-msg-cancel { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
+    .send-msg-cancel:hover { background: rgba(255,255,255,0.08); }
+    .send-msg-submit { background: rgba(180,140,255,0.1); border-color: rgba(180,140,255,0.3); color: rgba(180,140,255,0.95); }
+    .send-msg-submit:hover { background: rgba(180,140,255,0.2); }
+    .send-msg-submit:disabled { opacity: .4; cursor: not-allowed; }
+    .send-msg-feedback { font-size: 12px; margin-top: 12px; padding: 10px; border-radius: 6px; display: none; }
+    .send-msg-ok  { background: rgba(96,255,171,0.08); border: 1px solid rgba(96,255,171,0.2); color: #60ffab; }
+    .send-msg-err { background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #ff8080; }
+
+    /* ── Toast notification ── */
+    #minaliaToast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 99999;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: .04em;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .25s, transform .25s;
+      white-space: nowrap;
+    }
+    #minaliaToast.toast-ok  { background: rgba(96,255,171,0.12); border: 1px solid rgba(96,255,171,0.35); color: #60ffab; }
+    #minaliaToast.toast-err { background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.3); color: #ff8080; }
+    #minaliaToast.toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<div id="nav-placeholder"></div>
+<script src="load-nav.js?v=20260316a"></script>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-header-top">
+      <span class="page-icon">📡</span>
+      <h1 class="page-title" id="pageTitle">Minister Dispatches</h1>
+    </div>
+    <div class="page-subtitle" id="pageSubtitle">Direct communications from your territory ministers</div>
+  </div>
+
+  <!-- ── STEWARDSHIP WARNING BANNER (pinned, shown day 21-30) ── -->
+  <div id="stewardshipBanner" style="display:none;margin-bottom:16px;border-radius:10px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,60,60,0.07);padding:14px 16px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;color:rgba(255,100,100,0.95);margin-bottom:6px;">⚠️ URGENT — YOUR UNITS ARE AT RISK</div>
+        <div id="stewardshipBannerText" style="font-size:12px;color:rgba(255,255,255,0.65);font-family:'Share Tech Mono',monospace;line-height:1.6;"></div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <a href="tune.html" style="display:inline-block;padding:7px 16px;border-radius:7px;background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.4);color:rgba(255,120,120,0.95);font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;text-decoration:none;letter-spacing:.06em;transition:all .15s;" onmouseover="this.style.background='rgba(255,100,100,0.25)'" onmouseout="this.style.background='rgba(255,100,100,0.15)'">⚡ Tune Your Units Now →</a>
+          <button onclick="dismissStewardshipBanner()" style="padding:7px 14px;border-radius:7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.35);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">Dismiss for 7 days</button>
+        </div>
+      </div>
+      <div id="stewardshipCountdown" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:rgba(255,100,100,0.8);white-space:nowrap;text-align:center;min-width:60px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:.08em;margin-bottom:2px;">DAYS LEFT</div>
+        <div id="stewardshipDaysLeft">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main tab switcher ── -->
+  <div class="main-tabs">
+    <button class="main-tab active" id="tabAlerts" onclick="switchTab('alerts')">📡 Dispatches</button>
+    <button class="main-tab" id="tabMessages" onclick="switchTab('messages')">
+      💬 Messages
+      <span class="msg-unread-badge" id="msgUnreadBadge" style="display:none;"></span>
+    </button>
+  </div>
+
+  <!-- ── ALERTS PANEL ── -->
+  <div id="panelAlerts">
+    <div class="alert-filters">
+      <button class="filter-btn active" onclick="filterAlerts('all', this)">All</button>
+      <button class="filter-btn" onclick="filterAlerts('unread', this)">Unread</button>
+      <button class="filter-btn" onclick="filterAlerts('financial', this)">Financial</button>
+      <button class="filter-btn" onclick="filterAlerts('strategic', this)">Strategic</button>
+      <button class="filter-btn" onclick="filterAlerts('market', this)">Market</button>
+    </div>
+    <div class="alerts-list" id="alertsList">
+      <div class="loading-state">Loading dispatches…</div>
+    </div>
+  </div>
+
+  <!-- ── MESSAGES PANEL ── -->
+  <div id="panelMessages" style="display:none;">
+    <div id="msgDailyQuota" style="display:none;margin-bottom:14px;padding:10px 16px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:10px;font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;">
+      <!-- populated by loadMsgQuota() -->
+    </div>
+    <div class="alert-filters">
+      <button class="filter-btn active" id="msgFilterAll" onclick="filterMessages('all', this)">All</button>
+      <button class="filter-btn" id="msgFilterInbox" onclick="filterMessages('inbox', this)">Inbox</button>
+      <button class="filter-btn" id="msgFilterSent" onclick="filterMessages('sent', this)">Sent</button>
+      <button class="filter-btn" id="msgFilterUnread" onclick="filterMessages('unread', this)">Unread</button>
+    </div>
+    <div class="alerts-list" id="messagesList">
+      <div class="loading-state">Loading messages…</div>
+    </div>
+  </div>
+</div>
+
+<div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+
+<script>
+  let allAlerts = [];
+  let currentFilter = 'all';
+
+  const TERRITORY_NAMES = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+
+  const TYPE_BADGE = {
+    financial: '<span class="alert-type-badge badge-financial">💰 Financial</span>',
+    strategic: '<span class="alert-type-badge badge-strategic">⚡ Strategic</span>',
+    market:    '<span class="alert-type-badge badge-market">🌐 Market</span>',
+    general:   '<span class="alert-type-badge badge-general">📋 General</span>',
+  };
+
+  function timeAgo(dateStr) {
+    const d = new Date(dateStr);
+    const diff = Date.now() - d.getTime();
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins < 2)   return 'Just now';
+    if (mins < 60)  return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  }
+
+
+  // ── Linkify alert messages ────────────────────────────────────────────────
+  const KNOWN_USERS = [
+    'minaliens','Muten Roshi','crypto8519','Backwoodbr','MinaPunksNFT',
+    'NeilFurn','FlushtheFashion','kalkillas','zkTrivo','Glowy564274',
+    'ikozhemyakin','EndFigo','Shiroy_k','Jay','zkKirol','Haresh',
+    'Nova','Faze','Luma','Talha','Wisp','Halo','Gaze','Blip','Drip',
+    'Opal','Frog','Quip','Vale','Angel','Wise','Yasin','Mino','Zoro','Sike'
+  ];
+  const LINK_STYLE_UNIT = 'color:rgba(255,224,138,0.85);text-decoration:none;font-weight:700;border-bottom:1px solid rgba(255,224,138,0.3);';
+  const LINK_STYLE_TERR = 'color:rgba(160,200,255,0.85);text-decoration:none;font-weight:700;border-bottom:1px solid rgba(160,200,255,0.3);';
+  const LINK_STYLE_USER = 'color:rgba(255,224,138,0.85);text-decoration:none;font-weight:700;border-bottom:1px solid rgba(255,224,138,0.3);';
+
+  function formatAlertMessage(text) {
+    if (!text) return '';
+    // Split on newlines first, then add spacing between sentences
+    return text
+      .split('\n')
+      .map(function(line) {
+        // Add <br><br> after sentence-ending punctuation followed by a capital
+        return line.replace(/([.!?]) +(?=[A-Z“‘"])/g, '$1<br><br>');
+      })
+      .join('<br>');
+  }
+
+  function linkifyMessage(text) {
+    if (!text) return '';
+    var out = text.replace(/\b(LUM-\d{2}-[A-P])\b/g,
+      '<a href="unit.html?code=$1" style="' + LINK_STYLE_UNIT + '">$1</a>');
+    out = out.replace(/\b(LUM-\d{2})(?!-[A-P])\b/g,
+      '<a href="district.html?code=$1" style="' + LINK_STYLE_TERR + '">$1</a>');
+    KNOWN_USERS.forEach(function(u) {
+      var escaped = u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = new RegExp('(?<!["\'=\/>])\\b(' + escaped + ')\\b(?![^<]*>)', 'g');
+      out = out.replace(re, '<a href="profile.html?user=' + encodeURIComponent(u) + '" style="' + LINK_STYLE_USER + '">' + u + '</a>');
+    });
+    return out;
+  }
+
+    function renderAlerts(alerts) {
+    const list = document.getElementById('alertsList');
+    // Never show dismissed alerts
+    const active = alerts.filter(a => !a.dismissed);
+    const filtered = currentFilter === 'all' ? active
+      : currentFilter === 'unread' ? active.filter(a => !a.read)
+      : active.filter(a => a.alert_type === currentFilter);
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">No dispatches</div>
+        <div class="empty-state-sub">Your ministers have nothing to report right now.</div>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(a => {
+      const territory = TERRITORY_NAMES[a.minister_space] || a.minister_space || 'Luminaea';
+      const badge = TYPE_BADGE[a.alert_type] || TYPE_BADGE.general;
+      const ministerId = (a.minister_space || '').replace('LUM-', '').padStart(2, '0');
+      const ministerName_lc = (a.minister_name || '').toLowerCase();
+      const ministerImg = a.minister_name
+        ? `<video src="videos/${ministerName_lc}.mp4" autoplay loop muted playsinline
+             style="width:100%;height:100%;object-fit:cover;display:block;"
+             onerror="this.style.display='none'"></video>`
+        : '';
+      const unreadClass = !a.read ? 'unread' : '';
+
+      // Twitter share button if there are units for sale
+      const tweetBtn = a.share_text
+        ? `<a class="alert-btn alert-btn-twitter" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(a.share_text)}" target="_blank" rel="noopener">
+            𝕏 Share
+          </a>`
+        : '';
+
+      const actionBtn = a.action_url
+        ? `<a class="alert-btn alert-btn-primary" href="${a.action_url}">View →</a>`
+        : '';
+
+
+      const MINISTER_IMGS = {
+        'nova':  'https://play.minaliens.xyz/nfts/13_NOVA.png',
+        'faze':  'https://play.minaliens.xyz/nfts/2_FAZE.png',
+        'luma':  'https://play.minaliens.xyz/nfts/8_LUMA.png',
+        'talha': 'https://play.minaliens.xyz/nfts/1_TALHA.png',
+        'wisp':  'https://play.minaliens.xyz/nfts/38_WISP.png',
+        'halo':  'https://play.minaliens.xyz/nfts/47_HALO.png',
+        'gaze':  'https://play.minaliens.xyz/nfts/84_GAZE.png',
+        'blip':  'https://play.minaliens.xyz/nfts/16_BLIP.png',
+        'drip':  'https://play.minaliens.xyz/nfts/3_DRIP.png',
+        'opal':  'https://play.minaliens.xyz/nfts/42_OPAL.png',
+        'frog':  'https://play.minaliens.xyz/nfts/25_FROG.png',
+        'quip':  'https://play.minaliens.xyz/nfts/18_QUIP.png',
+        'vale':  'https://play.minaliens.xyz/nfts/69_VALE.png',
+        'angel': 'https://play.minaliens.xyz/nfts/60_ANGEL.png',
+        'wise':  'https://play.minaliens.xyz/nfts/59_WISE.png',
+        'yasin': 'https://play.minaliens.xyz/nfts/82_YASIN.png',
+        'ali':   'https://play.minaliens.xyz/nfts/61_ALI.png',
+        'mino':  'https://play.minaliens.xyz/nfts/19_MINO.png',
+        'zoro':  'https://play.minaliens.xyz/nfts/17_ZORB.png',
+        'sike':  'https://play.minaliens.xyz/nfts/37_SIKE.png',
+      };
+      const ministerImgSrc = MINISTER_IMGS[ministerName_lc] || '';
+      const videoOrFallback = ministerImgSrc
+        ? `<img src="${ministerImgSrc}" alt="${a.minister_name || 'Minister'}" style="width:140px;height:auto;display:block;object-fit:contain;border-radius:0;" />`
+        : '<div class="alert-minister-fallback">🏛️</div>';
+
+      return `<div class="alert-card ${unreadClass}" id="alert-${a.id}">
+        <div class="alert-card-inner">
+          <div class="alert-content">
+            <div class="alert-header-row">
+              <div class="alert-minister-name">${a.minister_name || 'Minister'}</div>
+              <div class="alert-territory">${territory}</div>
+              <div class="alert-time">${timeAgo(a.created_at)}</div>
+            </div>
+            ${badge}
+            <div class="alert-message">${linkifyMessage(formatAlertMessage(a.message || ''))}</div>
+            <div class="alert-actions">
+              ${actionBtn}
+              ${tweetBtn}
+              ${!a.dismissed ? `<button class="alert-btn alert-btn-dismiss" onclick="dismissAlert('${a.id}')">Dismiss</button>` : ''}
+            </div>
+          </div>
+          <div class="alert-minister-col">${videoOrFallback}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function filterAlerts(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAlerts(allAlerts);
+  }
+
+  async function dismissAlert(id) {
+    const db = window.supabaseClient || window.supabase;
+    if (!db) return;
+    // Animate card out then remove it
+    const card = document.getElementById('alert-' + id);
+    if (card) {
+      card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      card.style.pointerEvents = 'none';
+      card.style.overflow = 'hidden';
+      const h = card.offsetHeight;
+      card.style.maxHeight = h + 'px';
+      setTimeout(() => {
+        card.style.transition += ', max-height 0.3s ease, margin-bottom 0.3s ease';
+        card.style.maxHeight = '0';
+        card.style.marginBottom = '0';
+      }, 220);
+      setTimeout(() => card.remove(), 540);
+    }
+    await db.from('minister_alerts').update({ dismissed: true, read: true }).eq('id', id);
+    allAlerts = allAlerts.filter(a => a.id !== id);
+  }
+
+  async function markAllRead() {
+    const db = window.supabaseClient || window.supabase;
+    if (!db || !window._alertUserId) return;
+    await db.from('minister_alerts').update({ read: true }).eq('user_id', window._alertUserId).eq('read', false);
+    allAlerts = allAlerts.map(a => ({ ...a, read: true }));
+    renderAlerts(allAlerts);
+  }
+
+  async function loadAlerts() {
+    // Read session directly from localStorage — auth_auro.js doesn't expose currentUser on window
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const user = session?.user;
+
+    // Check session expiry (2 hours)
+    if (session?.login_time) {
+      const elapsed = Date.now() - new Date(session.login_time).getTime();
+      if (elapsed > 2 * 60 * 60 * 1000) {
+        localStorage.removeItem('minalia_session');
+      }
+    }
+
+    if (!user?.id) {
+      document.getElementById('alertsList').innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">🔒</div>
+        <div class="empty-state-title">Not logged in</div>
+        <div class="empty-state-sub"><a href="login.html" style="color:#FFE08A;">Login</a> to see your minister dispatches.</div>
+      </div>`;
+      return;
+    }
+
+    window._alertUserId = user.id;
+
+    // Wait for Supabase client to be ready
+    let db = null;
+    for (let i = 0; i < 50; i++) {
+      const c = window.supabaseClient || window.supabase;
+      if (c && typeof c.from === 'function') { db = c; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    if (!db) {
+      document.getElementById('alertsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not connect</div></div>';
+      return;
+    }
+
+    const { data, error } = await db
+      .from('minister_alerts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error || !data) {
+      document.getElementById('alertsList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load dispatches</div></div>`;
+      return;
+    }
+
+    // ── Deduplicate: remove alerts with near-identical messages ────────────
+    // Keep only the most recent alert if the first 60 chars of the message match a newer one
+    // Also skip if same alert_type was already shown on the same calendar day
+    const deduped = [];
+    const seenMsgPrefixes = new Set();
+    const seenTypeDay = new Set();
+
+    for (const alert of data) {
+      // Key 1: message prefix (first 60 chars, lowercased, stripped)
+      const msgKey = (alert.message || '').trim().toLowerCase().slice(0, 60);
+      // Key 2: same alert_type on same calendar day
+      const day = alert.created_at ? alert.created_at.slice(0, 10) : '';
+      const typeDay = (alert.alert_type || 'general') + '|' + day;
+
+      if (seenMsgPrefixes.has(msgKey) || seenTypeDay.has(typeDay)) {
+        continue; // skip duplicate
+      }
+      seenMsgPrefixes.add(msgKey);
+      seenTypeDay.add(typeDay);
+      deduped.push(alert);
+    }
+
+    allAlerts = deduped;
+    // Mark all as read
+    await markAllRead();
+    renderAlerts(allAlerts);
+  }
+
+  loadAlerts();
+  // Run after a tick so DOM is settled
+  setTimeout(checkSendParam, 100);
+  setTimeout(initUnreadBadge, 1000);
+  setTimeout(checkStewardshipWarning, 800);
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ── STEWARDSHIP WARNING BANNER ─────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+
+  async function checkStewardshipWarning() {
+    const banner = document.getElementById('stewardshipBanner');
+    if (!banner) return;
+
+    // Check if dismissed within last 7 days
+    const dismissed = localStorage.getItem('stewardship_banner_dismissed');
+    if (dismissed && Date.now() - parseInt(dismissed) < 7 * 86400 * 1000) return;
+
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const lastLogin = session?.user?.last_login_at;
+    if (!lastLogin) return;
+
+    const daysInactive = (Date.now() - new Date(lastLogin).getTime()) / 86400000;
+
+    // Only show between day 21 and 30
+    if (daysInactive < 21 || daysInactive >= 30) return;
+
+    const daysLeft = Math.ceil(30 - daysInactive);
+    const daysGone = Math.floor(daysInactive);
+
+    // Count units at risk
+    const db = window.supabaseClient || window.supabase;
+    let unitList = '';
+    if (db && session?.user?.id) {
+      try {
+        const { data } = await db.from('units')
+          .select('unit_code')
+          .eq('owner_id', session.user.id)
+          .is('stewardship_status', null);
+        if (data?.length) unitList = data.map(u => u.unit_code).join(', ');
+      } catch(e) {}
+    }
+
+    // Colour shifts from amber → red as deadline approaches
+    const urgency = daysLeft <= 3;
+    if (urgency) {
+      banner.style.borderColor = 'rgba(255,60,60,0.6)';
+      banner.style.background  = 'rgba(255,40,40,0.1)';
+    }
+
+    document.getElementById('stewardshipDaysLeft').textContent = daysLeft;
+    document.getElementById('stewardshipBannerText').innerHTML =
+      `You have not logged in for <strong style="color:rgba(255,180,100,0.9);">${daysGone} days</strong>. ` +
+      `After <strong style="color:rgba(255,100,100,0.9);">30 days</strong> your units are placed under Ministerial stewardship and all development income stops.` +
+      (unitList ? `<br><span style="color:rgba(255,255,255,0.35);font-size:11px;">Units at risk: ${unitList}</span>` : '') +
+      `<br><span style="color:rgba(255,255,255,0.35);font-size:11px;">Tune your units to reset the clock and keep ownership.</span>`;
+
+    banner.style.display = 'block';
+  }
+
+  function dismissStewardshipBanner() {
+    localStorage.setItem('stewardship_banner_dismissed', Date.now().toString());
+    const banner = document.getElementById('stewardshipBanner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ── TAB SWITCHING ─────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+
+  let currentTab = 'alerts';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('panelAlerts').style.display   = tab === 'alerts'   ? '' : 'none';
+    document.getElementById('panelMessages').style.display = tab === 'messages' ? '' : 'none';
+    document.getElementById('tabAlerts').classList.toggle('active',   tab === 'alerts');
+    document.getElementById('tabMessages').classList.toggle('active', tab === 'messages');
+    if (tab === 'messages') { loadMessages(); loadMsgQuota(); }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ── MESSAGE TEMPLATES ─────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+
+  const MSG_TEMPLATES = {
+    trade_buy_interest:  { label: "💰 Buy Interest",      text: "I'm interested in buying one of your units — are you open to offers?" },
+    alliance_seek:       { label: "⚔️ Alliance",          text: "I'm looking for allies — are you interested in forming an alliance together?" },
+    alliance_invite:     { label: "🌟 Alliance Invite",   text: "You've been invited to join [alliance] — [member_count] members strong." },
+  };
+
+  // Templates shown based on context — collab_welcome only to same-territory players etc.
+  // For simplicity we show all and let the player choose what's relevant.
+
+  const REPLY_TEMPLATES = {
+    trade_buy_interest:  [
+      { key: "reply_open",    text: "I'm open to offers — check my listed units on my profile." },
+      { key: "reply_not_now", text: "Not selling right now, but I'll keep you in mind." },
+      { key: "reply_contact", text: "Make me an offer via the unit page." },
+    ],
+    alliance_seek:       [
+      { key: "reply_interested", text: "I'm interested — let's explore what an alliance could look like." },
+      { key: "reply_not_now",    text: "Thanks for reaching out, but I'm not looking to ally right now." },
+    ],
+    alliance_invite:     [
+      { key: "reply_accept",  text: "I accept — let's build something great together." },
+      { key: "reply_decline", text: "Thanks for the invite, but I'll pass for now." },
+    ],
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ── LOAD MESSAGES ─────────────────────────────────════════════════════
+  // ══════════════════════════════════════════════════════════════════════
+
+  let allMessages = [];
+  let msgFilter = 'all';
+
+  async function loadMsgQuota() {
+    const db = window.supabaseClient || window.supabase;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const myId = session?.user?.id;
+    const el = document.getElementById('msgDailyQuota');
+    if (!el || !myId || !db) return;
+
+    try {
+      const since24h = new Date(Date.now() - 86400000).toISOString();
+      const { data } = await db.from('messages').select('recipient_id')
+        .eq('sender_id', myId).gte('created_at', since24h);
+
+      const recipients = data || [];
+      const uniqueCount = new Set(recipients.map(r => r.recipient_id)).size;
+      // Count per recipient
+      const perRecipient = {};
+      recipients.forEach(r => { perRecipient[r.recipient_id] = (perRecipient[r.recipient_id] || 0) + 1; });
+      const atLimit = Object.values(perRecipient).filter(c => c >= 2).length;
+
+      const playersLeft = Math.max(0, 10 - uniqueCount);
+      const color = playersLeft === 0 ? 'rgba(255,100,100,0.7)' : playersLeft <= 3 ? 'rgba(255,200,60,0.7)' : 'rgba(255,255,255,0.4)';
+
+      el.innerHTML = '<span style="color:rgba(255,224,138,0.6);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:10px;">Daily message allowance</span>'
+        + '<br>You can message <strong style="color:' + color + '">' + playersLeft + ' more player' + (playersLeft !== 1 ? 's' : '') + '</strong> today'
+        + (atLimit > 0 ? ' · <strong>' + atLimit + ' player' + (atLimit !== 1 ? 's' : '') + '</strong> have reached the 2-message limit' : '')
+        + ' · Quota resets every 24 hours.';
+      el.style.display = 'block';
+    } catch(e) { console.warn('loadMsgQuota:', e); }
+  }
+
+  async function loadMessages() {
+    const db = window.supabaseClient || window.supabase;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const user = session?.user;
+    if (!db || !user?.id) {
+      document.getElementById('messagesList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔒</div><div class="empty-state-title">Not logged in</div></div>';
+      return;
+    }
+
+    document.getElementById('messagesList').innerHTML = '<div class="loading-state">Loading messages…</div>';
+
+    try {
+      // Fetch all messages where user is sender or recipient
+      const { data: msgs, error } = await db
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .eq('dismissed', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error || !msgs) throw error || new Error('No data');
+
+      // Fetch user details for all involved parties
+      const userIds = [...new Set(msgs.flatMap(m => [m.sender_id, m.recipient_id]))];
+      const { data: users } = await db
+        .from('users')
+        .select('id, username, avatar, avatar_url, territory_color')
+        .in('id', userIds);
+
+      const userMap = Object.fromEntries((users || []).map(u => [u.id, u]));
+
+      allMessages = msgs.map(m => ({
+        ...m,
+        sender:    userMap[m.sender_id]    || { username: 'Unknown' },
+        recipient: userMap[m.recipient_id] || { username: 'Unknown' },
+        isMine:    m.sender_id === user.id,
+      }));
+
+      // Update unread badge
+      const unread = allMessages.filter(m => !m.read && !m.isMine).length;
+      const badge = document.getElementById('msgUnreadBadge');
+      if (badge) {
+        badge.style.display = unread > 0 ? 'flex' : 'none';
+        badge.textContent = unread;
+      }
+
+      // Mark received as read
+      const unreadIds = allMessages.filter(m => !m.read && !m.isMine).map(m => m.id);
+      if (unreadIds.length) {
+        await db.from('messages').update({ read: true }).in('id', unreadIds);
+        allMessages.forEach(m => { if (unreadIds.includes(m.id)) m.read = true; });
+      }
+
+      renderMessages();
+    } catch(e) {
+      document.getElementById('messagesList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Could not load messages</div></div>`;
+    }
+  }
+
+  function filterMessages(filter, btn) {
+    msgFilter = filter;
+    document.querySelectorAll('#panelMessages .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderMessages();
+  }
+
+  function renderMessages() {
+    const list = document.getElementById('messagesList');
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const myId = session?.user?.id;
+
+    let filtered = allMessages.filter(m => !m.reply_to); // top-level only
+    if (msgFilter === 'inbox') filtered = filtered.filter(m => m.recipient_id === myId);
+    if (msgFilter === 'sent')  filtered = filtered.filter(m => m.sender_id === myId);
+    if (msgFilter === 'unread') filtered = filtered.filter(m => !m.read && m.recipient_id === myId);
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No messages</div><div class="empty-state-sub">Messages from other players will appear here.</div></div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(m => renderMsgCard(m, myId, false)).join('');
+  }
+
+  function renderMsgCard(m, myId, isReply) {
+    const isMine = m.sender_id === myId;
+    const otherUser = isMine ? m.recipient : m.sender;
+    const direction = isMine ? '→ Sent to' : '← From';
+    const tmpl = MSG_TEMPLATES[m.template_key] || { label: m.template_key, text: '' };
+
+    const avatarSrc = otherUser.avatar_url || otherUser.avatar || null;
+    const avatarHtml = avatarSrc
+      ? `<img src="${avatarSrc}" alt="${otherUser.username}" onerror="this.parentNode.textContent='👤'">`
+      : '👤';
+
+    // Build message text with context substitution
+    let msgText = tmpl.text;
+    if (m.context_json) {
+      const ctx = typeof m.context_json === 'string' ? JSON.parse(m.context_json) : m.context_json;
+      if (ctx.unit_code)      msgText = msgText.replace('[unit]',         `<strong>${ctx.unit_code}</strong>`);
+      if (ctx.territory_code) msgText = msgText.replace('[territory]',    `<strong>${ctx.territory_code}</strong>`);
+      if (ctx.alliance_name)  msgText = msgText.replace('[alliance]',     `<strong>${ctx.alliance_name}</strong>`);
+      if (ctx.member_count)   msgText = msgText.replace('[member_count]', `<strong>${ctx.member_count} member${ctx.member_count == 1 ? '' : 's'}</strong>`);
+      else                    msgText = msgText.replace(' — [member_count] members strong', '');
+    }
+
+    // Replies to this message
+    const replies = allMessages.filter(r => r.reply_to === m.id);
+    const repliesHtml = replies.length
+      ? `<div class="msg-thread-indent">${replies.map(r => renderMsgCard(r, myId, true)).join('')}</div>`
+      : '';
+
+    // Reply options (only for received top-level messages)
+    const canReply = !isMine && !isReply && REPLY_TEMPLATES[m.template_key];
+    const replyBtn = canReply
+      ? `<button class="msg-btn msg-btn-reply" onclick="openReplyModal('${m.id}', '${m.sender_id}', '${m.template_key}', '${(otherUser.username||'').replace(/'/g, "\'")}')">Reply</button>`
+      : '';
+
+    const dismissBtn = !isReply
+      ? `<button class="msg-btn msg-btn-dismiss" onclick="dismissMessage('${m.id}')">Dismiss</button>`
+      : '';
+
+    // Build a clean context line for alliance messages
+    let contextLine = '';
+    if (m.context_json && typeof m.context_json === 'object') {
+      const ctx = typeof m.context_json === 'string' ? JSON.parse(m.context_json) : m.context_json;
+      if (m.template_key === 'alliance_invite' || m.template_key === 'alliance_seek') {
+        const parts = [];
+        if (ctx.alliance_name)  parts.push('Alliance: <strong>' + ctx.alliance_name + '</strong>');
+        if (ctx.member_count)   parts.push(ctx.member_count + ' member' + (ctx.member_count == 1 ? '' : 's'));
+        if (ctx.unit_count)     parts.push(ctx.unit_count + ' units');
+        if (ctx.default_bonus && Number(ctx.default_bonus) > 0)
+          parts.push('Joining bonus: <strong>' + Number(ctx.default_bonus).toLocaleString() + ' ARKIS</strong>');
+        if (ctx.invite_bonus && Number(ctx.invite_bonus) > 0)
+          parts.push('+ ' + Number(ctx.invite_bonus).toLocaleString() + ' ARKIS extra for you');
+        contextLine = parts.join(' · ');
+      }
+    }
+
+    return `<div class="msg-card ${!m.read && !isMine ? 'unread' : ''}" id="msg-${m.id}">
+      <div class="msg-card-header">
+        <div class="msg-avatar">${avatarHtml}</div>
+        <div class="msg-from">
+          <div class="msg-from-name">
+            <a href="profile.html?user=${otherUser.username}">${otherUser.username || 'Unknown'}</a>
+          </div>
+          <div class="msg-direction">${direction} ${otherUser.username}</div>
+        </div>
+        <div class="msg-time">${timeAgo(m.created_at)}</div>
+      </div>
+      <div class="msg-template-badge">${tmpl.label}</div>
+      <div class="msg-body">${msgText}</div>
+      ${contextLine ? `<div class="msg-context">${contextLine}</div>` : ''}
+      <div class="msg-actions">${replyBtn}${dismissBtn}</div>
+      ${repliesHtml}
+    </div>`;
+  }
+
+  async function dismissMessage(id) {
+    const db = window.supabaseClient || window.supabase;
+    if (!db) return;
+    await db.from('messages').update({ dismissed: true }).eq('id', id);
+    allMessages = allMessages.filter(m => m.id !== id);
+    renderMessages();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ── REPLY MODAL ───────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+
+  let _replyToId = null, _replyToUserId = null, _selectedReplyKey = null;
+
+  function openReplyModal(msgId, senderId, templateKey, senderName) {
+    _replyToId = msgId;
+    _replyToUserId = senderId;
+    _selectedReplyKey = null;
+
+    const replies = REPLY_TEMPLATES[templateKey] || [];
+    document.getElementById('sendMsgToName').textContent = senderName;
+    document.getElementById('sendMsgTemplates').innerHTML = replies.map(r => `
+      <div class="msg-template-option" onclick="selectReplyTemplate('${r.key}', this)">
+        <div class="msg-template-text">${r.text}</div>
+      </div>`).join('');
+    document.getElementById('sendMsgSubmit').disabled = true;
+    document.getElementById('sendMsgFeedback').style.display = 'none';
+    document.getElementById('sendMsgModal').classList.add('open');
+  }
+
+  function selectReplyTemplate(key, el) {
+    _selectedReplyKey = key;
+    document.querySelectorAll('#sendMsgTemplates .msg-template-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('sendMsgSubmit').disabled = false;
+  }
+
+  function closeSendMsg() {
+    document.getElementById('sendMsgModal').classList.remove('open');
+    _replyToId = null; _replyToUserId = null; _selectedReplyKey = null;
+    _sendToUserId = null; _sendToName = null; _selectedTemplateKey = null;
+  }
+
+  async function submitSendMsg() {
+    const db = window.supabaseClient || window.supabase;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const myId = session?.user?.id;
+
+    const btn = document.getElementById('sendMsgSubmit');
+    const fb  = document.getElementById('sendMsgFeedback');
+
+    if (!db || !myId) {
+      if (fb) {
+        fb.className = 'send-msg-feedback send-msg-err';
+        fb.style.display = 'block';
+        fb.textContent = 'Not logged in — please reconnect your wallet.';
+      }
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fb.style.display = 'none';
+
+    try {
+      const isReply = !!_replyToId;
+      const recipientId = isReply ? _replyToUserId : _sendToUserId;
+      const templateKey = isReply ? _selectedReplyKey : _selectedTemplateKey;
+      const context = _sendContext || {};
+
+      // Rate limit: max 2 messages to same player + max 10 unique recipients per 24h
+      const since24h = new Date(Date.now() - 86400000).toISOString();
+      const [{ data: toThisPlayer }, { data: allToday }] = await Promise.all([
+        db.from('messages').select('id')
+          .eq('sender_id', myId).eq('recipient_id', recipientId)
+          .gte('created_at', since24h),
+        db.from('messages').select('recipient_id')
+          .eq('sender_id', myId)
+          .gte('created_at', since24h),
+      ]);
+
+      if (toThisPlayer && toThisPlayer.length >= 2) {
+        fb.className = 'send-msg-feedback send-msg-err';
+        fb.style.display = 'block';
+        fb.textContent = 'You\'ve already sent 2 messages to this player today. Try again tomorrow.';
+        btn.disabled = false; btn.textContent = 'Send →';
+        return;
+      }
+      const uniqueToday = new Set((allToday||[]).map(r => r.recipient_id)).size;
+      if (uniqueToday >= 10 && !new Set((allToday||[]).map(r => r.recipient_id)).has(recipientId)) {
+        fb.className = 'send-msg-feedback send-msg-err';
+        fb.style.display = 'block';
+        fb.textContent = 'You\'ve reached your daily limit of 10 different players. Your quota resets every 24 hours.';
+        btn.disabled = false; btn.textContent = 'Send →';
+        return;
+      }
+
+      const payload = {
+        sender_id:    myId,
+        recipient_id: recipientId,
+        template_key: templateKey,
+        context_json: context,
+        reply_to:     isReply ? _replyToId : null,
+        read:         false,
+        dismissed:    false,
+      };
+
+      const { error } = await db.from('messages').insert(payload);
+      if (error) throw error;
+
+      // ── Alliance accept action ───────────────────────────────────────
+      // If replying 'reply_accept' to an alliance_invite, automatically join
+      if (isReply && templateKey === 'reply_accept') {
+        const origMsg = allMessages.find(m => m.id === _replyToId);
+        if (origMsg && origMsg.template_key === 'alliance_invite') {
+          await joinAlliance(db, origMsg.sender_id, origMsg.context_json);
+        }
+      }
+
+      fb.className = 'send-msg-feedback send-msg-ok';
+      fb.style.display = 'block';
+      fb.textContent = '✓ Message sent!';
+      btn.textContent = 'Sent ✓';
+      showToast('✓ Message sent to ' + (_sendToName || 'player'), 'ok');
+      setTimeout(() => { closeSendMsg(); if (currentTab === 'messages') loadMessages(); }, 2000);
+
+    } catch(e) {
+      fb.className = 'send-msg-feedback send-msg-err';
+      fb.style.display = 'block';
+      fb.textContent = 'Failed to send — please try again.';
+      btn.disabled = false; btn.textContent = 'Send →';
+    }
+  }
+
+  // ── Send NEW message (called from users.html / profile.html via URL param) ──
+  let _sendToUserId = null, _sendToName = null, _selectedTemplateKey = null, _sendContext = null;
+
+  async function openSendModal(recipientId, recipientName, contextJson) {
+    _sendToUserId = recipientId;
+    _sendToName = recipientName;
+    _selectedTemplateKey = null;
+    _replyToId = null;
+    _sendContext = contextJson || {};
+
+    document.getElementById('sendMsgToName').textContent = recipientName;
+    document.getElementById('sendMsgSubmit').disabled = true;
+    document.getElementById('sendMsgFeedback').style.display = 'none';
+    document.getElementById('sendMsgTemplates').innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:12px;padding:8px 0;">Loading…</div>';
+    document.getElementById('sendMsgModal').classList.add('open');
+
+    // Fetch sender's alliance context so alliance_invite shows real name + count
+    const db = window.supabaseClient || window.supabase;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session')||'{}'); } catch(e){ return {}; } })();
+    const myId = session?.user?.id;
+
+    if (db && myId && !_sendContext.alliance_name) {
+      try {
+        const { data: me } = await db.from('users').select('founded_alliance_id').eq('id', myId).single();
+        if (me?.founded_alliance_id) {
+          const [{ data: alliance }, { data: members }] = await Promise.all([
+            db.from('alliances').select('id, name').eq('id', me.founded_alliance_id).single(),
+            db.from('alliance_members').select('id').eq('alliance_id', me.founded_alliance_id).eq('status','active'),
+          ]);
+          if (alliance) {
+            _sendContext = {
+              ..._sendContext,
+              alliance_id:   alliance.id,
+              alliance_name: alliance.name,
+              member_count:  members?.length ?? 1,
+            };
+          }
+        }
+      } catch(e) { console.warn('openSendModal alliance fetch:', e); }
+    }
+
+    // Build template options — substitute placeholders in preview text
+    function applyContext(text) {
+      if (_sendContext.alliance_name) text = text.replace('[alliance]', `<strong>${_sendContext.alliance_name}</strong>`);
+      if (_sendContext.member_count != null) text = text.replace('[member_count]', `<strong>${_sendContext.member_count}</strong>`);
+      return text;
+    }
+
+    document.getElementById('sendMsgTemplates').innerHTML = Object.entries(MSG_TEMPLATES)
+      .filter(([key]) => {
+        // Only show alliance_invite if sender has a founded alliance
+        if (key === 'alliance_invite') return !!_sendContext.alliance_name;
+        return true;
+      })
+      .map(([key, tmpl]) => `
+        <div class="msg-template-option" onclick="selectTemplate('${key}', this)">
+          <div class="msg-template-text">${applyContext(tmpl.text)}</div>
+          <div class="msg-template-key">${tmpl.label}</div>
+        </div>`).join('');
+  }
+
+  function selectTemplate(key, el) {
+    _selectedTemplateKey = key;
+    document.querySelectorAll('#sendMsgTemplates .msg-template-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('sendMsgSubmit').disabled = false;
+  }
+
+  // Check URL param for direct send (from users.html / profile.html)
+  // Check URL param for direct send — defer until DOM + Supabase ready
+  function checkSendParam() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sendTo = params.get('sendto');
+      const sendName = params.get('name');
+      if (sendTo && sendName) {
+        // Wait for Supabase + loadAlerts to finish before switching tab
+        // so the page renders correctly first, then opens the message modal
+        const waitAndSwitch = async () => {
+          for (let i = 0; i < 40; i++) {
+            const d = window.supabaseClient || window.supabase;
+            if (d && typeof d.from === 'function') break;
+            await new Promise(r => setTimeout(r, 150));
+          }
+          // Extra delay to let loadAlerts finish rendering
+          await new Promise(r => setTimeout(r, 600));
+          switchTab('messages');
+          await new Promise(r => setTimeout(r, 300));
+          try { openSendModal(sendTo, decodeURIComponent(sendName), {}); }
+          catch(e) { console.warn('openSendModal error:', e); }
+        };
+        waitAndSwitch();
+      }
+    } catch(e) { console.warn('checkSendParam error:', e); }
+  }
+
+  // Count unread messages — called after Supabase is ready
+  async function initUnreadBadge() {
+    try {
+      const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+      const myId = session?.user?.id;
+      if (!myId) return;
+      // Wait for supabase
+      let d = null;
+      for (let i = 0; i < 40; i++) {
+        d = window.supabaseClient || window.supabase;
+        if (d && typeof d.from === 'function') break;
+        await new Promise(r => setTimeout(r, 150));
+      }
+      if (!d) return;
+      const { count } = await d.from('messages').select('id', { count: 'exact', head: true })
+        .eq('recipient_id', myId).eq('read', false).eq('dismissed', false);
+      const badge = document.getElementById('msgUnreadBadge');
+      if (badge && count > 0) { badge.style.display = 'flex'; badge.textContent = count; }
+    } catch(_) {}
+  }
+
+  // ── Alliance join (triggered by accepting an alliance_invite reply) ──
+  async function joinAlliance(db, inviterUserId, contextJson) {
+    try {
+      const session2 = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+      const myId2 = session2?.user?.id;
+      if (!myId2) return;
+
+      // Get alliance ID from context or via inviter's founded_alliance_id
+      let allianceId = contextJson?.alliance_id || null;
+      if (!allianceId) {
+        const { data: inviter } = await db.from('users').select('founded_alliance_id').eq('id', inviterUserId).single();
+        allianceId = inviter?.founded_alliance_id;
+      }
+      if (!allianceId) { console.warn('joinAlliance: no alliance ID found'); return; }
+
+      // Check 1: not already in two alliances
+      const { data: me2 } = await db.from('users').select('founded_alliance_id, joined_alliance_id').eq('id', myId2).single();
+      if (me2?.founded_alliance_id && me2?.joined_alliance_id) {
+        alert('You are already in two alliances — leave one before joining another.'); return;
+      }
+      if (me2?.founded_alliance_id === allianceId || me2?.joined_alliance_id === allianceId) {
+        console.warn('Already a member'); return;
+      }
+
+      // Check 2: alliance not full
+      const [{ data: members }, { data: alliance }] = await Promise.all([
+        db.from('alliance_members').select('id').eq('alliance_id', allianceId).eq('status', 'active'),
+        db.from('alliances').select('member_limit, name').eq('id', allianceId).single(),
+      ]);
+      if (members && alliance && members.length >= (alliance.member_limit || 8)) {
+        alert(`${alliance.name} is full (${members.length} members).`); return;
+      }
+
+      // Check 3: not already in DB
+      const { data: existing } = await db.from('alliance_members')
+        .select('id').eq('alliance_id', allianceId).eq('user_id', myId2).maybeSingle();
+      if (existing) { console.warn('Already in alliance_members'); return; }
+
+      // Join
+      await db.from('alliance_members').insert({
+        alliance_id: allianceId, user_id: myId2, role: 'member',
+        status: 'active', invited_by: inviterUserId, joined_at: new Date().toISOString(),
+      });
+      await db.from('users').update({ joined_alliance_id: allianceId }).eq('id', myId2);
+
+      const allianceName = alliance?.name || 'the alliance';
+      const fb2 = document.getElementById('sendMsgFeedback');
+      if (fb2) {
+        fb2.className = 'send-msg-feedback send-msg-ok';
+        fb2.style.display = 'block';
+        fb2.textContent = `You joined ${allianceName}! Visit your Alliance page to see your team.`;
+      }
+    } catch(e) { console.error('joinAlliance error:', e); }
+  }
+
+  // Expose functions needed by inline onclick handlers
+  window.switchTab        = switchTab;
+  window.filterMessages   = filterMessages;
+  window.submitSendMsg    = submitSendMsg;
+  window.closeSendMsg     = closeSendMsg;
+  window.selectTemplate   = selectTemplate;
+  window.selectReplyTemplate = selectReplyTemplate;
+  window.openReplyModal   = openReplyModal;
+  window.dismissMessage   = dismissMessage;
+
+</script>
+
+
+<!-- Send Message Modal -->
+<div id="sendMsgModal">
+  <div class="send-msg-box">
+    <div class="send-msg-title">💬 Send Message</div>
+    <div class="send-msg-to">To: <strong id="sendMsgToName">—</strong></div>
+    <span class="send-msg-label">Choose a message</span>
+    <div id="sendMsgTemplates"></div>
+    <div class="send-msg-btns">
+      <button class="send-msg-cancel" onclick="closeSendMsg()">Cancel</button>
+      <button class="send-msg-submit" id="sendMsgSubmit" onclick="submitSendMsg()" disabled>Send →</button>
+    </div>
+    <div class="send-msg-feedback" id="sendMsgFeedback"></div>
+  </div>
+</div>
+
+
+<script src="lum-time.js?v=20260316a"></script>
+<script>document.addEventListener("DOMContentLoaded", function(){ if(typeof startLumClock==="function") startLumClock(); });</script>
+<script src="nav-audio.js"></script>
+
+<div id="minaliaToast"></div>
+<script>
+  let _toastTimer = null;
+  function showToast(msg, type) {
+    const el = document.getElementById('minaliaToast');
+    if (!el) return;
+    clearTimeout(_toastTimer);
+    el.textContent = msg;
+    el.className = 'toast-' + (type || 'ok');
+    // Force reflow so transition fires
+    el.offsetHeight;
+    el.classList.add('toast-show');
+    _toastTimer = setTimeout(() => {
+      el.classList.remove('toast-show');
+    }, 3500);
+  }
+</script>
+</body>
+</html>

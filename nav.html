@@ -1,0 +1,179 @@
+<!-- nav.html — Shared navigation for all MINALIA pages -->
+<!-- Loaded dynamically by load-nav.js -->
+
+<div class="nav">
+  <div class="nav-left">
+    <a href="map.html" class="nav-logo-link">
+      <img src="images/mina-logo.png" alt="Mina" class="nav-logo-img" />
+      <span class="nav-logo-text">MINALIA</span>
+    </a>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-center" id="navCenter" style="display:none;">
+      <a href="map.html"        class="nav-link" data-page="map.html">Map</a>
+
+      <!-- Land dropdown — pure CSS, no JS needed -->
+      <div class="user-dropdown-container" id="landDropdownWrap" style="position:relative;">
+        <button id="landDropdownBtn" class="nav-link" onclick="this.blur();document.getElementById('landDropdownMenu').classList.toggle('open');event.stopPropagation();" style="background:none;border:none;cursor:pointer;font-size:15px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,0.85);padding:6px 12px;border-radius:6px;transition:all .2s;display:flex;align-items:center;gap:5px;">
+          Land <span style="font-size:9px;opacity:0.5;">▾</span>
+        </button>
+        <div class="user-dropdown-menu" id="landDropdownMenu" style="min-width:180px;left:0;right:auto;">
+          <div class="dropdown-menu-items" style="padding:6px 0;">
+            <a href="https://play.minaliens.xyz/realestate.html" class="dropdown-item" style="display:flex;align-items:center;gap:9px;"><span style="width:20px;text-align:center;flex-shrink:0;">🏛️</span>Real Estate</a>
+            <div class="dropdown-divider"></div>
+            <a href="unit.html"     class="dropdown-item" style="display:flex;align-items:center;gap:9px;"><span style="width:20px;text-align:center;flex-shrink:0;">⬡</span>Units</a>
+            <a href="district.html" class="dropdown-item" style="display:flex;align-items:center;gap:9px;"><span style="width:20px;text-align:center;flex-shrink:0;">🗺️</span>Districts</a>
+            <a href="nexus.html"    class="dropdown-item" style="display:flex;align-items:center;gap:9px;"><span style="width:20px;text-align:center;flex-shrink:0;">⚡</span>Nexus Points</a>
+          </div>
+        </div>
+      </div>
+
+      <a href="minaliens.html"  class="nav-link" data-page="minaliens.html">Minaliens</a>
+      <a href="users.html"      class="nav-link" data-page="users.html">Players</a>
+      <a href="exchange.html"   class="nav-link" data-page="exchange.html">Exchange</a>
+      <a href="alliance.html"   class="nav-link" data-page="alliance.html">Alliance</a>
+      <a href="profile.html"    class="nav-link" data-page="profile.html">Profile</a>
+      <a href="alerts.html"     class="nav-link" data-page="alerts.html" id="navAlertsLink" style="position:relative;">
+        Alerts
+        <span id="navAlertsBadge"
+          style="display:none;position:absolute;top:-5px;right:-12px;background:#ff6b6b;color:#fff;
+                 font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;line-height:1.5;
+                 font-family:monospace;min-width:16px;text-align:center;pointer-events:none;"></span>
+      </a>
+    </div>
+
+    <div class="auth-links" id="authLinks" style="display:none;">
+      <a href="login.html" class="auth-link login">Connect Wallet</a>
+    </div>
+
+    <div class="nav-audio-slot"></div>
+
+    <div id="navUserPill" style="display:none;align-items:center;background:rgba(255,224,138,0.06);border:1px solid rgba(255,224,138,0.18);border-radius:6px;height:36px;transition:border-color .15s;"
+      onmouseover="this.style.borderColor='rgba(255,224,138,0.4)'"
+      onmouseout="this.style.borderColor='rgba(255,224,138,0.18)'">
+      <a href="money.html" style="display:flex;align-items:center;gap:5px;padding:0 12px;height:100%;text-decoration:none;flex-shrink:0;">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.08em;color:rgba(255,224,138,0.55);">$ARKIS</span>
+        <span id="navArkisAmount" style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#FFE08A;letter-spacing:.02em;transition:color .3s,text-shadow .3s;">—</span>
+      </a>
+      <div style="width:1px;height:20px;background:rgba(255,224,138,0.2);flex-shrink:0;"></div>
+      <div class="user-dropdown-container" id="userDropdown">
+        <button class="user-avatar-btn" id="userAvatarBtn" style="border-radius:0 6px 6px 0;border:none;background:transparent;margin:0;">
+          <span id="userInitials">?</span>
+        </button>
+        <div class="user-dropdown-menu" id="dropdownMenu">
+          <div class="dropdown-header">
+            <div class="dropdown-username" id="dropdownUsername">Player</div>
+            <div class="dropdown-wallet" id="dropdownWallet" onclick="copyWallet()" title="Click to copy full address"></div>
+          </div>
+          <div class="dropdown-menu-items">
+            <a href="money.html"   class="dropdown-item">💰 Treasury</a>
+            <a href="alerts.html"  class="dropdown-item">
+              📡 Alerts
+              <span id="dropdownAlertCount" style="display:none;background:rgba(255,107,107,0.2);color:#ff6b6b;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;"></span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="privacy.html" class="dropdown-item">🔒 Privacy Settings</a>
+            <a href="settings.html" class="dropdown-item">⚙️ Settings</a>
+            <a href="faq.html"   class="dropdown-item">❓ Help & FAQ</a>
+            <a href="about.html"  class="dropdown-item">📖 About & Lore</a>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" id="logoutBtn">↩ Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Live ticker data — loads after nav, refreshes every 5 min -->
+<!-- Live ticker data — loads after nav, refreshes every 5 min -->
+<script src="ticker.js?v=20260316a"></script>
+
+<script>
+(function () {
+  var session;
+  try { session = JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) {}
+  var userId = session && session.user && session.user.id;
+  if (!userId || session.mode === 'spectator') return;
+
+  var pill   = document.getElementById('navUserPill');
+  var amtEl  = document.getElementById('navArkisAmount');
+
+  function fmt(n) {
+    n = Number(n) || 0;
+    if (n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
+    if (n >= 1000)    return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
+    return n.toLocaleString();
+  }
+
+  function setAmt(n) {
+    if (!amtEl || typeof n !== 'number') return;
+    amtEl.textContent = fmt(n);
+    if (n < 0) {
+      amtEl.style.color = '#ff4444';
+      amtEl.style.textShadow = '0 0 8px rgba(255,68,68,0.8), 0 0 16px rgba(255,68,68,0.4)';
+    } else {
+      amtEl.style.color = '#FFE08A';
+      amtEl.style.textShadow = '';
+    }
+    if (pill) pill.style.display = 'flex';
+    try { localStorage.setItem('minalia_arkis_cache', JSON.stringify({v:n,t:Date.now()})); } catch(e) {}
+  }
+
+  // Also show pill when auth_auro sets userDropdown visible (old auth_auro compat)
+  var ud = document.getElementById('userDropdown');
+  if (ud) {
+    var obs = new MutationObserver(function() {
+      if (ud.style.display && ud.style.display !== 'none' && pill && pill.style.display === 'none') {
+        pill.style.display = 'flex';
+      }
+    });
+    obs.observe(ud, { attributes: true, attributeFilter: ['style'] });
+  }
+
+  window.refreshNavArkis = function(n) {
+    if (typeof n === 'number') { setAmt(n); return; }
+    if (window.playerTokens && typeof window.playerTokens.arkis === 'number') setAmt(window.playerTokens.arkis);
+  };
+
+  // 1. Show cached value instantly
+  try {
+    var c = JSON.parse(localStorage.getItem('minalia_arkis_cache') || 'null');
+    if (c && typeof c.v === 'number' && (Date.now() - c.t) < 600000) setAmt(c.v);
+  } catch(e) {}
+
+  // 2. Poll window.playerTokens (set by most pages)
+  var polls = 0;
+  var pollTimer = setInterval(function() {
+    if (window.playerTokens && typeof window.playerTokens.arkis === 'number') {
+      clearInterval(pollTimer); setAmt(window.playerTokens.arkis); return;
+    }
+    if (++polls >= 20) {
+      clearInterval(pollTimer);
+      // 3. DB fallback after 3s gap — fires only if playerTokens never appeared
+      setTimeout(function() {
+        var sb = window.supabaseClient || window.supabase;
+        if (!sb) return;
+        sb.from('user_tokens').select('token_balance').eq('user_id', userId).single()
+          .then(function(r) { if (r.data) setAmt(Number(r.data.token_balance)); })
+          .catch(function() {});
+      }, 3000);
+    }
+  }, 150);
+})();
+</script>
+
+<div class="ticker-container">
+  <div class="ticker-content">
+    <div class="ticker-clock-box" id="ticker-clock-box">
+      <span class="lum-season-label" id="lum-season-label">Luminaea</span>
+      <span class="lum-time-label"   id="ticker-clock">--:--</span>
+    </div>
+    <div class="ticker-scroll-wrapper">
+      <div class="ticker-scroll" id="ticker-scroll">
+        <span class="ticker-item"><span class="ticker-icon info">ℹ</span> Loading Luminaea feed…</span>
+      </div>
+    </div>
+  </div>
+</div>

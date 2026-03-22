@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real Estate — MINALIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260315b">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+  <style>
+    /* ─── PAGE SHELL ─── */
+    body {
+      padding-top: 92px;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1520 100%);
+      min-height: 100vh;
+    }
+    /* Suppress the shared body::after planet bg */
+    body::after { display: none !important; }
+    /* Earth footer — fixed at bottom, low opacity, behind content */
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .earth-footer img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      opacity: 0.12;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, black 70%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, black 70%);
+    }
+    /* Ensure all content sits above the footer */
+    .re-wrap { position: relative; z-index: 1; }
+    .re-wrap { max-width: 1380px; margin: 0 auto; padding: 0 24px 140px; }
+
+    /* ─── HERO BANNER ─── */
+    .re-hero {
+      padding: 52px 0 44px;
+      position: relative;
+      border-bottom: 1px solid rgba(255,224,138,0.08);
+      margin-bottom: 56px;
+    }
+    .re-hero::after {
+      content: 'REAL ESTATE';
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(48px, 8vw, 110px); font-weight: 900;
+      color: rgba(255,224,138,0.03); letter-spacing: 0.06em;
+      pointer-events: none; white-space: nowrap;
+    }
+    .re-hero-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,224,138,0.45); margin-bottom: 12px;
+    }
+    .re-hero-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(26px, 4vw, 44px); font-weight: 900;
+      letter-spacing: 0.04em; color: #fff; line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    .re-hero-title em { color: #FFE08A; font-style: normal; }
+    .re-hero-sub { font-size: 13px; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
+    .re-hero-pills {
+      display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap;
+    }
+    .re-hero-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 18px;
+    }
+    .re-hero-pill-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px; font-weight: 700; color: #FFE08A;
+    }
+    .re-hero-pill-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+
+    /* ─── SECTION HEADER ─── */
+    .re-sh {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .re-sh-icon { font-size: 16px; }
+    .re-sh-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255,224,138,0.55);
+      white-space: nowrap;
+    }
+    .re-sh-count { font-size: 11px; color: rgba(255,255,255,0.2); font-family: 'Share Tech Mono', monospace; }
+    .re-sh-line { flex: 1; height: 1px; background: rgba(255,224,138,0.07); }
+    .re-section { margin-bottom: 64px; }
+    .re-section[id] { scroll-margin-top: 80px; }
+
+    /* ─── UNIT CARDS ─── */
+    .re-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 14px;
+    }
+    .re-unit-card {
+      position: relative; overflow: hidden;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px; padding: 22px 20px 18px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .re-unit-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,224,138,0.15), transparent);
+      border-radius: 14px 14px 0 0;
+    }
+    .re-unit-card.auction-card::before { background: linear-gradient(90deg, transparent, rgba(255,107,107,0.25), transparent); }
+    .re-unit-card:hover {
+      border-color: rgba(255,224,138,0.25); transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,224,138,0.05);
+    }
+    .re-unit-card.auction-card:hover {
+      border-color: rgba(255,107,107,0.35);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 24px rgba(255,107,107,0.08);
+    }
+    /* watermark hex behind card */
+    .re-card-watermark {
+      position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+      opacity: 0.06; pointer-events: none;
+      font-family: 'Orbitron', monospace; font-size: 64px; font-weight: 900;
+      color: #FFE08A; white-space: nowrap;
+    }
+    .re-card-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'Orbitron', monospace;
+      font-size: 8px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .badge-sale   { background: rgba(96,255,171,0.08); color: #60ffab; border: 1px solid rgba(96,255,171,0.2); }
+    .badge-auction{ background: rgba(255,107,107,0.08); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+
+    .re-card-code {
+      font-family: 'Orbitron', monospace;
+      font-size: 19px; font-weight: 700; color: #fff; letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+    .re-card-territory { font-size: 11px; color: rgba(255,224,138,0.4); letter-spacing: 0.06em; margin-bottom: 16px; font-family: 'Share Tech Mono', monospace; }
+
+    .re-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+    .re-card-tag {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .tag-active { background: rgba(96,255,171,0.07); color: rgba(96,255,171,0.7); border-color: rgba(96,255,171,0.15); }
+
+    .re-card-price {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px; font-weight: 700; color: #FFE08A; margin-bottom: 2px;
+    }
+    .re-card-price span { font-size: 12px; opacity: 0.45; }
+    .re-card-price-sub { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.25); margin-bottom: 10px; }
+
+    .re-card-timer {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: #ff6b6b;
+      display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+    }
+    .re-card-timer::before { content: '⏱'; }
+
+    .re-card-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0; }
+
+    .re-card-owner { display: flex; align-items: center; gap: 9px; font-size: 11px; color: rgba(255,255,255,0.35); }
+    .re-card-owner-av {
+      width: 24px; height: 24px; border-radius: 5px; overflow: hidden;
+      background: rgba(255,255,255,0.08); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .re-card-owner-av img { width: 100%; height: 100%; object-fit: cover; }
+    .re-card-owner-name { color: rgba(255,255,255,0.6); font-weight: 600; }
+    .re-card-yours { margin-left: auto; font-size: 9px; font-family: 'Orbitron', monospace; letter-spacing: 0.1em; color: rgba(255,224,138,0.4); }
+
+    .re-card-btn {
+      display: block; width: 100%; margin-top: 14px; padding: 10px;
+      border-radius: 8px; font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.15s; border: 1px solid;
+    }
+    .btn-buy  { background: rgba(96,255,171,0.08); color: #60ffab; border-color: rgba(96,255,171,0.2); }
+    .btn-buy:hover  { background: rgba(96,255,171,0.18); }
+    .btn-bid  { background: rgba(255,107,107,0.08); color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
+    .btn-bid:hover  { background: rgba(255,107,107,0.18); }
+    .btn-offer { background: rgba(180,140,255,0.08); color: rgba(180,140,255,0.9); border-color: rgba(180,140,255,0.2); }
+    .btn-offer:hover { background: rgba(180,140,255,0.18); }
+
+    /* Suggested / min-offer hints */
+    .re-card-suggested {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 4px;
+    }
+    .re-card-suggested span { color: rgba(255,224,138,0.6); font-family: 'Share Tech Mono', monospace; }
+    .re-card-min-offer {
+      font-size: 10px; letter-spacing: 0.05em; color: rgba(180,140,255,0.45); margin-top: 4px;
+    }
+    .re-card-min-offer span { color: rgba(180,140,255,0.8); font-family: 'Share Tech Mono', monospace; }
+
+    /* Offer modal */
+    .offer-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+      z-index: 2000; align-items: center; justify-content: center; padding: 24px;
+    }
+    .offer-modal-overlay.active { display: flex; }
+    .offer-modal {
+      background: rgba(18,14,24,0.98); border: 1px solid rgba(180,140,255,0.25);
+      border-radius: 14px; padding: 28px; max-width: 400px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .offer-modal-title {
+      font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: rgba(180,140,255,0.9); margin-bottom: 6px;
+    }
+    .offer-modal-unit {
+      font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 20px;
+      padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .offer-modal-hints { display: flex; gap: 12px; margin-bottom: 18px; }
+    .offer-hint-box {
+      flex: 1; padding: 10px 12px; border-radius: 8px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    }
+    .offer-hint-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); margin-bottom: 4px; }
+    .offer-hint-val { font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700; }
+    .offer-hint-val.sug { color: rgba(255,224,138,0.8); }
+    .offer-hint-val.min { color: rgba(180,140,255,0.8); }
+    .offer-modal-label {
+      display: block; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 8px; font-weight: 600;
+    }
+    .offer-modal-input {
+      width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(180,140,255,0.2); border-radius: 8px;
+      color: #fff; font-size: 16px; font-family: 'Share Tech Mono', monospace;
+      outline: none; transition: border-color 0.2s; margin-bottom: 14px;
+    }
+    .offer-modal-input:focus { border-color: rgba(180,140,255,0.5); }
+    .offer-modal-msg {
+      width: 100%; padding: 10px 14px; margin-bottom: 18px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: rgba(255,255,255,0.7); font-size: 13px;
+      outline: none; resize: none; font-family: inherit; transition: border-color 0.2s;
+    }
+    .offer-modal-msg:focus { border-color: rgba(180,140,255,0.3); }
+    .offer-modal-btns { display: flex; gap: 10px; }
+    .offer-modal-btns button {
+      flex: 1; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; border: 1px solid; transition: all 0.15s;
+    }
+    .offer-modal-cancel { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
+    .offer-modal-cancel:hover { background: rgba(255,255,255,0.08); }
+    .offer-modal-submit { background: rgba(180,140,255,0.1); border-color: rgba(180,140,255,0.3); color: rgba(180,140,255,0.95); }
+    .offer-modal-submit:hover { background: rgba(180,140,255,0.2); }
+    .offer-modal-feedback { font-size: 12px; margin-top: 12px; padding: 10px; border-radius: 6px; display: none; }
+    .offer-feedback-ok  { background: rgba(96,255,171,0.08); border: 1px solid rgba(96,255,171,0.2); color: #60ffab; }
+    .offer-feedback-err { background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #ff8080; }
+
+    .re-empty { color: rgba(255,255,255,0.2); font-size: 13px; padding: 32px; font-style: italic; }
+
+    /* ─── ARKIS CHART ─── */
+    .re-chart-shell {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; overflow: hidden;
+    }
+    .re-chart-top {
+      padding: 28px 28px 0; display: flex;
+      align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    }
+    .re-chart-ticker-row {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25); margin-bottom: 4px;
+    }
+    .re-chart-name-big {
+      font-family: 'Orbitron', monospace;
+      font-size: 26px; font-weight: 900; color: #fff; margin-bottom: 2px;
+    }
+    .re-chart-price-line { display: flex; align-items: baseline; gap: 12px; margin-top: 6px; }
+    .re-chart-price-big {
+      font-family: 'Orbitron', monospace;
+      font-size: 38px; font-weight: 900; color: #FFE08A;
+    }
+    .re-chart-delta { font-size: 14px; font-weight: 700; }
+    .delta-up   { color: #60ffab; }
+    .delta-down { color: #ff6b6b; }
+    .re-chart-ohlc { display: flex; gap: 20px; margin-top: 12px; }
+    .re-chart-ohlc-item { font-size: 11px; color: rgba(255,255,255,0.25); }
+    .re-chart-ohlc-item strong { color: rgba(255,255,255,0.55); font-family: 'Share Tech Mono', monospace; display: block; }
+
+    .re-chart-periods { display: flex; gap: 4px; }
+    .re-cperiod {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700; padding: 6px 14px; border-radius: 6px;
+      cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s;
+      background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .re-cperiod.active { background: rgba(255,224,138,0.1); color: #FFE08A; border-color: rgba(255,224,138,0.25); }
+
+    .re-chart-canvas-wrap { padding: 4px 0 0; height: 220px; position: relative; overflow: hidden; }
+    .re-chart-canvas-wrap canvas { position: absolute; inset: 0; }
+
+    /* ─── ELEMENTS EXCHANGE ─── */
+    .re-elgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 14px;
+    }
+    .re-el-card {
+      border-radius: 14px; padding: 24px 22px 20px;
+      position: relative; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.07);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .re-el-card:hover { transform: translateY(-3px); }
+    .el-plasm  { background: rgba(12,8,2,0.6);  border-color: rgba(255,160,30,0.18); box-shadow: inset 0 0 80px rgba(255,140,0,0.04); }
+    .el-lichen { background: rgba(2,10,6,0.6);  border-color: rgba(70,220,130,0.18); box-shadow: inset 0 0 80px rgba(60,200,100,0.04); }
+    .el-wire   { background: rgba(2,6,14,0.6);  border-color: rgba(80,160,255,0.18); box-shadow: inset 0 0 80px rgba(60,120,240,0.04); }
+    .el-spore  { background: rgba(10,4,14,0.6); border-color: rgba(190,90,255,0.18); box-shadow: inset 0 0 80px rgba(180,60,240,0.04); }
+
+    .el-orb {
+      position: absolute; top: -60px; right: -60px;
+      width: 160px; height: 160px; border-radius: 50%;
+      filter: blur(50px); pointer-events: none; opacity: 0.2;
+    }
+    .el-plasm  .el-orb { background: #FF9020; }
+    .el-lichen .el-orb { background: #46DC82; }
+    .el-wire   .el-orb { background: #50A0FF; }
+    .el-spore  .el-orb { background: #BE5AFF; }
+
+    .el-symbol {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    .el-plasm  .el-symbol { color: #FF9020; }
+    .el-lichen .el-symbol { color: #46DC82; }
+    .el-wire   .el-symbol { color: #50A0FF; }
+    .el-spore  .el-symbol { color: #BE5AFF; }
+
+    .el-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 2px;
+    }
+    .el-role { font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 18px; letter-spacing: 0.04em; }
+
+    .el-price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+    .el-price {
+      font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900;
+    }
+    .el-plasm  .el-price { color: #FF9020; }
+    .el-lichen .el-price { color: #46DC82; }
+    .el-wire   .el-price { color: #50A0FF; }
+    .el-spore  .el-price { color: #BE5AFF; }
+    .el-unit { font-size: 11px; color: rgba(255,255,255,0.25); }
+    .el-chg { font-size: 12px; font-weight: 700; }
+    .el-chg.up { color: #60ffab; }
+    .el-chg.dn { color: #ff6b6b; }
+
+    .el-spark { height: 52px; margin-bottom: 6px; }
+    .el-periods { display: flex; gap: 3px; margin-bottom: 14px; }
+    .el-period {
+      font-family: 'Orbitron', monospace;
+      font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 3px 8px; border-radius: 4px; cursor: pointer;
+      background: transparent; color: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.07); transition: all 0.15s;
+    }
+    .el-period:hover { color: rgba(255,255,255,0.55); border-color: rgba(255,255,255,0.18); }
+    .el-plasm  .el-period.active { background: rgba(255,144,32,0.12); color: #FF9020; border-color: rgba(255,144,32,0.3); }
+    .el-lichen .el-period.active { background: rgba(70,220,130,0.12); color: #46DC82; border-color: rgba(70,220,130,0.3); }
+    .el-wire   .el-period.active { background: rgba(80,160,255,0.12); color: #50A0FF; border-color: rgba(80,160,255,0.3); }
+    .el-spore  .el-period.active { background: rgba(190,90,255,0.12); color: #BE5AFF; border-color: rgba(190,90,255,0.3); }
+
+    .el-btns { display: flex; gap: 8px; margin-bottom: 18px; }
+    .el-btn {
+      flex: 1; padding: 9px 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      border-radius: 7px; cursor: pointer; transition: all 0.15s;
+      border: 1px solid;
+    }
+    .el-btn-buy  { background: rgba(96,255,171,0.06); color: #60ffab; border-color: rgba(96,255,171,0.2); }
+    .el-btn-buy:hover  { background: rgba(96,255,171,0.15); }
+    .el-btn-sell { background: rgba(255,107,107,0.06); color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
+    .el-btn-sell:hover { background: rgba(255,107,107,0.15); }
+    .el-btn-trade { background: rgba(255,224,138,0.06); color: #FFE08A; border-color: rgba(255,224,138,0.2); }
+    .el-btn-trade:hover { background: rgba(255,224,138,0.14); }
+
+    .el-stats { display: flex; justify-content: space-between; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .el-stat-v { font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.65); }
+    .el-stat-k { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.22); margin-top: 2px; }
+
+    /* Lum clock note */
+    .el-lum-note { text-align: center; font-size: 10px; color: rgba(255,255,255,0.18); margin-top: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 0.06em; }
+
+    /* ─── DEVELOPMENTS ─── */
+    .re-dev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .re-dev-card {
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px; padding: 22px 20px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .re-dev-card:hover { border-color: rgba(255,224,138,0.18); transform: translateY(-2px); }
+    .re-dev-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .re-dev-code { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; color: #fff; }
+    .re-dev-type-tag {
+      font-family: 'Orbitron', monospace;
+      font-size: 8px; font-weight: 700; letter-spacing: 0.12em;
+      padding: 3px 9px; border-radius: 20px;
+      background: rgba(255,224,138,0.07); color: rgba(255,224,138,0.55);
+      border: 1px solid rgba(255,224,138,0.14);
+    }
+    .re-dev-name { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 7px; }
+    .re-dev-desc { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.3); margin-bottom: 18px; }
+    .re-dev-pb-label { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 0.06em; margin-bottom: 6px; }
+    .re-dev-pb { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 16px; }
+    .re-dev-pb-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #FFE08A 0%, #60ffab 100%); }
+    .re-dev-footer { display: flex; gap: 20px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .re-dev-meta-item { font-size: 10px; color: rgba(255,255,255,0.25); }
+    .re-dev-meta-item strong { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 1px; }
+
+    /* ─── COLLABORATIONS ─── */
+    .re-collab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+    .re-collab-card {
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(100,180,255,0.1);
+      border-radius: 14px; padding: 22px 20px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .re-collab-card:hover { border-color: rgba(100,180,255,0.28); transform: translateY(-2px); }
+    .re-collab-pill {
+      font-family: 'Orbitron', monospace;
+      font-size: 8px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 12px;
+      background: rgba(100,180,255,0.07); color: rgba(100,180,255,0.65);
+      border: 1px solid rgba(100,180,255,0.18);
+    }
+    .re-collab-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .re-collab-desc { font-size: 12px; color: rgba(255,255,255,0.3); line-height: 1.6; margin-bottom: 16px; }
+    .re-collab-players-row { display: flex; align-items: center; gap: 0; margin-bottom: 14px; }
+    .re-collab-av {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: rgba(255,255,255,0.08); border: 2px solid rgba(10,10,20,0.9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; margin-left: -6px;
+    }
+    .re-collab-av:first-child { margin-left: 0; }
+    .re-collab-player-names { font-size: 11px; color: rgba(255,255,255,0.3); margin-left: 10px; }
+    .re-collab-reward { font-size: 11px; color: rgba(255,224,138,0.4); padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .re-collab-reward strong { color: #FFE08A; }
+    .re-collab-status-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    .re-collab-status-pill { font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:3px 9px; border-radius:20px; }
+    .re-collab-status-pill.open       { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.35); }
+    .re-collab-status-pill.interested { background:rgba(255,200,80,0.08);  border:1px solid rgba(255,200,80,0.25);  color:rgba(255,200,80,0.85); }
+    .re-collab-status-pill.building   { background:rgba(96,255,171,0.08);  border:1px solid rgba(96,255,171,0.25);  color:rgba(96,255,171,0.85); }
+    .re-collab-status-pill.completed  { background:rgba(100,180,255,0.08); border:1px solid rgba(100,180,255,0.25); color:rgba(100,180,255,0.85); }
+    .re-collab-interested-names { font-size:10px; color:rgba(255,255,255,0.3); margin-bottom:8px; }
+    .re-collab-native-badge { display:inline-block; font-size:9px; font-weight:700; padding:2px 8px; border-radius:10px; background:rgba(96,255,171,0.09); border:1px solid rgba(96,255,171,0.28); color:rgba(96,255,171,0.8); margin-bottom:8px; }
+    .re-collab-card-native { border-color:rgba(96,255,171,0.18) !important; }
+    .re-collab-btn { display:block; width:100%; margin-top:14px; padding:9px 0; border-radius:8px; border:none; cursor:pointer; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; transition:all 0.15s; }
+    .re-collab-btn.btn-start { background:rgba(255,200,80,0.1);  border:1px solid rgba(255,200,80,0.3);  color:rgba(255,200,80,0.9); }
+    .re-collab-btn.btn-start:hover  { background:rgba(255,200,80,0.18); }
+    .re-collab-btn.btn-join  { background:rgba(96,255,171,0.08); border:1px solid rgba(96,255,171,0.25); color:rgba(96,255,171,0.85); }
+    .re-collab-btn.btn-join:hover   { background:rgba(96,255,171,0.15); }
+    .re-collab-btn.btn-view  { background:rgba(100,180,255,0.07); border:1px solid rgba(100,180,255,0.2); color:rgba(100,180,255,0.75); }
+    .re-collab-btn.btn-view:hover   { background:rgba(100,180,255,0.13); }
+    .re-collab-btn.btn-yours { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); cursor:default; }
+    .re-collab-section-header { grid-column: 1 / -1; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,200,80,0.7); padding:18px 0 6px; margin-top:6px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+    .re-collab-section-header::after { content:''; flex:1; height:1px; background:rgba(255,200,80,0.12); }
+    .re-collab-section-header:first-child { border-top:none; margin-top:0; padding-top:0; }
+    .re-collab-status-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .re-collab-status-pill {
+      font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+      padding:3px 9px; border-radius:20px; display:inline-block;
+    }
+    .re-collab-status-pill.open      { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.35); }
+    .re-collab-status-pill.interested{ background:rgba(255,200,80,0.08);  border:1px solid rgba(255,200,80,0.25);  color:rgba(255,200,80,0.85); }
+    .re-collab-status-pill.building  { background:rgba(96,255,171,0.08);  border:1px solid rgba(96,255,171,0.25);  color:rgba(96,255,171,0.85); }
+    .re-collab-status-pill.completed { background:rgba(100,180,255,0.08); border:1px solid rgba(100,180,255,0.25); color:rgba(100,180,255,0.85); }
+    .re-collab-interested-names { font-size:10px; color:rgba(255,255,255,0.3); }
+    .re-collab-btn {
+      display:block; width:100%; margin-top:14px;
+      padding:9px 0; border-radius:8px; border:none; cursor:pointer;
+      font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+      transition: all 0.15s;
+    }
+    .re-collab-btn.btn-start  { background:rgba(255,200,80,0.1);  border:1px solid rgba(255,200,80,0.3);  color:rgba(255,200,80,0.9); }
+    .re-collab-btn.btn-start:hover  { background:rgba(255,200,80,0.18); border-color:rgba(255,200,80,0.5); }
+    .re-collab-btn.btn-join   { background:rgba(96,255,171,0.08); border:1px solid rgba(96,255,171,0.25); color:rgba(96,255,171,0.85); }
+    .re-collab-btn.btn-join:hover   { background:rgba(96,255,171,0.15); border-color:rgba(96,255,171,0.45); }
+    .re-collab-btn.btn-view   { background:rgba(100,180,255,0.07); border:1px solid rgba(100,180,255,0.2); color:rgba(100,180,255,0.75); }
+    .re-collab-btn.btn-view:hover   { background:rgba(100,180,255,0.13); border-color:rgba(100,180,255,0.35); }
+    .re-collab-btn.btn-yours  { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1);  color:rgba(255,255,255,0.3); cursor:default; }
+    .re-collab-native { font-size:10px; color:rgba(255,255,255,0.25); margin-bottom:6px; }
+    .re-collab-card.re-collab-unavailable {
+      opacity: 0.38;
+      filter: grayscale(0.5);
+      pointer-events: none;
+    }
+    .re-collab-unavailable-label {
+      font-size:10px; color:rgba(255,255,255,0.25); margin-top:8px;
+      padding:5px 8px; background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08); border-radius:6px;
+      text-align:center; letter-spacing:0.04em;
+    }
+    /* Development catalog */
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+  <script src="load-nav.js?v=20260315b"></script>
+
+  <div class="re-wrap">
+
+    <!-- ════════════ HERO ════════════ -->
+    <div class="re-hero">
+      <div class="re-hero-eyebrow">Luminaea · Live Market</div>
+      <div class="re-hero-title">Real <em>Estate</em></div>
+      <div class="re-hero-sub">Units · Auctions · Developments · Collaborations</div>
+      <div class="re-hero-pills">
+        <div class="re-hero-pill">
+          <div>
+            <div class="re-hero-pill-val" id="heroPillSale">—</div>
+            <div class="re-hero-pill-label">For Sale</div>
+          </div>
+        </div>
+        <div class="re-hero-pill">
+          <div>
+            <div class="re-hero-pill-val" id="heroPillAuct">—</div>
+            <div class="re-hero-pill-label">Live Auctions</div>
+          </div>
+        </div>
+        <div class="re-hero-pill">
+          <div>
+            <div class="re-hero-pill-val">20</div>
+            <div class="re-hero-pill-label">Territories</div>
+          </div>
+        </div>
+        <div class="re-hero-pill">
+          <div>
+            <div class="re-hero-pill-val" id="heroPillDevs">—</div>
+            <div class="re-hero-pill-label">Active Builds</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ FOR SALE ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">🏷</span>
+        <span class="re-sh-title">Units For Sale</span>
+        <span class="re-sh-count" id="saleCount">loading…</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div class="re-grid" id="saleGrid">
+        <div class="re-empty">Fetching market data…</div>
+      </div>
+    </div>
+
+    <!-- ════════════ AUCTIONS ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">⚡</span>
+        <span class="re-sh-title">Live Auctions</span>
+        <span class="re-sh-count" id="auctCount">loading…</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div class="re-grid" id="auctGrid">
+        <div class="re-empty">Fetching auction data…</div>
+      </div>
+    </div>
+
+    <!-- ════════════ $ARKIS CHART ════════════ -->
+    <!-- ════════════ THE EXCHANGE ════════════ -->
+    <!-- ════════════ DEVELOPMENTS ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">🏗</span>
+        <span class="re-sh-title">Active Developments</span>
+        <span class="re-sh-count">Projects under construction across Luminaea</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div class="re-dev-grid" id="devGrid"></div>
+    </div>
+
+    <!-- ════════════ COLLABORATIONS ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">🤝</span>
+        <span class="re-sh-title">Special Building Collaborations</span>
+        <span class="re-sh-count">One per territory · Paid in tokens · Host unit earns full yield · Collaborators share equally</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div class="re-collab-grid" id="collabGrid"></div>
+    </div>
+
+    <!-- ════════════ NEXUS COLLABORATIONS ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">⬡</span>
+        <span class="re-sh-title">Nexus Point Collaborations</span>
+        <span class="re-sh-count">Cross-territory builds at nexus junctions</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div class="re-collab-grid" id="nexusCollabGrid">
+        <div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;">Loading nexus collaborations…</div>
+      </div>
+    </div>
+
+    <!-- ════════════ DEVELOPMENT LINKS ════════════ -->
+    <div class="re-section">
+      <div class="re-sh">
+        <span class="re-sh-icon">🏗️</span>
+        <span class="re-sh-title">Develop Your Territory</span>
+        <div class="re-sh-line"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px;">
+
+        <a href="profile.html" style="display:flex;align-items:center;gap:14px;padding:20px 22px;border-radius:12px;background:rgba(255,224,138,0.04);border:1px solid rgba(255,224,138,0.2);text-decoration:none;transition:all .15s;" onmouseover="this.style.background='rgba(255,224,138,0.08)';this.style.borderColor='rgba(255,224,138,0.4)'" onmouseout="this.style.background='rgba(255,224,138,0.04)';this.style.borderColor='rgba(255,224,138,0.2)'">
+          <span style="font-size:28px;flex-shrink:0;">🏠</span>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;color:#FFE08A;margin-bottom:4px;">Develop Your Units</div>
+            <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.4);line-height:1.5;">View your units and start building on your territory</div>
+          </div>
+        </a>
+
+        <a href="dev.html" style="display:flex;align-items:center;gap:14px;padding:20px 22px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.1);text-decoration:none;transition:all .15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='rgba(255,255,255,0.1)'">
+          <span style="font-size:28px;flex-shrink:0;">📋</span>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.8);margin-bottom:4px;">Development Catalog</div>
+            <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.4);line-height:1.5;">Browse all buildable developments and special buildings</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+  </div><!-- /re-wrap -->
+
+  <div class="earth-footer"><img src="images/minalia.png" alt="" /></div>
+  <audio id="bgAudio" preload="auto" style="display:none"><source src="audio/minalia.mp3" type="audio/mpeg"></audio>
+  <script src="lum-time.js?v=20260315b"></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>{ if(typeof startLumClock==='function') startLumClock(); });</script>
+  <script src="nav-audio.js"></script>
+
+  <script>
+
+  const TNAMES = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head',
+    'LUM-04':'Emberveil','LUM-05':'Fenwild','LUM-06':'Firesky',
+    'LUM-07':'Pieve','LUM-08':'Oakland','LUM-09':'Jadehollow','LUM-10':'Astral Peaks'
+  };
+
+  // ── DEMO DATA – shown when DB has no live listings yet ──
+  const DEMO_SALE = [
+    { unit_code:'LUM-04-A', owner_id:'demo-1', sale_price:850,  value_tier:'Rare',    pulse_state:'active',    for_sale:true },
+    { unit_code:'LUM-06-C', owner_id:'demo-2', sale_price:420,  value_tier:'Common',  pulse_state:'flicker',   for_sale:true },
+    { unit_code:'LUM-09-B', owner_id:'demo-9', sale_price:1200, value_tier:'Epic',    pulse_state:'active',    for_sale:true },
+    { unit_code:'LUM-03-F', owner_id:'demo-8', sale_price:310,  value_tier:'Common',  pulse_state:'forfeited', for_sale:true },
+    { unit_code:'LUM-07-K', owner_id:'demo-3', sale_price:760,  value_tier:'Uncommon',pulse_state:'active',    for_sale:true },
+  ];
+  const DEMO_AUCTIONS = [
+    { unit_code:'LUM-02-D', owner_id:'demo-5', auction_active:true, auction_min_bid:200, auction_current_bid:340, value_tier:'Rare',   pulse_state:'active',  auction_end_time: new Date(Date.now()+24*3600000).toISOString() },
+    { unit_code:'LUM-05-G', owner_id:'demo-6', auction_active:true, auction_min_bid:150, auction_current_bid:0,   value_tier:'Common', pulse_state:'flicker', auction_end_time: new Date(Date.now()+24*3600000).toISOString() },
+    { unit_code:'LUM-08-E', owner_id:'demo-7', auction_active:true, auction_min_bid:500, auction_current_bid:720, value_tier:'Epic',   pulse_state:'active',  auction_end_time: new Date(Date.now()+24*3600000).toISOString() },
+  ];
+  const DEMO_OWNERS = {
+    'demo-1': { username:'minaliens',       avatar:'https://unavatar.io/twitter/minaliens' },
+    'demo-2': { username:'NeilFurn',        avatar:'https://unavatar.io/twitter/NeilFurn' },
+    'demo-3': { username:'FlushtheFashion', avatar:'https://unavatar.io/twitter/FlushtheFashion' },
+    'demo-5': { username:'MutenRoshi7777',  avatar:'https://unavatar.io/twitter/MutenRoshi7777' },
+    'demo-6': { username:'Backwoodbr88471', avatar:'https://unavatar.io/twitter/Backwoodbr88471' },
+    'demo-7': { username:'MinaPunksNFT',    avatar:'https://unavatar.io/twitter/MinaPunksNFT' },
+    'demo-8': { username:'crypto8519',      avatar:'https://unavatar.io/twitter/crypto8519' },
+    'demo-9': { username:'kalkillas',       avatar:'https://unavatar.io/twitter/kalkillas' },
+  };
+
+  function getSessionUserId() {
+    try { return JSON.parse(localStorage.getItem('minalia_session')||'{}').user?.id || null; } catch(e){ return null; }
+  }
+
+  /* ─── UNIT CARD ─── */
+  function buildUnitCard(unit, owner, type) {
+    const sid = getSessionUserId();
+    const isMe = sid && unit.owner_id === sid;
+    const terr = unit.unit_code.substring(0,6);
+    const tname = TNAMES[terr] || terr;
+    const avRaw = owner?.avatar_url || owner?.avatar;
+    const avSrc = avRaw && avRaw.startsWith('http')
+      ? avRaw
+      : avRaw
+        ? avRaw
+        : owner?.x_username
+          ? `https://unavatar.io/twitter/${owner.x_username}`
+          : null;
+    const avInitial = (owner?.username||'?')[0].toUpperCase();
+    const av = avSrc
+      ? `<img src="${avSrc}" alt="${owner?.username||''}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span>${avInitial}</span>')">`
+      : `<span>${avInitial}</span>`;
+
+    const sug    = unit.suggested_price  ? Number(unit.suggested_price).toLocaleString()  : null;
+    const minOff = unit.min_offer_price  ? Number(unit.min_offer_price).toLocaleString()  : null;
+    const offerAttrs = `data-code="${unit.unit_code}" data-sug="${unit.suggested_price||0}" data-min="${unit.min_offer_price||0}" data-seller="${unit.owner_id||''}" data-owner="${owner?.username||'?'}"`;
+
+    let priceHtml='', timerHtml='', btnHtml='';
+    if(type==='sale'){
+      const p = Number(unit.sale_price||0).toLocaleString();
+      priceHtml = `<div class="re-card-price">${p} <span>ARKIS</span></div>
+        <div class="re-card-price-sub">Fixed Price</div>
+        ${sug ? `<div class="re-card-suggested">Suggested <span>${sug}</span></div>` : ''}
+        ${minOff ? `<div class="re-card-min-offer">Min offer <span>${minOff} ARKIS</span></div>` : ''}`;
+      if(!isMe) btnHtml = `
+        <button class="re-card-btn btn-buy" onclick="event.stopPropagation();alert('Buy functionality coming soon!')">Buy Now →</button>
+        <button class="re-card-btn btn-offer" style="margin-top:6px" onclick="event.stopPropagation();openOfferModal(this)" ${offerAttrs}>Make Offer</button>`;
+    } else {
+      const cur = parseFloat(unit.auction_current_bid||0), mn = parseFloat(unit.auction_min_bid||0);
+      const bid = cur>0?cur:mn; const lbl = cur>0?'Current Bid':'Min Bid';
+      priceHtml = `<div class="re-card-price">${bid.toLocaleString()} <span>ARKIS</span></div>
+        <div class="re-card-price-sub">${lbl}</div>
+        ${minOff ? `<div class="re-card-min-offer">Min offer <span>${minOff} ARKIS</span></div>` : ''}`;
+      if(unit.auction_end_time) timerHtml = `<div class="re-card-timer"><span class="cntd" data-end="${unit.auction_end_time}"></span></div>`;
+      if(!isMe) btnHtml = `
+        <button class="re-card-btn btn-bid" onclick="event.stopPropagation();alert('Bidding coming soon!')">Place Bid →</button>
+        <button class="re-card-btn btn-offer" style="margin-top:6px" onclick="event.stopPropagation();openOfferModal(this)" ${offerAttrs}>Make Offer</button>`;
+    }
+    const hexNum = unit.unit_code.split('-')[2]||'';
+    return `
+    <div class="re-unit-card ${type==='auction'?'auction-card':''}" onclick="window.location.href='unit.html?code=${unit.unit_code}'">
+      <div class="re-card-watermark">${hexNum}</div>
+      <span class="re-card-badge ${type==='sale'?'badge-sale':'badge-auction'}">${type==='sale'?'● For Sale':'⚡ Live Auction'}</span>
+      <div class="re-card-code">${unit.unit_code}</div>
+      <div class="re-card-territory">${tname} · ${terr}</div>
+      <div class="re-card-tags">
+        <span class="re-card-tag">${unit.value_tier||'Standard'}</span>
+        ${unit.pulse_state==='active'?'<span class="re-card-tag tag-active">⚡ Active</span>':''}
+      </div>
+      ${priceHtml}${timerHtml}
+      <div class="re-card-divider"></div>
+      <div class="re-card-owner">
+        <div class="re-card-owner-av">${av}</div>
+        <span>Owner:</span><span class="re-card-owner-name">&nbsp;${owner?.username||'Unknown'}</span>
+        ${isMe?'<span class="re-card-yours">Yours</span>':''}
+      </div>
+      ${btnHtml}
+    </div>`;
+  }
+
+  /* ─── LOAD LIVE MARKET (with demo fallback) ─── */
+  async function loadMarket() {
+    // Wait for Supabase client to be ready
+    let sb = null;
+    for (let i = 0; i < 50; i++) {
+      const c = window.supabaseClient || window.supabase;
+      if (c && typeof c.from === 'function') { sb = c; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    let saleArr = [], auctArr = [], owners = { ...DEMO_OWNERS };
+
+    if (sb) {
+      try {
+        const [{data:saleUnits},{data:auctUnits}] = await Promise.all([
+          sb.from('units').select('unit_code,area_code,owner_id,sale_price,for_sale,auction_active,auction_min_bid,auction_current_bid,auction_end_time,value_tier,value_score,pulse_state,suggested_price,min_offer_price').eq('for_sale',true).not('sale_price','is',null),
+          sb.from('units').select('unit_code,area_code,owner_id,sale_price,for_sale,auction_active,auction_min_bid,auction_current_bid,auction_end_time,value_tier,value_score,pulse_state,suggested_price,min_offer_price').eq('auction_active',true)
+        ]);
+        saleArr = saleUnits || [];
+        auctArr = auctUnits || [];
+        const all = [...saleArr, ...auctArr];
+        const oids = [...new Set(all.filter(u=>u.owner_id).map(u=>u.owner_id))];
+        if (oids.length) {
+          const {data:ow} = await sb.from('users').select('id,username,avatar,avatar_url,x_username').in('id',oids);
+          if (ow) ow.forEach(o => owners[o.id] = o);
+        }
+      } catch(e) { console.warn('Market load error:', e); }
+    }
+
+    // Fall back to demo data if DB returned nothing
+    if (saleArr.length === 0) { saleArr = DEMO_SALE; }
+    if (auctArr.length === 0) { auctArr = DEMO_AUCTIONS; }
+
+    // Render For Sale
+    const sg = document.getElementById('saleGrid');
+    document.getElementById('saleCount').textContent = saleArr.length + ' units';
+    document.getElementById('heroPillSale').textContent = saleArr.length;
+    sg.innerHTML = saleArr.map(u => buildUnitCard(u, owners[u.owner_id], 'sale')).join('');
+
+    // Render Auctions
+    const ag = document.getElementById('auctGrid');
+    document.getElementById('auctCount').textContent = auctArr.length + ' live';
+    document.getElementById('heroPillAuct').textContent = auctArr.length;
+    ag.innerHTML = auctArr.map(u => buildUnitCard(u, owners[u.owner_id], 'auction')).join('');
+
+    startCountdowns();
+  }
+
+  function startCountdowns(){
+    const tick = () => document.querySelectorAll('.cntd[data-end]').forEach(el=>{
+      const d = new Date(el.dataset.end).getTime()-Date.now();
+      if(d<=0){el.textContent='Ended';return;}
+      const h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000),s=Math.floor((d%60000)/1000);
+      const lumDays = h; // 1 IRL hour = 1 Lum day
+      el.textContent=`${h}h ${m}m ${s}s · ${lumDays} Lum day${lumDays!==1?'s':''} remaining`;
+    });
+    tick(); setInterval(tick,1000);
+  }
+
+  /* ─── LIVE DEVELOPMENTS — pulled from DB ─── */
+  async function renderDevs() {
+    const grid = document.getElementById('devGrid');
+    grid.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:13px;padding:20px 0;">Loading developments…</div>';
+
+    let sb = null;
+    for (let i = 0; i < 20; i++) {
+      sb = window.supabaseClient || window.supabase;
+      if (sb?.from) break;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (!sb?.from) { grid.innerHTML = '<div style="color:rgba(255,80,80,0.6);font-size:13px;">Could not connect.</div>'; return; }
+
+    try {
+      const { data: devs, error } = await sb
+        .from('developments')
+        .select(`
+          unit_code, building_name, building_type, cost, started_at, completed_at, status,
+          development_catalog(name, icon, category, description, cost_arkis),
+          owner:users!developments_owner_id_fkey(username)
+        `)
+        .eq('status', 'building')
+        .order('started_at', { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+
+      if (!devs || devs.length === 0) {
+        document.getElementById('heroPillDevs').textContent = '0';
+        grid.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;font-style:italic;">No active developments right now — check back soon.</div>';
+        return;
+      }
+
+      document.getElementById('heroPillDevs').textContent = devs.length;
+
+      grid.innerHTML = devs.map(d => {
+        const cat = d.development_catalog;
+        const name = cat?.name || d.building_name || 'Development';
+        const icon = cat?.icon || '🏗️';
+        const category = cat?.category || d.building_type || '';
+        const desc = cat?.description || '';
+        const cost = Number(cat?.cost_arkis || d.cost || 0);
+        const owner = d.owner?.username || '—';
+
+        // Calculate progress %
+        const started = d.started_at ? new Date(d.started_at) : null;
+        const completed = d.completed_at ? new Date(d.completed_at) : null;
+        let pct = 0, etaStr = '—';
+        if (started && completed) {
+          const total = completed - started;
+          const elapsed = Date.now() - started;
+          pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+          const msLeft = completed - Date.now();
+          if (msLeft > 0) {
+            const daysLeft = Math.floor(msLeft / 86400000);
+            const hoursLeft = Math.floor((msLeft % 86400000) / 3600000);
+            etaStr = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h` : `${hoursLeft}h`;
+          } else { etaStr = 'Soon'; pct = 99; }
+        }
+
+        const catLabel = {culture:'Culture',economy:'Economy',health:'Health',housing:'Housing',nature:'Nature',prestige:'Prestige',science:'Science'}[category] || category;
+
+        return `<div class="re-dev-card">
+          <div class="re-dev-top">
+            <div class="re-dev-code">${d.unit_code}</div>
+            ${catLabel ? `<div class="re-dev-type-tag">${catLabel}</div>` : ''}
+          </div>
+          <div class="re-dev-name">${icon} ${name}</div>
+          ${desc ? `<div class="re-dev-desc">${desc}</div>` : ''}
+          <div class="re-dev-pb-label"><span>Construction Progress</span><span>${pct}%</span></div>
+          <div class="re-dev-pb"><div class="re-dev-pb-fill" style="width:${pct}%"></div></div>
+          <div class="re-dev-footer">
+            <div class="re-dev-meta-item"><strong>${etaStr}</strong>ETA</div>
+            ${cost > 0 ? `<div class="re-dev-meta-item"><strong>${cost.toLocaleString()} ARKIS</strong>Invested</div>` : ''}
+            <div class="re-dev-meta-item"><strong>${owner}</strong>Developer</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('renderDevs:', e);
+      grid.innerHTML = '<div style="color:rgba(255,80,80,0.6);font-size:13px;">Error loading developments.</div>';
+    }
+  }
+
+  /* removed — collab/exchange/arkis JS moved to exchange.html */
+  const SPECIAL_BUILDINGS = {
+    'LUM-01': { icon:'🔭', name:'Canopy Observatory',        benefit:'Boosts navigation clarity, +8 Innovator for builder.',    native:'Aurellia',      slug:'canopy_observatory' },
+    'LUM-02': { icon:'🛒', name:'Biolum Market (Gourmet)',   benefit:'19,900 $ARKIS/month',                 native:'Celestara',     slug:'biolum_market' },
+    'LUM-03': { icon:'🌱', name:'Energy Garden',             benefit:'+10% $LICHEN yield for all gardens.',                     native:'Willow Head',   slug:'energy_garden' },
+    'LUM-04': { icon:'🌉', name:'Skybridge Trading Post',    benefit:'8,500 $ARKIS/month',                        native:'Emberveil',     slug:'skybridge_trading_post' },
+    'LUM-05': { icon:'🖼️', name:'Luminaea Art Gallery',      benefit:'+8 Luminary for builder.',                               native:'Fenwild',       slug:'luminaea_art_gallery' },
+    'LUM-06': { icon:'🎭', name:'Starlight Amphitheater',    benefit:'22,800 $LICHEN/month',                         native:'Firesky',       slug:'starlight_amphitheater' },
+    'LUM-07': { icon:'🌊', name:'Prismatic Wellspring',      benefit:'8,100 $PLASM + 650 $LICHEN/month',  native:'Pieve',         slug:'prismatic_wellspring' },
+    'LUM-08': { icon:'🔊', name:'Harmonic Sound Node',       benefit:'+5 Innovator. Creates rhythmic guiding pulses.',          native:'Oakland',       slug:'harmonic_sound_node' },
+    'LUM-09': { icon:'🧵', name:'Spore-Silk Loom (Fashion)', benefit:'5,650 $LICHEN/month',                         native:'Jadehollow',    slug:'spore_silk_loom' },
+    'LUM-10': { icon:'🧘', name:'Meditation Sanctuary',      benefit:'19,950 $PLASM/month',                     native:'Astral Peaks',  slug:'meditation_sanctuary' },
+    'LUM-11': { icon:'🏃', name:'Parkour Athletics Hub',     benefit:'7,100 $LICHEN/month',                     native:'Lumenvast',     slug:'parkour_athletics_hub' },
+    'LUM-12': { icon:'😂', name:'Comedy Social Club',        benefit:'22,000 $WIRE/month',              native:'Mirewood',      slug:'comedy_social_club' },
+    'LUM-13': { icon:'🔧', name:'Adaptive Living Units',     benefit:'-15% build time for ALL structures.',                    native:'Northfen',      slug:'adaptive_living_units' },
+    'LUM-14': { icon:'💉', name:'Nectar-Infusion Clinic',    benefit:'Lowers population death rate, +15 Spiritualist.',        native:'Oldmarch',      slug:'nectar_infusion_clinic' },
+    'LUM-15': { icon:'📚', name:"Archivist's Spire",          benefit:'+5 Innovator +5 Spiritualist.',                          native:'Mugugno',     slug:'archivists_spire' },
+    'LUM-16': { icon:'⚡', name:'Energy-Efficiency Hub',     benefit:'9,100 $WIRE/month',                    native:'Bauscia', slug:'energy_efficiency_hub' },
+    'LUM-17': { icon:'🍽️', name:'Galactic Banquet Hall',     benefit:'5,450 $ARKIS/month',             native:'Ravenholm',     slug:'galactic_banquet_hall' },
+    'LUM-18': { icon:'⛏️', name:'Mineral Extraction Lab',    benefit:'9,150 $PLASM/month',          native:'Stormgate',     slug:'mineral_extraction_lab' },
+    'LUM-19': { icon:'🎬', name:'Holographic Theater',       benefit:'+10 Luminary. Ancient dimensional storytelling.',        native:'The Spine',     slug:'holographic_theater' },
+    'LUM-20': { icon:'🔋', name:'Acoustic Power Plant',      benefit:'50 $WIRE + 30 $ARKIS/month.',                           native:'Umbralia',      slug:'acoustic_power_plant' },
+  };
+
+  const TNAME_MAP = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+
+  // Nexus adjacency — which territories share each nexus point.
+  // A player can collaborate on a building in territory X if they own units
+  // in any territory that shares a nexus with X (including X itself).
+  const NEXUS_TOUCHES = [
+    ['LUM-06','LUM-18','LUM-19'], // NEXUS-01 Convergence
+    ['LUM-09','LUM-11','LUM-14'], // NEXUS-02 Southern Crossing
+    ['LUM-11','LUM-12','LUM-19'], // NEXUS-03 The Meridian
+    ['LUM-01','LUM-02'],          // NEXUS-04 Twin Peak Gate
+    ['LUM-03','LUM-18'],          // NEXUS-05 Ember Reach
+    ['LUM-06','LUM-20'],          // NEXUS-06 Shadow Crossing
+    ['LUM-07','LUM-08'],          // NEXUS-07 The Brightway
+    ['LUM-04','LUM-19'],          // NEXUS-08 The Wandering Fork
+    ['LUM-05','LUM-20'],          // NEXUS-09 Northern Passage
+    ['LUM-10','LUM-14'],          // NEXUS-10 East Lookout
+    ['LUM-13','LUM-15'],          // NEXUS-11 The Deep Hollow
+    ['LUM-09','LUM-14','LUM-16'], // NEXUS-12 Veilgate
+    ['LUM-12','LUM-17','LUM-19'], // NEXUS-13 The Drift
+    ['LUM-15','LUM-20'],          // NEXUS-14 The Long Step
+    ['LUM-06','LUM-12'],          // NEXUS-15 Gloom's Edge
+    ['LUM-04','LUM-07'],          // NEXUS-16 The Middle Path
+    ['LUM-03','LUM-18'],          // NEXUS-17 Frost Notch
+    ['LUM-08','LUM-10'],          // NEXUS-18 The Upper Watch
+    ['LUM-01','LUM-02'],          // NEXUS-19 The Twin Gate
+    ['LUM-01','LUM-04'],          // NEXUS-20 Emberveil Pass
+    ['LUM-05','LUM-20'],          // NEXUS-21 The Fen Bridge
+    ['LUM-13','LUM-17'],          // NEXUS-22 Darkfen Crossing
+    ['LUM-16','LUM-17','LUM-19'], // NEXUS-23 The Southern Knot
+  ];
+
+  // Build territory → set of nexus-adjacent territories (including itself)
+  const NEXUS_NEIGHBOURS = {};
+  NEXUS_TOUCHES.forEach(group => {
+    group.forEach(terr => {
+      if (!NEXUS_NEIGHBOURS[terr]) NEXUS_NEIGHBOURS[terr] = new Set([terr]);
+      group.forEach(other => NEXUS_NEIGHBOURS[terr].add(other));
+    });
+  });
+
+  // Returns true if a player owning units in `ownedTerritories` is eligible
+  // to collaborate on a building whose native territory is `nativeTerr`.
+  // Eligibility = player owns units in any territory sharing a nexus with nativeTerr.
+  function isCollabEligible(ownedTerritories, nativeTerr) {
+    const neighbours = NEXUS_NEIGHBOURS[nativeTerr] || new Set([nativeTerr]);
+    return ownedTerritories.some(t => neighbours.has(t));
+  }
+
+  // collabStatus: keyed by territory_code, value from special_building_status view
+  let collabStatus = {};
+  // collabRows: keyed by territory_code, array of rows from special_building_collaborations
+  let collabRows = {};
+  // usernameCache: player_id -> username
+  let usernameCache = {};
+
+  // user's owned territory codes — populated in loadCollabs
+  let myTerritories = [];
+
+  async function loadCollabs() {
+    // Wait for Supabase client to be ready
+    let sb = null;
+    for (let i = 0; i < 50; i++) {
+      const c = window.supabaseClient || window.supabase;
+      if (c && typeof c.from === 'function') { sb = c; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    const sessionUserId = getSessionUserId();
+    if (!sb) { renderCollabs(); return; }
+
+    try {
+      // Determine which territories the logged-in user owns units in
+      if (sessionUserId) {
+        const { data: myUnits } = await sb.from('units').select('unit_code').eq('owner_id', sessionUserId);
+        myTerritories = [...new Set((myUnits || []).map(u => u.unit_code.substring(0, 6)))];
+      }
+
+      const [statusRes, rowsRes] = await Promise.all([
+        sb.from('special_building_status').select('*'),
+        sb.from('special_building_collaborations').select('territory_code, building_slug, player_id, unit_code, status')
+      ]);
+
+      // collabStatus keyed by the building's native territory code
+      (statusRes.data || []).forEach(r => { collabStatus[r.territory_code] = r; });
+      // collabRows keyed by territory_code (building's native territory) — matches collabStatus
+      (rowsRes.data || []).forEach(r => {
+        const key = r.territory_code;
+        if (!collabRows[key]) collabRows[key] = [];
+        collabRows[key].push(r);
+      });
+
+      const allPlayerIds = [...new Set((rowsRes.data || []).map(r => r.player_id))];
+      if (allPlayerIds.length) {
+        const { data: users } = await sb.from('users').select('id, username').in('id', allPlayerIds);
+        (users || []).forEach(u => { usernameCache[u.id] = u.username; });
+      }
+    } catch(e) { console.warn('loadCollabs error:', e); }
+
+    renderCollabs();
+  }
+
+  function renderCollabs() {
+    const sessionUserId = getSessionUserId();
+    const grid = document.getElementById('collabGrid');
+
+    const cards = [];
+
+    if (!sessionUserId) {
+      // Guest: show all 20, no availability state
+      cards.push(`<div class="re-collab-section-header">All 20 Special Buildings — Log in to see your availability</div>`);
+      Object.entries(SPECIAL_BUILDINGS).forEach(([nativeTerr, b]) => {
+        const rows = collabRows[nativeTerr] || [];
+        cards.push(buildCollabCard(b, nativeTerr, null, rows, null));
+      });
+    } else if (myTerritories.length === 0) {
+      // Logged in but no units — show all greyed out
+      cards.push(`<div class="re-collab-section-header">Acquire units in a territory to collaborate on special buildings</div>`);
+      Object.entries(SPECIAL_BUILDINGS).forEach(([nativeTerr, b]) => {
+        const rows = collabRows[nativeTerr] || [];
+        cards.push(buildCollabCard(b, nativeTerr, null, rows, null, true));
+      });
+    } else {
+      // Logged in with units — show all 20, eligible ones active, ineligible greyed out
+      const nativeCards  = [];
+      const adjCards     = [];
+      const lockedCards  = [];
+
+      Object.entries(SPECIAL_BUILDINGS).forEach(([nativeTerr, b]) => {
+        const rows      = collabRows[nativeTerr] || [];
+        const eligible  = isCollabEligible(myTerritories, nativeTerr);
+        const isNative  = myTerritories.includes(nativeTerr);
+        const bestTerr  = isNative
+          ? nativeTerr
+          : myTerritories.find(t => (NEXUS_NEIGHBOURS[nativeTerr] || new Set()).has(t)) || null;
+
+        const card = buildCollabCard(b, nativeTerr, bestTerr, rows, sessionUserId, !eligible);
+        if (isNative)       nativeCards.push(card);
+        else if (eligible)  adjCards.push(card);
+        else                lockedCards.push(card);
+      });
+
+      if (nativeCards.length) {
+        cards.push(`<div class="re-collab-section-header">⭐ Native to Your Territories</div>`);
+        nativeCards.forEach(c => cards.push(c));
+      }
+      if (adjCards.length) {
+        cards.push(`<div class="re-collab-section-header">Nexus-Connected · 75% Yield</div>`);
+        adjCards.forEach(c => cards.push(c));
+      }
+      if (lockedCards.length) {
+        cards.push(`<div class="re-collab-section-header" style="color:rgba(255,255,255,0.2);">🔒 Not Yet Reachable From Your Territories</div>`);
+        lockedCards.forEach(c => cards.push(c));
+      }
+    }
+
+    grid.innerHTML = cards.join('');
+  }
+
+  function buildCollabCard(b, nativeTerr, userTerr, rows, sessionUserId, locked) {
+    const isNative      = userTerr && nativeTerr === userTerr;
+    const myRow         = sessionUserId ? rows.find(r => r.player_id === sessionUserId) : null;
+    const bStatusObj    = collabStatus[nativeTerr];
+    const buildingState = bStatusObj?.status || 'open';
+
+    // Status pill
+    let pillLabel, pillClass;
+    if (buildingState === 'completed')     { pillLabel = '✓ Built';                  pillClass = 'completed'; }
+    else if (buildingState === 'building') { pillLabel = '🔨 Building';              pillClass = 'building'; }
+    else if (rows.length)                  { pillLabel = rows.length + ' Interested'; pillClass = 'interested'; }
+    else                                   { pillLabel = 'Open';                      pillClass = 'open'; }
+
+    // Yield / native note
+    const yieldNote = isNative
+      ? `<span class="re-collab-native-badge">⭐ Native · 100% yield here</span>`
+      : userTerr
+        ? `<span style="font-size:10px;color:rgba(255,255,255,0.25);">75% yield here · 100% native to ${b.native}</span>`
+        : `<span style="font-size:10px;color:rgba(255,255,255,0.3);">Native to ${b.native}</span>`;
+
+    // Interested player names — filter to this building only
+    const buildingRows = rows.filter(r => r.building_slug === b.slug);
+    const interestedHtml = buildingRows.length
+      ? `<div class="re-collab-interested-names">👥 ${buildingRows.map(r => usernameCache[r.player_id] || '…').join(' · ')}</div>`
+      : '';
+
+    // Token cost — read from TOKEN_COSTS hardcoded (matches DB after migration)
+    const TOKEN_COSTS = {
+      'LUM-01':'36,000 WIRE','LUM-02':'88,000 PLASM','LUM-03':'30,000 LICHEN','LUM-04':'36,000 WIRE',
+      'LUM-05':'30,000 LICHEN','LUM-06':'88,000 PLASM','LUM-07':'30,000 LICHEN','LUM-08':'36,000 WIRE',
+      'LUM-09':'23,000 SPORE','LUM-10':'88,000 PLASM','LUM-11':'30,000 LICHEN','LUM-12':'88,000 PLASM',
+      'LUM-13':'36,000 WIRE','LUM-14':'88,000 PLASM','LUM-15':'36,000 WIRE','LUM-16':'36,000 WIRE',
+      'LUM-17':'23,000 SPORE','LUM-18':'36,000 WIRE','LUM-19':'88,000 PLASM','LUM-20':'23,000 SPORE',
+    };
+    const costStr = TOKEN_COSTS[nativeTerr] || '—';
+
+    // Action button — hidden if locked
+    let btnHtml = '';
+    if (!locked) {
+      if (buildingState === 'completed') {
+        btnHtml = `<button class="re-collab-btn btn-view" disabled>✓ Completed</button>`;
+      } else if (!sessionUserId) {
+        btnHtml = `<button class="re-collab-btn btn-view" onclick="alert('Log in to collaborate on this project.')">View Project →</button>`;
+      } else if (myRow) {
+        btnHtml = `<button class="re-collab-btn btn-yours">✦ You're Interested</button>`;
+      } else if (buildingState === 'building') {
+        btnHtml = `<button class="re-collab-btn btn-view" onclick="alert('This project is already under construction.')">View Project →</button>`;
+      } else if (rows.length) {
+        btnHtml = `<button class="re-collab-btn btn-join" onclick="window.location.href='profile.html'">Join Project →</button>`;
+      } else {
+        btnHtml = `<button class="re-collab-btn btn-start" onclick="window.location.href='profile.html'">Start Collaboration →</button>`;
+      }
+    }
+
+    const lockedLabel = locked
+      ? `<div class="re-collab-unavailable-label">🔒 Requires a unit in a nexus-adjacent territory</div>`
+      : '';
+
+    return `
+    <div class="re-collab-card${isNative ? ' re-collab-card-native' : ''}${locked ? ' re-collab-unavailable' : ''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <span class="re-collab-pill">${nativeTerr} · ${b.native}</span>
+        <span class="re-collab-status-pill ${pillClass}">${pillLabel}</span>
+      </div>
+      <div class="re-collab-title">${b.icon} ${b.name}</div>
+      <div style="margin-bottom:8px;">${yieldNote}</div>
+      <div class="re-collab-desc">${b.benefit}</div>
+      ${interestedHtml}
+      <div class="re-collab-reward" style="margin-bottom:0;">Cost: <strong>${costStr}</strong> · split equally between collaborators</div>
+      ${lockedLabel}
+      ${btnHtml}
+    </div>`;
+  }
+
+  /* ─── NEXUS COLLABORATIONS ─── */
+  async function loadNexusCollabs() {
+    const grid = document.getElementById('nexusCollabGrid');
+    const sessionUserId = getSessionUserId();
+    let sb = null;
+    for (let i = 0; i < 30; i++) {
+      const c = window.supabaseClient || window.supabase;
+      if (c && typeof c.from === 'function') { sb = c; break; }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (!sb) { grid.innerHTML = ''; return; }
+
+    try {
+      // Fetch all nexus collabs with player info
+      const { data: collabs } = await sb
+        .from('nexus_collaborations')
+        .select('nexus_id, nexus_building_slug, player_id, territory_code, status, joined_at, users(id, username, avatar, avatar_url, x_username)')
+        .order('joined_at', { ascending: false });
+
+      // Fetch nexus point names
+      const { data: nexusPoints } = await sb
+        .from('nexus_points')
+        .select('id, name, touches, location_type, q, r');
+
+      // Fetch nexus building catalog for names/icons
+      const { data: nexusCatalog } = await sb
+        .from('nexus_building_catalog')
+        .select('slug, name, icon, tier, description, cost_arkis, cost_wire, cost_plasm, cost_lichen, cost_spore, currencies_accepted, min_contributors');
+
+      const nexusMap   = {};
+      (nexusPoints || []).forEach(n => { nexusMap[n.id] = n; });
+      const catalogMap = {};
+      (nexusCatalog || []).forEach(b => { catalogMap[b.slug] = b; });
+
+      // Group by nexus_id + building_slug
+      const grouped = {};
+      (collabs || []).forEach(c => {
+        const key = c.nexus_id + '::' + (c.nexus_building_slug || 'open');
+        if (!grouped[key]) grouped[key] = { nexus_id: c.nexus_id, slug: c.nexus_building_slug, rows: [] };
+        grouped[key].rows.push(c);
+      });
+
+      // Get player's territories if logged in
+      let myTerrs = new Set();
+      if (sessionUserId) {
+        const { data: myUnits } = await sb.from('units').select('unit_code').eq('owner_id', sessionUserId);
+        (myUnits || []).forEach(u => myTerrs.add(u.unit_code.substring(0, 6)));
+      }
+
+      const TERRITORY_COLORS = {
+        'LUM-01':'#d4a96a','LUM-02':'#c084c4','LUM-03':'#6ab4d4','LUM-04':'#d4c46a',
+        'LUM-05':'#6ad490','LUM-06':'#8a6ad4','LUM-07':'#d4846a','LUM-08':'#6a9ad4',
+        'LUM-09':'#84d46a','LUM-10':'#d46a84','LUM-11':'#6ad4c4','LUM-12':'#d4a46a',
+        'LUM-13':'#a46ad4','LUM-14':'#6ab4a4','LUM-15':'#d46a6a','LUM-16':'#6ad464',
+        'LUM-17':'#c4846a','LUM-18':'#6a84d4','LUM-19':'#d4d46a','LUM-20':'#846ad4'
+      };
+      const TERRITORY_NAMES = {
+        'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+        'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+        'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+        'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+        'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+      };
+
+      const entries = Object.values(grouped);
+
+      if (!entries.length) {
+        grid.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;font-style:italic;">No nexus collaborations registered yet.</div>';
+        return;
+      }
+
+      grid.innerHTML = entries.map(entry => {
+        const nexus   = nexusMap[entry.nexus_id] || {};
+        const bld     = catalogMap[entry.slug] || {};
+        const rows    = entry.rows;
+        const isConvergence = nexus.location_type === 'convergence_hub';
+
+        // Player eligibility — owns a unit in a touching territory
+        const touches  = nexus.touches || [];
+        const eligible = sessionUserId && touches.some(t => myTerrs.has(t));
+        const myRow    = rows.find(r => r.player_id === sessionUserId);
+
+        // Status
+        const allStatuses = rows.map(r => r.status);
+        const hasBuilding = allStatuses.some(s => s === 'building' || s === 'completed');
+        const statusLabel = hasBuilding
+          ? (allStatuses.includes('completed') ? '✓ Built' : '🔨 Building')
+          : rows.length + ' Interested';
+        const statusCls = hasBuilding
+          ? (allStatuses.includes('completed') ? 'completed' : 'building')
+          : 'interested';
+
+        // Players list
+        const playerNames = rows.map(r => {
+          const u = r.users || {};
+          return u.username || '—';
+        }).join(' · ');
+
+        // Cost display
+        let costStr = '—';
+        if (bld.slug === 'teleportation_gate') {
+          costStr = [
+            bld.cost_wire   ? `${Number(bld.cost_wire).toLocaleString()} WIRE`   : null,
+            bld.cost_plasm  ? `${Number(bld.cost_plasm).toLocaleString()} PLASM`  : null,
+            bld.cost_lichen ? `${Number(bld.cost_lichen).toLocaleString()} LICHEN` : null,
+            bld.cost_spore  ? `${Number(bld.cost_spore).toLocaleString()} SPORE`  : null,
+          ].filter(Boolean).join(' + ');
+        } else if (bld.cost_arkis) {
+          costStr = `${Math.round(Number(bld.cost_arkis) / (bld.min_contributors || 2)).toLocaleString()} ARKIS each`;
+        }
+
+        // Territory pills
+        const terrPillHtml = touches.map(tc => {
+          const ownedMark = myTerrs.has(tc) ? ' ✓' : '';
+          return `<span style="font-size:10px;font-weight:700;color:${TERRITORY_COLORS[tc]||'#888'};">● ${TERRITORY_NAMES[tc]||tc}${ownedMark}</span>`;
+        }).join('<span style="color:rgba(255,255,255,0.2);margin:0 3px;">·</span>');
+
+        // Action button
+        let btnHtml = '';
+        if (!sessionUserId) {
+          btnHtml = `<button class="re-collab-btn btn-view" onclick="alert('Log in to join nexus collaborations.')">View Nexus →</button>`;
+        } else if (myRow) {
+          btnHtml = `<button class="re-collab-btn btn-yours">✦ You're Registered</button>`;
+        } else if (eligible) {
+          btnHtml = `<a href="nexus.html?id=${entry.nexus_id}" class="re-collab-btn btn-join" style="text-align:center;text-decoration:none;display:block;">Join at Nexus →</a>`;
+        } else {
+          btnHtml = `<a href="nexus.html?id=${entry.nexus_id}" class="re-collab-btn btn-view" style="text-align:center;text-decoration:none;display:block;">View Nexus →</a>`;
+        }
+
+        return `
+        <div class="re-collab-card${isConvergence ? '" style="border-color:rgba(160,120,255,0.3);background:rgba(160,120,255,0.04)' : ''}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+            <span class="re-collab-pill" style="${isConvergence?'color:rgba(200,160,255,0.8);border-color:rgba(160,120,255,0.3);':''}">${entry.nexus_id}${isConvergence?' · World Hub':''}</span>
+            <span class="re-collab-status-pill ${statusCls}">${statusLabel}</span>
+          </div>
+          <div class="re-collab-title">${bld.icon || '⬡'} ${bld.name || 'Nexus Project'}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;">${nexus.name || entry.nexus_id}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${terrPillHtml}</div>
+          ${bld.description ? `<div class="re-collab-desc" style="font-size:11px;">${bld.description.substring(0,120)}…</div>` : ''}
+          ${rows.length ? `<div class="re-collab-interested-names" style="margin:6px 0;">👥 ${playerNames}</div>` : ''}
+          <div class="re-collab-reward" style="margin-bottom:0;">Cost: <strong>${costStr}</strong></div>
+          ${btnHtml}
+        </div>`;
+      }).join('');
+
+    } catch(e) {
+      console.warn('loadNexusCollabs error:', e);
+      grid.innerHTML = '<div style="color:rgba(255,80,80,0.5);font-size:13px;">Could not load nexus collaborations.</div>';
+    }
+  }
+
+  /* ─── INIT ─── */
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadMarket();
+    if (location.hash) {
+      setTimeout(() => {
+        const el = document.querySelector(location.hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+    }
+    renderDevs();
+    loadCollabs();
+    loadNexusCollabs();
+  });
+  </script>
+
+  <!-- ════════════ OFFER MODAL ════════════ -->
+  <div class="offer-modal-overlay" id="offerModalOverlay">
+    <div class="offer-modal">
+      <div class="offer-modal-title">Make an Offer</div>
+      <div class="offer-modal-unit" id="offerModalUnit">Unit · Owner</div>
+      <div class="offer-modal-hints">
+        <div class="offer-hint-box">
+          <div class="offer-hint-label">Suggested Price</div>
+          <div class="offer-hint-val sug" id="offerHintSug">—</div>
+        </div>
+        <div class="offer-hint-box">
+          <div class="offer-hint-label">Min Offer</div>
+          <div class="offer-hint-val min" id="offerHintMin">—</div>
+        </div>
+      </div>
+      <label class="offer-modal-label">Your Offer (ARKIS)</label>
+      <input class="offer-modal-input" id="offerPriceInput" type="number" min="1" placeholder="Enter amount…">
+      <label class="offer-modal-label">Message to owner (optional)</label>
+      <textarea class="offer-modal-msg" id="offerMessageInput" rows="2" placeholder="e.g. Happy to negotiate…"></textarea>
+      <div class="offer-modal-btns">
+        <button class="offer-modal-cancel" onclick="closeOfferModal()">Cancel</button>
+        <button class="offer-modal-submit" id="offerSubmitBtn" onclick="submitOffer()">Send Offer →</button>
+      </div>
+      <div class="offer-modal-feedback" id="offerFeedback"></div>
+    </div>
+  </div>
+
+  <script>
+  /* ─── OFFER MODAL ─── */
+  let _offerTarget = {};
+
+  function openOfferModal(btn) {
+    _offerTarget = {
+      code:   btn.dataset.code,
+      sug:    Number(btn.dataset.sug)  || 0,
+      min:    Number(btn.dataset.min)  || 0,
+      seller: btn.dataset.seller       || '',
+      owner:  btn.dataset.owner        || '?'
+    };
+    const fmt = n => n ? Number(n).toLocaleString() + ' ARKIS' : '—';
+    document.getElementById('offerModalUnit').textContent  = _offerTarget.code + ' · Owner: ' + _offerTarget.owner;
+    document.getElementById('offerHintSug').textContent    = fmt(_offerTarget.sug);
+    document.getElementById('offerHintMin').textContent    = fmt(_offerTarget.min);
+    document.getElementById('offerPriceInput').value       = '';
+    document.getElementById('offerMessageInput').value     = '';
+    document.getElementById('offerFeedback').style.display = 'none';
+    document.getElementById('offerSubmitBtn').disabled     = false;
+    document.getElementById('offerSubmitBtn').textContent  = 'Send Offer →';
+    document.getElementById('offerModalOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('offerPriceInput').focus(), 100);
+  }
+
+  function closeOfferModal() {
+    document.getElementById('offerModalOverlay').classList.remove('active');
+  }
+
+  // Close on overlay click
+  document.getElementById('offerModalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('offerModalOverlay')) closeOfferModal();
+  });
+
+  async function submitOffer() {
+    const sb = window.supabaseClient || window.supabase;
+    const fb = document.getElementById('offerFeedback');
+    const btn = document.getElementById('offerSubmitBtn');
+
+    const price = parseFloat(document.getElementById('offerPriceInput').value);
+    const msg   = document.getElementById('offerMessageInput').value.trim();
+
+    if (!price || price <= 0) {
+      showOfferFeedback('Please enter a valid offer amount.', false); return;
+    }
+    if (_offerTarget.min && price < _offerTarget.min) {
+      showOfferFeedback(`Offer is below the minimum of ${Number(_offerTarget.min).toLocaleString()} ARKIS.`, false); return;
+    }
+
+    // Get logged-in user
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const buyerId = session?.user?.id;
+    if (!buyerId) {
+      showOfferFeedback('You must be logged in to make an offer.', false); return;
+    }
+    if (buyerId === _offerTarget.seller) {
+      showOfferFeedback('You cannot make an offer on your own unit.', false); return;
+    }
+    if (!sb) {
+      showOfferFeedback('Database unavailable. Please try again.', false); return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const { error } = await sb.from('unit_offers').insert({
+        unit_code:  _offerTarget.code,
+        buyer_id:   buyerId,
+        seller_id:  _offerTarget.seller || null,
+        price:      price,
+        message:    msg || null
+      });
+      if (error) throw error;
+      showOfferFeedback('✓ Offer sent! The owner will be notified.', true);
+      btn.textContent = 'Sent ✓';
+      setTimeout(closeOfferModal, 2000);
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Send Offer →';
+      showOfferFeedback('Error: ' + e.message, false);
+    }
+  }
+
+  function showOfferFeedback(msg, ok) {
+    const fb = document.getElementById('offerFeedback');
+    fb.textContent = msg;
+    fb.className = 'offer-modal-feedback ' + (ok ? 'offer-feedback-ok' : 'offer-feedback-err');
+    fb.style.display = 'block';
+  }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minister — MINALIA</title>
+  <link rel="stylesheet" href="style.css?v=20260306b">
+  <style>
+    /* ── Page layout ── */
+    body { padding-top: 92px; }
+    .minister-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .minister-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Left column ── */
+    .minister-left { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── NFT Card ── */
+    .nft-card {
+      background: rgba(25,20,35,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+    .nft-media-wrap {
+      width: 100%;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .nft-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+    }
+    .nft-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .nft-token {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; color: rgba(255,255,255,0.35);
+    }
+    .rarity-badge {
+      font-size: 10px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+    .stars-row {
+      font-size: 14px; letter-spacing: 2px;
+      margin-top: 6px;
+    }
+
+    /* ── Nav buttons ── */
+    .all-ministers-btn {
+      display: block; text-align: center;
+      padding: 9px 14px; border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.55);
+      font-size: 12px; font-weight: 600;
+      text-decoration: none; letter-spacing: 0.02em;
+      transition: all 0.2s;
+    }
+    .all-ministers-btn:hover {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+    }
+    .minister-nav {
+      display: flex; gap: 8px;
+    }
+    .minister-nav-btn {
+      flex: 1; padding: 9px 12px;
+      border-radius: 8px; text-align: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.55);
+      font-size: 12px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .minister-nav-btn:hover {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.85);
+    }
+    .minister-nav-btn.disabled {
+      opacity: 0.3; pointer-events: none;
+    }
+
+    /* ── Consult panel ── */
+    .consult-panel {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .consult-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+    .consult-desc {
+      font-size: 12px; color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+    }
+    .consult-btn {
+      padding: 10px 16px; border-radius: 8px;
+      background: rgba(255,224,138,0.1);
+      border: 1px solid rgba(255,224,138,0.25);
+      color: rgba(255,224,138,0.9);
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .consult-btn:hover {
+      background: rgba(255,224,138,0.18);
+      border-color: rgba(255,224,138,0.4);
+    }
+    .back-btn {
+      display: block; text-align: center;
+      font-size: 11px; color: rgba(255,255,255,0.3);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .back-btn:hover { color: rgba(255,255,255,0.6); }
+
+    /* ── Right column ── */
+    .minister-right { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── Hero panel ── */
+    .minister-hero {
+      background: rgba(25,20,35,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 24px;
+    }
+    /* Two columns inside hero: description left, attributes right */
+    .minister-hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .minister-hero-inner { grid-template-columns: 1fr; }
+    }
+    .minister-hero-attrs {
+      border-left: 1px solid rgba(255,255,255,0.07);
+      padding-left: 24px;
+    }
+    .attrs-inline-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 12px;
+    }
+    .territory-badge {
+      display: inline-block; margin-bottom: 12px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .territory-badge:hover { opacity: 0.8; }
+    .minister-name {
+      font-size: 36px; font-weight: 900;
+      letter-spacing: -0.01em; line-height: 1;
+      margin-bottom: 14px;
+    }
+    .minister-bio {
+      font-size: 13px; color: rgba(255,255,255,0.55);
+      line-height: 1.7; margin-bottom: 20px;
+    }
+    .details-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .detail-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 12px;
+    }
+    .detail-label {
+      font-size: 9px; text-transform: uppercase;
+      letter-spacing: .09em; color: rgba(255,255,255,0.3);
+      font-weight: 700; margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 13px; color: rgba(255,255,255,0.75);
+    }
+    .superpower-value {
+      font-size: 13px; font-weight: 600;
+    }
+    .overall-score {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 16px; border-radius: 8px;
+      border: 1px solid; margin-bottom: 20px;
+    }
+    .overall-label {
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: .1em; color: rgba(255,255,255,0.4);
+      font-weight: 700;
+    }
+    .overall-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px; font-weight: 900;
+    }
+    .owners-empty {
+      font-size: 12px; color: rgba(255,255,255,0.3);
+      font-style: italic;
+    }
+
+    /* ── Accordion panels ── */
+    .attributes-panel {
+      background: rgba(25,20,35,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; overflow: hidden;
+    }
+    .accordion-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .accordion-header:hover { background: rgba(255,255,255,0.03); }
+    .accordion-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+    .accordion-icon {
+      font-size: 10px; color: rgba(255,255,255,0.3);
+      transition: transform 0.25s;
+    }
+    .accordion-icon.collapsed { transform: rotate(-90deg); }
+    .accordion-body {
+      overflow: hidden;
+      padding: 0 18px 16px;
+      transition: all 0.25s;
+    }
+    .accordion-body.collapsed { display: none; }
+
+    /* ── Attribute bars ── */
+    .attributes-grid { display: flex; flex-direction: column; gap: 8px; }
+    .attribute-bar { display: flex; flex-direction: column; gap: 4px; }
+    .attribute-info { display: flex; justify-content: space-between; align-items: center; }
+    .attribute-name { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; }
+    .attribute-value { font-size: 12px; font-weight: 700; }
+    .attribute-bar-bg {
+      height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.07); overflow: hidden;
+    }
+    .attribute-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+    /* ── Treasury panel ── */
+    .treasury-panel {
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+    }
+    .treasury-panel-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); margin-bottom: 14px;
+    }
+    .treasury-total-row {
+      display: flex; align-items: baseline; gap: 8px;
+      padding-bottom: 12px; margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .treasury-total-amount {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 22px; font-weight: 700;
+    }
+    .treasury-total-label {
+      font-size: 9px; text-transform: uppercase;
+      letter-spacing: .1em; color: rgba(255,255,255,0.3); font-weight: 700;
+    }
+    .treasury-cols {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    }
+    .treasury-col {
+      padding: 9px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .treasury-col-lbl {
+      font-size: 8px; text-transform: uppercase;
+      letter-spacing: .09em; color: rgba(255,255,255,0.25);
+      font-weight: 700; margin-bottom: 4px;
+    }
+    .treasury-col-val {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7);
+    }
+    .treasury-col.income .treasury-col-lbl { color: rgba(96,255,171,0.45); }
+    .treasury-col.income .treasury-col-val { color: rgba(96,255,171,0.85); }
+    .treasury-col.units  .treasury-col-lbl { color: rgba(255,224,138,0.45); }
+    .treasury-col.units  .treasury-col-val { color: rgba(255,224,138,0.85); }
+    .treasury-loading { font-size: 11px; color: rgba(255,255,255,0.2); font-style: italic; }
+
+    /* ── Page background ── */
+    body { padding-top: 92px; overflow-x: hidden; }
+    /* Suppress style.css body::after planet bleed */
+    body::after { display: none !important; }
+
+    /* ── Earth footer (same approach as unit.html) ── */
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .earth-footer img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      opacity: 0.2;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+      margin-bottom: 24px;
+      padding-top: 8px;
+    }
+    .breadcrumb a {
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .breadcrumb a:hover { color: rgba(255,255,255,0.8); }
+    .breadcrumb span { color: rgba(255,255,255,0.85); }
+    .breadcrumb .sep { color: rgba(255,255,255,0.2); font-size: 10px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+  <script src="load-nav.js"></script>
+
+  <!-- ── MAIN CONTENT (populated by JS) ── -->
+  <div class="container" id="main-container">
+    <div style="text-align:center;padding:80px;color:rgba(255,255,255,0.3);">Loading minister…</div>
+  </div>
+
+  <div class="earth-footer"><img src="images/minalia.png" alt="" /></div>
+  <audio id="bgAudio" preload="auto" style="display:none"><source src="audio/minalia.mp3" type="audio/mpeg"></audio>
+
+  <script>
+  // ══════════════════════════════════════════════════════════════
+  //  SINGLE SOURCE OF TRUTH — all 20 ministers
+  // ══════════════════════════════════════════════════════════════
+  const MINALIENS = [
+    { token:'13', name:'Nova',  lum:1,  area:'LUM-01', stars:8, overall:81, rarity:'uncommon', signed:true,  superpower:'Enhances telescope clarity for stargazing',              food:'Chicken Quesadilla',  hobbies:'Astronomy, Mapping constellations',               personality:'TBD',                  territory:'Aurellia',      color:'#FFE08A', biography:'Nova is an astronomer who maps the constellations of distant galaxies. Their superpower to enhance telescope clarity allows them to discover stars invisible to others. They often collaborate with Orbit, sharing their celestial findings. Related to Lush and Orbit.',   strength:80, intelligence:70, creativity:81, kindness:99, humour:99, spirituality:69, speed:91, fame:81, eco:62 },
+    { token:'2',  name:'Faze',  lum:2,  area:'LUM-02', stars:8, overall:92, rarity:'legendary',signed:true,  superpower:'Summons Fireflies',                                     food:'Gourmet Pasta',       hobbies:'Culinary Arts, Hosting Dinners',                  personality:'Friendly, Outgoing',   territory:'Celestara',     color:'#60DFFF', biography:'Faze is a culinary artist specializing in intergalactic cuisine, experimenting with rare cosmic spices to craft dishes that surprise and delight. They often collaborate with Talha, sharing recipes and laughter over new creations. Related to Talha and Luma.',      strength:82, intelligence:93, creativity:93, kindness:89, humour:87, spirituality:90, speed:94, fame:97, eco:86 },
+    { token:'8',  name:'Luma',  lum:3,  area:'LUM-03', stars:8, overall:82, rarity:'uncommon', signed:true,  superpower:'Summons meteors with a whistle',                        food:'TBD',                 hobbies:'Cultivating glowing alien plants, Gardening',     personality:'TBD',                  territory:'Willow Head',   color:'#B388FF', biography:'Luma spends their time cultivating glowing alien plants in their garden, creating a breathtaking display of colors under the stars. Their ability to summon meteors enriches their garden with rare minerals. Related to Drip and Faze.',                            strength:90, intelligence:80, creativity:82, kindness:55, humour:68, spirituality:58, speed:92, fame:63, eco:60 },
+    { token:'1',  name:'Talha', lum:4,  area:'LUM-04', stars:8, overall:72, rarity:'uncommon', signed:false, superpower:'Gravity Manipulation',                                  food:'Spaghetti Bolognese', hobbies:'Stargazing, Mapping Constellations',              personality:'Mysterious, Thoughtful', territory:'Emberveil',   color:'#FF6B35', biography:'Talha enjoys stargazing on alien planets, tracing new constellations, and creating maps that others use to navigate the stars. They often share this hobby with Faze and Zeal, discussing the mysteries of the cosmos. Related to Faze and Zeal.',               strength:90, intelligence:80, creativity:82, kindness:55, humour:68, spirituality:58, speed:92, fame:63, eco:60 },
+    { token:'38', name:'Wisp',  lum:5,  area:'LUM-05', stars:8, overall:82, rarity:'uncommon', signed:true,  superpower:'Knows the thoughts of nearby plants',                  food:'TBD',                 hobbies:'Crafting stardust sculptures, Art',               personality:'TBD',                  territory:'Fenwild',       color:'#80DEEA', biography:"Wisp enjoys crafting delicate sculptures out of stardust, their work shimmering beautifully under alien skies. Their ability to know the thoughts of nearby plants often inspires their creations. Related to Lush and Opal.", strength:97, intelligence:83, creativity:84, kindness:67, humour:93, spirituality:60, speed:76, fame:78, eco:97 },
+    { token:'47', name:'Halo',  lum:6,  area:'LUM-06', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Grows flowers with a clap of their hands',             food:'Goulash',             hobbies:'Painting, Floral art',                            personality:'TBD',                  territory:'Firesky',       color:'#F06292', biography:'Halo is a celestial artist, painting scenes inspired by distant galaxies. Their power to grow flowers with a clap of their hands often adds a vibrant touch to their exhibitions. Related to Grit and Glim.',                                                        strength:91, intelligence:65, creativity:70, kindness:99, humour:91, spirituality:77, speed:84, fame:61, eco:76 },
+    { token:'84', name:'Gaze',  lum:7,  area:'LUM-07', stars:9, overall:81, rarity:'rare',     signed:true,  superpower:'Sees distant objects in extreme detail',               food:'Baklava',             hobbies:'Landscape painting, Extracting natural pigments', personality:'TBD',                  territory:'Pieve',         color:'#CE93D8', biography:'Gaze is an artist who paints breathtaking landscapes of alien worlds using colors extracted from natural elements. Their superpower to see far-off objects in high detail allows them to capture even the smallest features. Related to Brim and Wavy.',             strength:78, intelligence:78, creativity:91, kindness:78, humour:83, spirituality:66, speed:100,fame:77, eco:79 },
+    { token:'16', name:'Blip',  lum:8,  area:'LUM-08', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Creates harmonic sound frequencies that calm emotions', food:'Miso Ramen',           hobbies:'Sound engineering, Music composition',            personality:'Calm, Analytical',     territory:'Oakland',       color:'#4FC3F7', biography:'Blip is a curious signal-hopper who travels across tiny bursts of space-time, collecting fragments of lost sounds and forgotten messages from the cosmos. Blip often shares discoveries with Luma and Faze.',                                                          strength:83, intelligence:78, creativity:85, kindness:76, humour:82, spirituality:75, speed:81, fame:77, eco:76 },
+    { token:'3',  name:'Drip',  lum:9,  area:'LUM-09', stars:8, overall:80, rarity:'uncommon', signed:false, superpower:'Water Control',                                         food:'Sushi',               hobbies:'Fashion, Art Galleries',                          personality:'Stylish, Creative',    territory:'Jadehollow',    color:'#4ade80', biography:'Drip spends hours molding alien pottery from unique clays harvested on distant planets. Their ability to control the patterns of stars is often reflected in the intricate designs of their creations. Related to Luma and Raze.',                                    strength:85, intelligence:78, creativity:91, kindness:68, humour:82, spirituality:75, speed:88, fame:79, eco:72 },
+    { token:'42', name:'Opal',  lum:10, area:'LUM-10', stars:8, overall:80, rarity:'uncommon', signed:true,  superpower:'Reflects and redirects light to create illusions',     food:'Crystal Fruit Salad', hobbies:'Meditation, Light sculpture',                     personality:'Serene, Reflective',   territory:'Astral Peaks',  color:'#80CBC4', biography:'Opal is a jeweler who designs intricate pieces from rare alien gems. Their superpower to form shapes in clouds often inspires the unique patterns in their jewelry. They frequently work with Halo. Related to Halo and Wisp.',                                      strength:83, intelligence:78, creativity:85, kindness:80, humour:82, spirituality:79, speed:81, fame:77, eco:76 },
+    { token:'25', name:'Frog',  lum:11, area:'LUM-11', stars:8, overall:80, rarity:'uncommon', signed:true,  superpower:'Leaps across vast distances using energy springs',      food:'Grilled Vegetables',  hobbies:'Parkour, Exploring new heights',                  personality:'Energetic, Adventurous', territory:'Lumenvast',   color:'#AED581', biography:'Frog loves amphibious races on planets with lush wetlands, where they test their speed and agility. Their ability to make objects levitate often gives them an edge during challenges. Related to Kelp and Volt.',                                                  strength:83, intelligence:78, creativity:85, kindness:80, humour:82, spirituality:75, speed:81, fame:77, eco:76 },
+    { token:'18', name:'Quip',  lum:12, area:'LUM-12', stars:8, overall:85, rarity:'uncommon', signed:true,  superpower:'Amplifies the laughter of nearby individuals',         food:'Stuffed Zucchini',    hobbies:'Comedy, Wordplay',                                personality:'TBD',                  territory:'Mirewood',      color:'#FFD54F', biography:'Quip is a humorist, spreading joy through their clever wordplay and jokes. Their ability to amplify the laughter of others makes their performances unforgettable. They often collaborate with Zoro and Mino. Related to Zoro and Mino.',                          strength:86, intelligence:77, creativity:94, kindness:99, humour:81, spirituality:70, speed:90, fame:69, eco:95 },
+    { token:'69', name:'Vale',  lum:13, area:'LUM-13', stars:8, overall:85, rarity:'uncommon', signed:false, superpower:'Reshapes materials with her mind',                      food:'Fennel Salad',        hobbies:'Cosmic architecture, Designing adaptive structures', personality:'TBD',               territory:'Northfen',      color:'#FF8A65', biography:'Vale is a cosmic architect with a heart of gold; she designs futuristic structures that adapt to alien environments. Her power to reshape materials with her mind often results in creations that are both functional and beautiful. Related to Zero and Cris.',     strength:99, intelligence:80, creativity:90, kindness:98, humour:88, spirituality:75, speed:81, fame:85, eco:70 },
+    { token:'60', name:'Angel', lum:14, area:'LUM-14', stars:8, overall:81, rarity:'uncommon', signed:true,  superpower:'Creates temporary protective shields',                  food:'Ceviche',             hobbies:'Exploring alien ruins, Artifact hunting',         personality:'TBD',                  territory:'Oldmarch',      color:'#F48FB1', biography:'Angel loves exploring alien ruins, searching for artifacts and clues about ancient civilizations. Their ability to create temporary protective shields makes them invaluable on dangerous expeditions. Related to Wise and Ali.',                                    strength:70, intelligence:66, creativity:92, kindness:95, humour:78, spirituality:82, speed:64, fame:92, eco:88 },
+    { token:'59', name:'Wise',  lum:15, area:'LUM-15', stars:8, overall:72, rarity:'uncommon', signed:true,  superpower:'Projects holograms from their hands',                  food:'Chicken Couscous',    hobbies:'Philosophy, Storytelling',                        personality:'TBD',                  territory:'Mugugno',     color:'#80DEEA', biography:'Wise is a philosopher and storyteller, weaving intricate tales that captivate audiences across the galaxy. Their superpower to project holograms from their hands enhances their storytelling, bringing characters and scenes to life. Related to Krew and Wine.',  strength:66, intelligence:65, creativity:66, kindness:86, humour:73, spirituality:88, speed:71, fame:73, eco:62 },
+    { token:'82', name:'Yasin', lum:16, area:'LUM-16', stars:9, overall:81, rarity:'rare',     signed:true,  superpower:'Charges objects with energy by touch',                 food:'Eggs Benedict',       hobbies:'Engineering, Crafting energy-efficient devices',  personality:'TBD',                  territory:'Bauscia', color:'#CE93D8', biography:'Yasin is a celestial engineer, crafting energy-efficient devices that run on cosmic energy. Their superpower to charge objects with energy by touch makes them a favorite collaborator in large-scale projects. Related to Zkon and Brim.',                           strength:86, intelligence:67, creativity:97, kindness:72, humour:92, spirituality:99, speed:64, fame:70, eco:84 },
+    { token:'61', name:'Ali',   lum:17, area:'LUM-17', stars:8, overall:77, rarity:'uncommon', signed:true,  superpower:'Detects ingredients with a single sniff',              food:'Sushi Platter',       hobbies:'Cooking, Galactic banquets',                      personality:'TBD',                  territory:'Ravenholm',     color:'#FFCC80', biography:'Ali is an intergalactic chef, known for their ability to blend the most exotic flavors from across the cosmos. Their superpower to detect ingredients with a single sniff makes them a culinary legend. Related to Angel and Zoro.',                               strength:62, intelligence:84, creativity:70, kindness:74, humour:93, spirituality:68, speed:67, fame:82, eco:93 },
+    { token:'19', name:'Mino',  lum:18, area:'LUM-18', stars:8, overall:76, rarity:'uncommon', signed:true,  superpower:'Can mimic the abilities of nearby Minaliens',          food:'Chili Con Carne',     hobbies:'Collecting rare minerals, Expeditions',           personality:'TBD',                  territory:'Stormgate',     color:'#A5D6A7', biography:'Mino is a collector of rare minerals from alien planets, fascinated by the unique properties of each find. Their superpower to mimic the abilities of nearby Minaliens often surprises their companions during expeditions. Related to Flux and Quip.',             strength:89, intelligence:74, creativity:79, kindness:70, humour:65, spirituality:100,speed:63, fame:73, eco:72 },
+    { token:'17', name:'Zoro',  lum:19, area:'LUM-19', stars:8, overall:82, rarity:'uncommon', signed:true,  superpower:'Creates holographic images to illustrate stories',     food:'Bibimbap',            hobbies:'Storytelling, Performing',                        personality:'TBD',                  territory:'The Spine',     color:'#FFA726', biography:'Zoro is an artist specializing in gravity-defying sculptures, creating mesmerizing displays that seem to float in mid-air. Their ability to manipulate magnetic fields often aids in crafting these stunning works. Related to Ali and Bash.',                      strength:73, intelligence:99, creativity:100,kindness:64, humour:70, spirituality:72, speed:85, fame:100,eco:76 },
+    { token:'37', name:'Sike',  lum:20, area:'LUM-20', stars:8, overall:79, rarity:'uncommon', signed:true,  superpower:'Converts sound waves into heat energy',                food:'TBD',                 hobbies:'Pranks, Comedy setups',                           personality:'TBD',                  territory:'Umbralia',      color:'#EF9A9A', biography:'Sike is a master of pranks and quick wit, always keeping others on their toes. Their superpower to convert sound waves into heat energy has created some unforgettable comedic setups. Quip often collaborates with Sike to craft elaborate scenarios. Related to Plop and Quip.',  strength:88, intelligence:82, creativity:86, kindness:97, humour:87, spirituality:65, speed:70, fame:71, eco:66 },
+  ];
+
+  // ... (the rest of your existing script, including territory owners, stars, etc.)
+
+  // ── Resolve which minister to show ──
+  const urlId = (new URLSearchParams(window.location.search).get('id') || '').toLowerCase();
+  const M = MINALIENS.find(m => m.name.toLowerCase() === urlId);
+
+  if (!M) {
+    document.getElementById('main-container').innerHTML = `
+      <div class="not-found">
+        <h2>Minister not found</h2>
+        <p style="color:rgba(255,255,255,0.4);margin-bottom:24px">No Minalien matches "<strong>${urlId || '?'}</strong>"</p>
+        <a href="minaliens.html">← Back to all Minaliens</a>
+      </div>`;
+  } else {
+    // ── Set page title & CSS accent colour ──
+    document.title = `${M.name} — Minister of ${M.area} — MINALIA`;
+    document.documentElement.style.setProperty('--accent-color', M.color);
+    document.documentElement.style.setProperty('--accent-glow', M.color + '18');
+
+    // Rarity display
+    const rarityMap = {
+      legendary: { label:'🔥 Legendary', bg:'rgba(255,200,0,0.12)', border:'rgba(255,200,0,0.35)', color:'#FFD700' },
+      rare:      { label:'💜 Rare',      bg:'rgba(192,132,252,0.12)', border:'rgba(192,132,252,0.35)', color:'#C084FC' },
+      uncommon:  { label:'💚 Uncommon',  bg:'rgba(74,222,128,0.1)',   border:'rgba(74,222,128,0.3)',   color:'#4ade80'  },
+    };
+    const rar = rarityMap[M.rarity] || rarityMap.uncommon;
+
+    // Stars HTML
+    function starsHtml(n, color) {
+      return Array(10).fill(0).map((_,i) =>
+        `<span style="color:${i<n?color:'rgba(255,255,255,0.12)'}">${i<n?'★':'☆'}</span>`
+      ).join('');
+    }
+
+    // Attribute bar
+    function attrBar(label, value, color) {
+      return `
+        <div class="attribute-bar">
+          <div class="attribute-info">
+            <span class="attribute-name">${label}</span>
+            <span class="attribute-value" style="color:${color}">${value}</span>
+          </div>
+          <div class="attribute-bar-bg">
+            <div class="attribute-bar-fill" style="width:${value}%;background:linear-gradient(90deg,${color},${color}88)"></div>
+          </div>
+        </div>`;
+    }
+
+    // Prev / Next
+    const idx = MINALIENS.indexOf(M);
+    const prev = MINALIENS[idx - 1];
+    const next = MINALIENS[idx + 1];
+
+    document.getElementById('main-container').innerHTML = `
+      <div class="breadcrumb">
+        <a href="map.html">Map</a>
+        <span style="opacity:.4">›</span>
+        <a href="minaliens.html">Minaliens</a>
+        <span style="opacity:.4">›</span>
+        <a href="district.html?code=${M.area}">Territory ${M.area}</a>
+        <span style="opacity:.4">›</span>
+        <span>${M.name}</span>
+      </div>
+
+      <div class="minister-layout">
+        <!-- LEFT -->
+        <div class="minister-left">
+          <div class="nft-card">
+            <div class="nft-media-wrap" id="nftMediaWrap">
+              <video id="nftIntroVideo" class="nft-image" style="display:none" playsinline muted></video>
+              <img id="nftStaticImg" src="/nfts/${M.token}_${M.name.toUpperCase()}.png" alt="${M.name} NFT" class="nft-image"
+                onerror="this.src=&quot;images/profile_icons/demo_me.jpg&quot;" />
+            </div>
+            <div class="nft-meta">
+              <span class="nft-token">NFT #${M.token}</span>
+              <span class="rarity-badge" style="background:${rar.bg};border:1px solid ${rar.border};color:${rar.color}">${rar.label}</span>
+            </div>
+            <div class="stars-row">${starsHtml(M.stars, M.color)}</div>
+            ${M.signed ? `<div style="display:inline-block;margin-top:10px;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(96,255,171,0.1);border:1px solid rgba(96,255,171,0.3);color:#60ffab">✍️ Signed</div>` : ''}
+          </div>
+
+          <a href="minaliens.html" class="all-ministers-btn">👾 View All 20 Minaliens</a>
+
+          <div class="minister-nav">
+            ${prev
+              ? `<a href="minalien.html?id=${prev.name.toLowerCase()}" class="minister-nav-btn">← ${prev.name}</a>`
+              : `<span class="minister-nav-btn disabled">← First</span>`}
+            ${next
+              ? `<a href="minalien.html?id=${next.name.toLowerCase()}" class="minister-nav-btn">${next.name} →</a>`
+              : `<span class="minister-nav-btn disabled">Last →</span>`}
+          </div>
+
+          <div class="consult-panel">
+            <div class="consult-title">Ministerial Consultation</div>
+            <div class="consult-desc">Request guidance on development, financing, and territorial strategy for ${M.area}.</div>
+            <button class="consult-btn" onclick="consultMinister()">⚡ Consult ${M.name}</button>
+            <a href="map.html?highlight=${M.area}" class="back-btn">← Return to Map · ${M.area}</a>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="minister-right">
+          <div class="minister-hero">
+            <div class="minister-hero-inner">
+              <!-- Left: description + details -->
+              <div class="minister-hero-desc">
+                <a href="district.html?code=${M.area}" class="territory-badge" style="color:${M.color};background:${M.color}18;border-color:${M.color}44">
+                  🗺 Minister of ${M.area} · ${M.territory}
+                </a>
+                <div class="minister-name" style="color:${M.color}">${M.name}</div>
+                <div class="minister-bio">${M.biography}</div>
+                <div class="details-grid">
+                  <div class="detail-box">
+                    <div class="detail-label">Superpower</div>
+                    <div class="superpower-value" style="color:${M.color}">⚡ ${M.superpower}</div>
+                  </div>
+                  <div class="detail-box">
+                    <div class="detail-label">Favorite Food</div>
+                    <div class="detail-value">${M.food}</div>
+                  </div>
+                  <div class="detail-box">
+                    <div class="detail-label">Hobbies</div>
+                    <div class="detail-value">${M.hobbies}</div>
+                  </div>
+                  <div class="detail-box">
+                    <div class="detail-label">Personality</div>
+                    <div class="detail-value">${M.personality}</div>
+                  </div>
+                </div>
+                <div class="overall-score" style="background:${M.color}10;border-color:${M.color}33">
+                  <span class="overall-label">Overall Score</span>
+                  <span class="overall-value" style="color:${M.color}">${M.overall}</span>
+                </div>
+
+                <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07);">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:12px;">
+                    👥 Territory Owners <span id="ownersCount" style="font-weight:400;color:rgba(255,255,255,0.2);margin-left:6px;"></span>
+                  </div>
+                  <div id="ownersGrid" style="display:flex;flex-wrap:wrap;gap:12px;min-height:20px;">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.25);font-style:italic;">Loading…</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: attributes -->
+              <div class="minister-hero-attrs">
+                <div class="attrs-inline-title">⚡ Attributes</div>
+                <div class="attributes-grid">
+                  ${attrBar('Strength',    M.strength,    M.color)}
+                  ${attrBar('Intelligence',M.intelligence,M.color)}
+                  ${attrBar('Creativity',  M.creativity,  M.color)}
+                  ${attrBar('Kindness',    M.kindness,    M.color)}
+                  ${attrBar('Humour',      M.humour,      M.color)}
+                  ${attrBar('Spirituality',M.spirituality,M.color)}
+                  ${attrBar('Speed',       M.speed,       M.color)}
+                  ${attrBar('Fame',        M.fame,        M.color)}
+                  ${attrBar('Eco-Friendly',M.eco,         M.color)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Minister Treasury -->
+          <div class="attributes-panel" id="treasury-panel">
+            <div class="accordion-header" onclick="toggleTreasury()">
+              <div class="accordion-title">💰 Minister Treasury</div>
+              <span class="accordion-icon" id="treasury-icon">▼</span>
+            </div>
+            <div class="accordion-body" id="treasury-body">
+              <div class="treasury-panel">
+                <div class="treasury-panel-title" id="treasury-loading">Loading treasury…</div>
+                <div id="treasury-content" style="display:none;">
+                  <div class="treasury-total-row">
+                    <span class="treasury-total-amount" id="treasury-balance">—</span>
+                    <span class="treasury-total-label">$ARKIS Balance</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;margin:10px 0 14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,144,32,0.05);border:1px solid rgba(255,144,32,0.15);border-radius:6px;">
+                      <span style="font-size:11px;color:rgba(255,144,32,0.8);font-weight:600;">$PLASM</span>
+                      <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;" id="treasury-plasm">—</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(80,160,255,0.05);border:1px solid rgba(80,160,255,0.15);border-radius:6px;">
+                      <span style="font-size:11px;color:rgba(80,160,255,0.8);font-weight:600;">$WIRE</span>
+                      <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;" id="treasury-wire">—</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(70,220,130,0.05);border:1px solid rgba(70,220,130,0.15);border-radius:6px;">
+                      <span style="font-size:11px;color:rgba(70,220,130,0.8);font-weight:600;">$LICHEN</span>
+                      <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;" id="treasury-lichen">—</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(190,90,255,0.05);border:1px solid rgba(190,90,255,0.15);border-radius:6px;">
+                      <span style="font-size:11px;color:rgba(190,90,255,0.8);font-weight:600;">$SPORE</span>
+                      <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;" id="treasury-spore">—</span>
+                    </div>
+                  </div>
+                  <div class="treasury-cols">
+                    <div class="treasury-col income">
+                      <div class="treasury-col-lbl">Tax this week</div>
+                      <div class="treasury-col-val" id="treasury-tax-week">—</div>
+                    </div>
+                    <div class="treasury-col income">
+                      <div class="treasury-col-lbl">Tax all time</div>
+                      <div class="treasury-col-val" id="treasury-tax-total">—</div>
+                    </div>
+                    <div class="treasury-col units">
+                      <div class="treasury-col-lbl">Held units</div>
+                      <div class="treasury-col-val" id="treasury-units">—</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;padding:8px 10px;background:rgba(255,140,60,0.05);border:1px solid rgba(255,140,60,0.15);border-radius:7px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(255,180,80,0.6);">🗑 Demolish refunds paid out</span>
+                    <span style="font-size:11px;font-weight:700;color:rgba(255,180,80,0.85);" id="treasury-demolish-total">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    // ── Load owners + treasury ──
+    loadTerritoryOwners();
+    loadTreasury();
+
+    // ── Ticker (unchanged) ──
+    const tickerItems = [
+      { icon:'⚡', color:'alert',  text:`${M.name}'s superpower: ${M.superpower}` },
+      { icon:'🗺️', color:'info',   text:`${M.name} governs ${M.territory} (${M.area}) — 16 land units available` },
+      { icon:'💡', color:'info',   text:`Overall score: ${M.overall} / 100 · Rarity: ${M.rarity}` },
+      { icon:'🏗️', color:'development', text:'Consult your minister for territory development strategy' },
+      { icon:'👾', color:'sale',   text:'View all 20 Minaliens — each governs a unique territory in Luminaea' },
+    ];
+    const scroll = document.getElementById('ticker-scroll');
+    if (scroll) {
+      const doubled = [...tickerItems, ...tickerItems];
+      scroll.innerHTML = doubled.map(i =>
+        `<div class="ticker-item"><span class="ticker-icon ${i.color}">${i.icon}</span><span>${i.text}</span></div>`
+      ).join('');
+    }
+  }
+
+
+
+  
+// ── Avatar URL resolver ──
+// Priority: OG local image → DB avatar URL → Supabase filename → unavatar.io → null
+const OG_AVATARS = {
+  'minaliens':       'images/profile_icons/og_minaliens.jpg',
+  'MutenRoshi7777':  'images/profile_icons/og_mutenroshi7777.jpg',
+  'crypto8519':      'images/profile_icons/og_crypto8519.jpg',
+  'Backwoodbr':      'images/profile_icons/og_backwoodbr88471.jpg',
+  'MinaPunksNFT':    'images/profile_icons/og_minapunksnft.jpg',
+  'NeilFurn':        'images/profile_icons/og_neilfurn.jpg',
+  'FlushtheFashion': 'images/profile_icons/og_flushthefashion.jpg',
+  'kalkillas':       'images/profile_icons/og_kalkillas.jpg',
+};
+function resolveAvatar(av, xUsername, username) {
+  if (username && OG_AVATARS[username]) return OG_AVATARS[username];
+  if (av && (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/'))) return av;
+  if (av && av.length > 8 && !/\p{Emoji}/u.test(av)) return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+  if (xUsername) return 'https://unavatar.io/twitter/' + xUsername.replace(/^@/, '');
+  return null;
+}
+
+  // ══════════════════════════════════════════════════════════════
+  //  TERRITORY OWNERS — real DB + demo fallback (unchanged)
+  // ══════════════════════════════════════════════════════════════
+  async function loadTerritoryOwners() {
+    const grid  = document.getElementById('ownersGrid');
+    const count = document.getElementById('ownersCount');
+    if (!grid || !count || !M) return;
+
+    const cu = window.currentUser || window._sessionUser;
+
+    // Wait for supabase
+    let db = null;
+    for (let i = 0; i < 50; i++) {
+      if (window.supabase && typeof window.supabase.from === 'function') { db = window.supabase; break; }
+      if (window.supabaseClient && typeof window.supabaseClient.from === 'function') { db = window.supabaseClient; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    let dbOwners = [];
+    if (db) {
+      try {
+        const { data: units } = await db
+          .from('units')
+          .select('owner_id')
+          .like('unit_code', M.area + '-%')
+          .not('owner_id', 'is', null);
+
+        if (units && units.length) {
+          const ownerIds = [...new Set(units.map(u => u.owner_id))];
+          const { data: users } = await db
+            .from('users')
+            .select('id, username, avatar_url, avatar, x_username')
+            .in('id', ownerIds);
+          if (users) dbOwners = users;
+        }
+      } catch(e) { console.warn('DB query failed:', e.message); }
+    }
+
+    const seen = new Set();
+    const allOwners = [
+      ...dbOwners.map(u => {
+        const av = resolveAvatar(u.avatar || u.avatar_url || null, u.x_username, u.username);        return { username: u.username, avatar: av };
+      })
+    ].filter(o => {
+      if (seen.has(o.username)) return false;
+      seen.add(o.username);
+      return true;
+    });
+
+    count.textContent = allOwners.length + ' owner' + (allOwners.length !== 1 ? 's' : '');
+
+    if (!allOwners.length) {
+      grid.innerHTML = `<div class="owners-empty">No units claimed yet — <a href="map.html?highlight=${M.area}" style="color:#4ade80;text-decoration:none">be the first!</a></div>`;
+      return;
+    }
+
+    grid.innerHTML = allOwners.map(owner => {
+      const isSelf = cu && cu.username === owner.username;
+      const profileUrl = isSelf
+        ? 'profile.html'
+        : 'profile.html?user=' + encodeURIComponent(owner.username);
+      const initials = (owner.username || '?').substring(0,2).toUpperCase();
+      const imgHtml = owner.avatar
+        ? `<img src="${owner.avatar}" alt="${owner.username}" onerror="this.style.display=&quot;none&quot;;this.nextElementSibling.style.display=&quot;flex&quot;;" style="width:44px;height:44px;object-fit:cover;object-position:center top;display:block;">`
+        : '';
+      const fallbackHtml = `<span style="display:${owner.avatar ? 'none' : 'flex'};width:44px;height:44px;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#FFE08A;">${initials}</span>`;
+      return `<a href="${profileUrl}" title="${owner.username}" style="display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;flex-shrink:0;">
+        <div style="width:44px;height:44px;border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);background:#151020;flex-shrink:0;">
+          ${imgHtml}${fallbackHtml}
+        </div>
+        <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.55);max-width:52px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${owner.username}</span>
+        ${isSelf ? '<span style="font-size:9px;color:#60FFAB;font-weight:700;">You</span>' : ''}
+      </a>`;
+    }).join('');
+  }
+
+  // ── Accordion toggles ──
+  // (attrs accordion removed — attributes shown inline)
+  function toggleTreasury() {
+    document.getElementById('treasury-body').classList.toggle('collapsed');
+    document.getElementById('treasury-icon').classList.toggle('collapsed');
+  }
+
+  // ── Treasury loader ──
+  async function loadTreasury() {
+    if (!M) return;
+    let db = null;
+    for (let i = 0; i < 50; i++) {
+      if (window.supabase && typeof window.supabase.from === 'function') { db = window.supabase; break; }
+      if (window.supabaseClient && typeof window.supabaseClient.from === 'function') { db = window.supabaseClient; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    if (!db) return;
+    try {
+      const { data: trow } = await db
+        .from('treasuries').select('token_balance,plasm_balance,wire_balance,lichen_balance,spore_balance')
+        .eq('territory_code', M.area).single();
+
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+      const weekStr = weekStart.toISOString().split('T')[0];
+
+      const { data: weekTx } = await db
+        .from('treasury_transactions').select('amount')
+        .eq('territory_code', M.area).eq('type','tax').eq('direction','in')
+        .gte('created_at', weekStr);
+
+      const { data: allTx } = await db
+        .from('treasury_transactions').select('amount')
+        .eq('territory_code', M.area).eq('type','tax').eq('direction','in');
+
+      // Demolish refunds paid out from this treasury
+      const { data: demolishTx } = await db
+        .from('treasury_transactions').select('amount')
+        .eq('territory_code', M.area).eq('type','demolish_refund').eq('direction','out');
+
+      const { data: units } = await db
+        .from('units').select('unit_code')
+        .like('unit_code', M.area + '-%')
+        .not('owner_id', 'is', null);
+
+      const bal          = trow ? Number(trow.token_balance) : 0;
+      const weekInc      = (weekTx    || []).reduce((s,r) => s + Number(r.amount), 0);
+      const totalInc     = (allTx     || []).reduce((s,r) => s + Number(r.amount), 0);
+      const totalDemolish= (demolishTx|| []).reduce((s,r) => s + Number(r.amount), 0);
+      const heldCnt      = (units     || []).length;
+
+      function fmt(n) {
+        if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+        if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+        return n.toLocaleString();
+      }
+
+      const balEl = document.getElementById('treasury-balance');
+      balEl.textContent = bal.toLocaleString() + ' ARKIS';
+      balEl.style.color = M.color;
+
+      // Other token balances
+      const fmtTok = n => Number(n || 0).toLocaleString();
+      const plasmEl  = document.getElementById('treasury-plasm');
+      const wireEl   = document.getElementById('treasury-wire');
+      const lichenEl = document.getElementById('treasury-lichen');
+      const sporeEl  = document.getElementById('treasury-spore');
+      if (plasmEl)  plasmEl.textContent  = fmtTok(trow?.plasm_balance);
+      if (wireEl)   wireEl.textContent   = fmtTok(trow?.wire_balance);
+      if (lichenEl) lichenEl.textContent = fmtTok(trow?.lichen_balance);
+      if (sporeEl)  sporeEl.textContent  = fmtTok(trow?.spore_balance);
+
+      document.getElementById('treasury-tax-week').textContent  = weekInc  > 0 ? '+' + fmt(weekInc)  : '—';
+      document.getElementById('treasury-tax-total').textContent = totalInc > 0 ? '+' + fmt(totalInc) : '—';
+      document.getElementById('treasury-units').textContent     = heldCnt + ' / 16';
+
+      const demolishEl = document.getElementById('treasury-demolish-total');
+      if (demolishEl) demolishEl.textContent = totalDemolish > 0 ? '−' + fmt(totalDemolish) : '—';
+
+      document.getElementById('treasury-loading').style.display = 'none';
+      document.getElementById('treasury-content').style.display = '';
+    } catch(e) {
+      console.warn('Treasury load failed:', e.message);
+      document.getElementById('treasury-loading').textContent = 'Treasury unavailable.';
+    }
+  }
+
+  // ── Consult ──
+  function consultMinister() {
+    if (!M) return;
+    alert(`Minister ${M.name} consultation coming soon!\n\nPersonalised guidance for ${M.area} — ${M.territory}.`);
+  }
+
+  // ── Lum clock (inline) ──
+  const LUM_EPOCH_MS = 1738368000000;
+  const LUM_SEASONS = [
+    {name:'The Kindling',symbol:'🔥',color:'#FF6B35',startDay:1,endDay:73},
+    {name:'The Bloom',   symbol:'🌿',color:'#60FFab',startDay:74,endDay:146},
+    {name:'The Drift',   symbol:'💨',color:'#50B0FF',startDay:147,endDay:219},
+    {name:'The Freeze',  symbol:'❄️', color:'#B0E0FF',startDay:220,endDay:292},
+    {name:'The Surge',   symbol:'⚡',color:'#FFE08A',startDay:293,endDay:365},
+  ];
+  function _lumTime() {
+    const ms = Date.now() - LUM_EPOCH_MS;
+    const lumMins = Math.floor(ms / (3600000 / 1440));
+    const minute = lumMins % 60, hour = Math.floor(lumMins / 60) % 24;
+    const dayTotal = Math.floor(lumMins / 1440), year = Math.floor(dayTotal / 365) + 1;
+    const dayOfYear = (dayTotal % 365) + 1;
+    const season = LUM_SEASONS.find(s => dayOfYear >= s.startDay && dayOfYear <= s.endDay) || LUM_SEASONS[0];
+    return { year, month: Math.min(12, Math.ceil(dayOfYear / 30.417)), dayOfYear, hour, minute, season };
+  }
+  function _updateClock() {
+    const t = _lumTime();
+    const te = document.getElementById('ticker-clock');
+    const bx = document.getElementById('ticker-clock-box');
+    if (te) te.textContent = `YEAR ${t.year} · MONTH ${t.month} · DAY ${t.dayOfYear} · ${String(t.hour).padStart(2,'0')}:${String(t.minute).padStart(2,'0')}`;
+    if (bx) { bx.style.borderLeftColor = t.season.color; bx.title = `${t.season.name} · Year ${t.year}`; }
+  }
+  _updateClock();
+  setInterval(_updateClock, 1000);
+  </script>
+
+  <script src="lum-time.js?v=20260306b"></script>
+  <script>document.addEventListener('DOMContentLoaded', function(){ if(typeof startLumClock==='function') startLumClock(); });</script>
+  <script src="nav-audio.js"></script>
+<script>
+  document.addEventListener('navLoaded', function() {
+    if (window.initNavAudio) window.initNavAudio();
+  });
+</script>
+
+  <script>
+    // ── AUTH GATE ── Redirect to login if not connected with Auro wallet
+    (function() {
+      var session = null;
+      try { session = JSON.parse(localStorage.getItem('minalia_session')); } catch(e) {}
+      if (!session || !session.wallet_address) {
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
+<script>
+// Minalien intro video — play once then show static image
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const id = (params.get('id') || '').toLowerCase();
+  if (!id) return;
+
+  const video = document.getElementById('nftIntroVideo');
+  const img   = document.getElementById('nftStaticImg');
+  if (!video || !img) return;
+
+  const src = `videos/${id}.mp4`;
+
+  // Probe whether the video file exists
+  fetch(src, { method: 'HEAD' })
+    .then(r => {
+      if (!r.ok) throw new Error('no video');
+      // Video exists — show it, hide image
+      video.src = src;
+      video.style.display = 'block';
+      img.style.display   = 'none';
+      video.play().catch(() => {});
+      // When it ends, swap back to image
+      video.addEventListener('ended', () => {
+        // Seek to last frame and freeze — no swap needed
+        video.currentTime = video.duration - 0.001;
+      }, { once: true });
+    })
+    .catch(() => {
+      // No video for this minalien — just show the image (already visible)
+    });
+})();
+</script>
+</body>
+</html>

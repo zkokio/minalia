@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<!-- Version 2.1 - Compact owner cards, square avatars, reduced image size -->
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LUMINAEA - Territory Map</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { 
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1520 100%);
+      overflow:hidden; 
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; 
+      color:#fff; 
+    }
+    #map { width:100vw; height:100vh; display:block; cursor:grab; }
+    #map:active { cursor:grabbing; }
+
+    .hud {
+      position: fixed; top: 100px; left: 20px;
+      background: rgba(25,20,30,0.95);
+      border: 1px solid rgba(255,224,138,0.2);
+      border-radius: 16px;
+      padding: 18px 20px 14px;
+      min-width: 260px;
+      max-width: 320px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+    .hud-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.35);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .hud .subtitle {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 14px;
+      line-height: 1.3;
+    }
+    .hud-divider {
+      height: 1px;
+      background: rgba(255,224,138,0.1);
+      margin-bottom: 12px;
+    }
+    .hud .stats-inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+    .hud .stat-inline {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .hud .stat-inline.clickable { cursor: pointer; transition: all 0.2s; }
+    .hud .stat-inline.clickable:hover {
+      background: rgba(255,224,138,0.06);
+      border-color: rgba(255,224,138,0.18);
+    }
+    .hud .stat-inline .label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.38);
+      font-weight: 600;
+    }
+    .hud .stat-inline .value {
+      color: #FFE08A;
+      font-weight: 800;
+      font-size: 17px;
+      line-height: 1;
+    }
+    .hud .more-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: rgba(255,224,138,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .hud .more-info:hover { color: #FFE08A; }
+    .hud .more-info-arrow {
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+    .hud .more-info:hover .more-info-arrow { transform: translateX(3px); }
+
+    .stats {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-box {
+      background: rgba(255,224,138,0.08);
+      border: 1px solid rgba(255,224,138,0.2);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .stat-box-clickable:hover {
+      background: rgba(255,224,138,0.15);
+      border-color: rgba(255,224,138,0.4);
+      transform: translateY(-2px);
+    }
+    .stat-box .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #a8aab8;
+      margin-bottom: 4px;
+    }
+    .stat-box .value {
+      font-size: 20px;
+      font-weight: 900;
+      color: #FFE08A;
+    }
+    
+    /* Player panel */
+    .player-panel {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: rgba(18,14,24,0.92);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 10px;
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      min-width: 340px;
+      max-width: 400px;
+      max-height: calc(100vh - 120px);
+      display: flex;
+      flex-direction: column;
+      transition: min-width 0.2s ease;
+    }
+    .player-panel.collapsed {
+      min-width: 0;
+    }
+    .player-panel.collapsed .player-list {
+      display: none;
+    }
+    .player-panel-title {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(255,224,138,0.6);
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .player-panel.collapsed .player-panel-title {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .panel-toggle-btn {
+      background: none;
+      border: none;
+      color: rgba(255,224,138,0.5);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      transition: color 0.15s, transform 0.2s ease;
+      flex-shrink: 0;
+    }
+    .panel-toggle-btn:hover {
+      color: rgba(255,224,138,0.9);
+    }
+    .player-panel.collapsed .panel-toggle-btn {
+      transform: rotate(180deg);
+    }
+    .player-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px;
+      min-height: 0;
+    }
+    .player-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .player-list::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+    .player-list::-webkit-scrollbar-thumb {
+      background: rgba(255,224,138,0.3);
+      border-radius: 3px;
+    }
+    .player-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,224,138,0.5);
+    }
+    .player-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .player-item:hover {
+      background: rgba(255,224,138,0.06);
+      border-color: rgba(255,224,138,0.2);
+    }
+    .player-item.active {
+      background: rgba(255,224,138,0.10);
+      border-color: rgba(255,224,138,0.4);
+    }
+    .player-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+    .player-item.active .player-avatar {
+      border-color: rgba(255,224,138,0.9);
+      box-shadow: 0 0 12px rgba(255,224,138,0.5);
+    }
+    .player-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .player-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0.02em;
+    }
+    .player-item.active .player-name {
+      color: #FFE08A;
+    }
+    .player-units {
+      font-size: 9px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 1px;
+    }
+    .player-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      opacity: 0.5;
+    }
+    .player-item.active .player-dot {
+      opacity: 1;
+      box-shadow: 0 0 6px currentColor;
+    }
+    @keyframes thumbGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255,224,138,0.8), 0 0 40px rgba(255,224,138,0.4); }
+      50% { box-shadow: 0 0 30px rgba(255,224,138,1.0), 0 0 60px rgba(255,224,138,0.6); }
+    }
+
+
+    
+    /* ── POPUP CARD — matches popup.png design ── */
+    .card{
+      width: 300px;
+      max-width: calc(100vw - 40px);
+      border-radius: 16px;
+      padding: 0;
+      background: rgba(16, 12, 22, 0.98);
+      border: 1px solid rgba(255,224,138,0.18);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.75);
+      backdrop-filter: blur(14px);
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      z-index: 9999;
+      right: auto;
+      top: auto;
+      transform: none;
+      display: none;
+      overflow: hidden;
+    }
+
+    /* TOP SECTION: 2-column grid — image | info */
+    .card-grid{
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 0;
+      align-items: stretch;
+      min-height: 200px;
+    }
+    .imgwrap{
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+      position: relative;
+      padding: 10px 8px 8px 10px;
+      gap: 6px;
+    }
+    .unit-status-badge {
+      width: 100%;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 6px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .unit-status-badge.badge--sale {
+      background: rgba(80,170,255,0.15);
+      border: 1px solid rgba(80,170,255,0.4);
+      color: rgba(80,170,255,0.95);
+    }
+    .unit-status-badge.badge--auction {
+      background: rgba(255,140,0,0.15);
+      border: 1px solid rgba(255,140,0,0.4);
+      color: rgba(255,140,0,0.95);
+    }
+    .minalien-img{
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: block;
+      object-fit: contain;
+      object-position: center top;
+      border-radius: 8px;
+    }
+    .meta{
+      position: relative;
+      padding: 16px 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 0;
+    }
+    /* Owner block: compact label + avatar + name row at bottom of left col */
+    .owner-inline {
+      width: 100%;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .owner-inline-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.35);
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .owner-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .owner-username-link {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      transition: border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .owner-username-link:hover {
+      border-color: rgba(255,224,138,0.7);
+      color: rgba(255,224,138,0.95);
+    }
+    /* Minister name - large */
+    .title{
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 8px;
+      color: #fff;
+      word-break: break-word;
+    }
+    .title.nexus-title {
+      font-size: 18px;
+    }
+    /* DISTRICT row */
+    .kv-district {
+      margin-bottom: 8px;
+    }
+    .kv-district .k {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .kv-district .v {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #fff;
+      line-height: 1.1;
+      word-break: break-word;
+    }
+    /* UNIT ID row */
+    .kv{
+      margin-bottom: 0;
+    }
+    .k{
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .v{
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #fff;
+      line-height: 1.1;
+    }
+    /* highlight the unit letter in the ID */
+    .unit-letter-highlight {
+      color: #c084fc;
+      font-weight: 900;
+    }
+
+    /* PILLS - 2×2 grid */
+    .pills-under{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 7px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.80);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 10px;
+      line-height: 1;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .pill::before{
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.3);
+      flex: 0 0 auto;
+    }
+
+    .pill.pill--status.is-claimed::before{ background: rgba(60, 255, 170, 0.95); box-shadow: 0 0 5px rgba(60,255,170,0.4); }
+    .pill.pill--status.is-unclaimed::before{ background: rgba(255, 220, 90, 0.95); box-shadow: 0 0 5px rgba(255,220,90,0.4); }
+    .pill.pill--status.is-forsale::before{ background: rgba(80, 170, 255, 0.95); box-shadow: 0 0 5px rgba(80,170,255,0.4); }
+    .pill.pill--status.is-auction::before{ background: rgba(255, 140, 0, 0.95); box-shadow: 0 0 5px rgba(255,140,0,0.4); }
+    .pill--territory::before{
+      background: rgba(255,224,138,0.95);
+    }
+    .pill--status.is-claimed::before{
+      background: rgba(96, 255, 171, 0.95);
+    }
+    .pill--status.is-unclaimed::before{
+      background: rgba(255,224,138,0.85);
+    }
+
+    /* BOTTOM SECTION — view unit button full width */
+    .bottom{
+      padding: 10px 14px 14px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* owner-col overrides removed — owner now inline in meta */
+    .view-unit-btn-sm {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+    }
+    .status-text{
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      padding: 0;
+    }
+    .claim-link{
+      color: rgba(255,224,138,0.95);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    /* OWNER CARD in popup */
+    .owner-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px;
+      padding: 9px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .owner-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: rgba(255,224,138,0.15);
+      border: 1px solid rgba(255,224,138,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .owner-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .owner-card .owner-info {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+    }
+    .owner-card .owner-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left !important;
+    }
+    .owner-card .owner-score {
+      font-size: 10px;
+      color: rgba(255,224,138,0.6);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left !important;
+    }
+    /* 2-COLUMN ACTION BUTTONS */
+    .owner-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .owner-btn {
+      background: rgba(255,224,138,0.12);
+      border: 1px solid rgba(255,224,138,0.28);
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,224,138,0.95);
+      cursor: pointer;
+      transition: all 0.18s;
+      text-decoration: none;
+      text-align: center;
+      white-space: nowrap;
+      min-width: 68px;
+      letter-spacing: 0.04em;
+    }
+    .owner-btn:hover {
+      background: rgba(255,224,138,0.22);
+      border-color: rgba(255,224,138,0.5);
+    }
+
+    /* CLOSE BUTTON */
+    .close-btn{
+      display: none;
+    }
+
+    /* VIEW UNIT LINK */
+    #ownerLink a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+    }
+    #ownerLink a:hover { color: rgba(255,255,255,0.85); }
+
+    /* VIEW UNIT PAGE BUTTON */
+    .view-unit-btn {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 7px;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .view-unit-btn:hover {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.85);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    /* Compact owner avatar grid (for 4+ owners) */
+    .owner-avatar-compact {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: rgba(255,224,138,0.2);
+      border: 1px solid rgba(255,224,138,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .owner-avatar-compact:hover {
+      background: rgba(255,224,138,0.3);
+      transform: scale(1.1);
+    }
+    
+    /* Hover tooltip for unit IDs */
+    .hex-tooltip {
+      position: fixed;
+      background: rgba(18,14,24,0.96);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      padding: 8px 12px;
+      pointer-events: none;
+      z-index: 10000;
+      display: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+    }
+    .hex-tooltip.active {
+      display: block;
+      animation: tooltipFadeIn 0.15s ease;
+    }
+    @keyframes tooltipFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tooltip-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+    .tooltip-value {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(255,224,138,0.95);
+    }
+    
+    @media (max-width: 760px){
+      .card-grid{ grid-template-columns: 1fr; }
+      .minalien-img{ width: 200px; }
+      .meta{ min-height: auto; }
+      .title{ font-size: 30px; }
+      .v{ font-size: 20px; }
+      .status-text{ font-size: 16px; }
+      .hex-watermark{ display:none; }
+    }
+  
+    
+    
+      to   { transform: translate3d(1000px, 0px, 0px); }
+    }
+    
+    
+
+/* ── TWINKLING STARS ── */
+@keyframes move-background {
+  from { -webkit-transform: translate3d(0px,0px,0px); transform: translate3d(0px,0px,0px); }
+  to   { -webkit-transform: translate3d(1000px,0px,0px); transform: translate3d(1000px,0px,0px); }
+}
+.stars {
+  background: black url('images/stars.png') repeat;
+  position: fixed;
+  top: 0; bottom: 0; left: 0; right: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+.twinkling {
+  width: 10000px;
+  height: 100%;
+  background: transparent url('images/twinkling.png') repeat;
+  background-size: 1000px 1000px;
+  position: fixed;
+  right: 0; top: 0; bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-animation: move-background 70s linear infinite;
+  animation: move-background 70s linear infinite;
+}
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .earth-footer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      opacity: 0.2;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    }
+    /* ── TWINKLING STARS ── */
+    @keyframes move-background {
+      from { -webkit-transform: translate3d(0px,0px,0px); transform: translate3d(0px,0px,0px); }
+      to   { -webkit-transform: translate3d(1000px,0px,0px); transform: translate3d(1000px,0px,0px); }
+    }
+    .stars {
+      background: black url('images/stars.png') repeat;
+      position: fixed;
+      top: 0; bottom: 0; left: 0; right: 0;
+      z-index: -2;
+      pointer-events: none;
+    }
+    .twinkling {
+      width: 10000px;
+      height: 100%;
+      background: transparent url('images/twinkling.png') repeat;
+      background-size: 1000px 1000px;
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      z-index: -1;
+      pointer-events: none;
+      -webkit-animation: move-background 70s linear infinite;
+      animation: move-background 70s linear infinite;
+    }
+</style>
+  <link rel="stylesheet" href="style.css?v=20260306c">
+
+  <!-- Supabase JS (for popup resident lookup) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Site config (expects window.CONFIG.SUPABASE_URL / SUPABASE_ANON_KEY) -->
+  <script src="unit_data.js?v=20260312b"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+
+</head>
+
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+<script src="load-nav.js"></script>
+<script>
+  // Initialize Supabase client for public read access (minaliens lookup).
+  // This sets the global `supabase` variable to the client, which the rest of the map code expects.
+  (function(){
+    try{
+      if (window.supabase && typeof window.supabase.createClient === "function" &&
+          window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_ANON_KEY){
+        window.supabase = window.supabase.createClient(
+          window.CONFIG.SUPABASE_URL,
+          window.CONFIG.SUPABASE_ANON_KEY
+        );
+        console.log("Supabase client initialised");
+      } else {
+        console.warn("Supabase not initialised (missing supabase-js or CONFIG).");
+      }
+    }catch(e){
+      console.warn("Supabase init failed:", e);
+    }
+  })();
+</script>
+
+<!-- News ticker tape (loaded after supabase init to avoid conflicts) -->
+
+  <canvas id="map"></canvas>
+
+  <div class="hud">
+    <div class="hud-title">World</div>
+    <div class="subtitle">Luminaea: The Continent of Light and Harmony</div>
+    <div class="hud-divider"></div>
+    <div class="stats-inline">
+      <div class="stat-inline">
+        <span class="label">Spaces</span>
+        <span class="value" id="totalSpaces">20</span>
+      </div>
+      <div class="stat-inline">
+        <span class="label">Units</span>
+        <span class="value" id="totalUnits">320</span>
+      </div>
+      <div class="stat-inline clickable" id="forSaleBox">
+        <span class="label">For Sale</span>
+        <span class="value" id="forSaleCount">0</span>
+      </div>
+      <div class="stat-inline clickable" id="auctionBox">
+        <span class="label">Auctions</span>
+        <span class="value" id="auctionCount">0</span>
+      </div>
+      <div class="stat-inline" style="grid-column:span 2;">
+        <span class="label">Population</span>
+        <span class="value" id="totalPopCount" style="color:#60ffab">— <span id="popTrend" style="font-size:12px;">↑</span></span>
+      </div>
+    </div>
+    <a href="#" class="more-info" onclick="showLuminaeaInfo(event)">
+      More about Luminaea <span class="more-info-arrow">→</span>
+    </a>
+  </div>
+
+  <!-- Player Panel -->
+  <div id="playerPanel" class="player-panel collapsed">
+    <div class="player-panel-title" onclick="togglePlayerPanel()">
+      <span>⬡ Active Players</span>
+      <button class="panel-toggle-btn" id="panelToggleBtn" title="Show/hide players" aria-label="Toggle player panel">▶</button>
+    </div>
+    <div class="player-list" id="playerList">
+      <div class="player-skeleton" style="padding:10px 8px;color:rgba(255,255,255,0.25);font-size:11px;text-align:center;">Loading players…</div>
+    </div>
+  </div>
+
+  <!-- Hover tooltip for unit IDs -->
+  <div class="hex-tooltip" id="hexTooltip">
+    <div class="tooltip-value" id="tooltipUnitId">—</div>
+  </div>
+
+  <div class="card" id="card">
+    <button class="close-btn" id="close" aria-label="Close">✕</button>
+
+    <!-- 2-column: image | name+district+unitid+owner -->
+    <div class="card-grid">
+
+      <!-- Col 1: Portrait + status badge -->
+      <div class="imgwrap">
+        <img id="minalienImg" class="minalien-img" alt="Minalien NFT" style="display:none;" />
+        <div id="unitStatusBadge" class="unit-status-badge" style="display:none;"></div>
+      </div>
+
+      <!-- Col 2: All info stacked -->
+      <div class="meta">
+        <div class="title" id="minalienName">—</div>
+
+        <div class="kv-district">
+          <div class="k" id="districtLabel">District</div>
+          <div class="v" id="districtName">—</div>
+        </div>
+
+        <div class="kv">
+          <div class="v" id="unitIdV" style="cursor:pointer;">—</div>
+        </div>
+
+        <div class="status-text" id="statusV" style="display:none;"></div>
+
+        <div id="ownersSection" style="display:none;">
+          <div id="ownersList"></div>
+        </div>
+
+        <div id="ownerLink" style="display:none;">
+          <a href="#" id="viewMyUnitBtn" class="view-unit-btn-sm">My Profile</a>
+        </div>
+
+        <div class="pills-under" id="pills"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom: View Unit Page full-width -->
+    <div class="bottom" id="cardBottom">
+      <a href="#" id="viewUnitPageBtn" class="view-unit-btn" style="display:none;">
+        → View Unit Page
+      </a>
+    </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d", { alpha: true });
+
+let HEX_SIZE = 20;
+const camera = { x:0, y:0, zoom:1, minZoom:0.72, maxZoom:4 };
+// ── Minister lookup — permanent assignment, no DB needed ──────────────────
+const MINISTER_BY_TERRITORY = {
+  'LUM-01': { name: 'NOVA',  img: '/nfts/13_NOVA.png'  },
+  'LUM-02': { name: 'FAZE',  img: '/nfts/2_FAZE.png'   },
+  'LUM-03': { name: 'LUMA',  img: '/nfts/8_LUMA.png'   },
+  'LUM-04': { name: 'TALHA', img: '/nfts/1_TALHA.png'  },
+  'LUM-05': { name: 'WISP',  img: '/nfts/38_WISP.png'  },
+  'LUM-06': { name: 'HALO',  img: '/nfts/47_HALO.png'  },
+  'LUM-07': { name: 'GAZE',  img: '/nfts/84_GAZE.png'  },
+  'LUM-08': { name: 'BLIP',  img: '/nfts/16_BLIP.png'  },
+  'LUM-09': { name: 'DRIP',  img: '/nfts/3_DRIP.png'   },
+  'LUM-10': { name: 'OPAL',  img: '/nfts/42_OPAL.png'  },
+  'LUM-11': { name: 'FROG',  img: '/nfts/25_FROG.png'  },
+  'LUM-12': { name: 'QUIP',  img: '/nfts/18_QUIP.png'  },
+  'LUM-13': { name: 'VALE',  img: '/nfts/69_VALE.png'  },
+  'LUM-14': { name: 'ANGEL', img: '/nfts/60_ANGEL.png' },
+  'LUM-15': { name: 'WISE',  img: '/nfts/59_WISE.png'  },
+  'LUM-16': { name: 'YASIN', img: '/nfts/82_YASIN.png' },
+  'LUM-17': { name: 'ALI',   img: '/nfts/61_ALI.png'   },
+  'LUM-18': { name: 'MINO',  img: '/nfts/19_MINO.png'  },
+  'LUM-19': { name: 'ZORO',  img: '/nfts/17_ZORO.png'  },
+  'LUM-20': { name: 'SIKE',  img: '/nfts/37_SIKE.png'  },
+};
+
+
+
+const THEME = {
+  gold: "#FFE08A",
+  grey: "#35313A"
+};
+
+
+const TERRITORY_COLORS = {
+  LUM: "#FFE08A", // Luminaea
+  UMB: "#B68CFF",
+  SOL: "#7FE8FF",
+  NOX: "#FF6B6B",
+  AER: "#7CFFB2"
+};
+
+function territoryPrefix(spaceCode){
+  return (spaceCode || "").split("-")[0];
+}
+
+function territoryColor(spaceCode){
+  const p = territoryPrefix(spaceCode);
+  return TERRITORY_COLORS[p] || THEME.gold;
+}
+
+// deterministic tiny hash for phase offsets (keeps pulses de-synced)
+function hashCode(str){
+  let h = 0;
+  for (let i = 0; i < str.length; i++){
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+let ANIM_T = 0;
+
+const claimedSpaces = new Map();
+const unitOwnerColors = new Map(); // unit code → player color (per-unit ownership)
+// Territory colours populated from DB via loadPlayers() — no hardcoded values
+// (removed static assignments that caused stale ownership display)
+
+// Track which spaces the current user owns
+const userOwnedSpaces = new Set(["LUM-01"]); // minaliens territory
+
+const UNIT_LETTERS = "ABCDEFGHIJKLMNOP";
+
+// LUM-18 moved to western peninsula position and reshaped into compact cluster
+const SPACE_HEXAGONS = {
+  "LUM-01": [[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2],[3,2],[1,3],[2,3],[3,3],[2,4],[3,4],[4,4],[3,5]],
+  "LUM-02": [[5,1],[6,1],[4,2],[5,2],[6,2],[7,2],[4,3],[5,3],[6,3],[7,3],[8,3],[5,4],[6,4],[7,4],[8,4],[7,5]],
+  "LUM-03": [[-5,1],[-4,1],[-5,2],[-6,3],[-5,3],[-4,3],[-5,4],[-10,8],[-9,8],[-8,8],[-10,9],[-9,9],[-7,7],[-8,7],[-9,7],[-10,7]],
+  
+  // LUM-18: Moved to western peninsula as compact cluster
+  "LUM-18": [[-7,4],[-6,4],[-7,5],[-6,5],[-5,5],[-7,6],[-6,6],[-5,6],[-6,7],[-5,7],[-4,7],[-6,8],[-5,8],[-4,8],[-5,9],[-4,9]],
+  
+  "LUM-04": [[-2,3],[-1,3],[0,3],[-2,4],[-1,4],[0,4],[1,4],[-2,5],[-1,5],[0,5],[1,5],[-1,6],[0,6],[1,6],[0,7],[1,7]],
+  "LUM-15": [[-10,16],[-11,16],[-12,16],[-12,17],[-11,17],[-13,18],[-12,18],[-11,18],[-12,19],[-13,20],[-14,20],[-14,21],[-14,22],[-13,22],[-15,23],[-15,22]],
+  "LUM-06": [[-7,10],[-6,10],[-5,10],[-7,11],[-6,11],[-5,11],[-4,11],[-7,12],[-6,12],[-5,12],[-4,12],[-6,13],[-5,13],[-4,13],[-5,14],[-4,14]],
+  "LUM-05": [[-11,7],[-12,7],[-11,8],[-11,9],[-12,10],[-13,11],[-14,11],[-14,10],[-13,9],[-13,8],[-13,7],[-14,8],[-14,7],[-13,6],[-14,6],[-13,5]],
+  "LUM-07": [[2,8],[3,8],[4,8],[2,9],[3,9],[4,9],[5,9],[2,10],[3,10],[4,10],[5,10],[3,11],[4,11],[5,11],[4,12],[5,12]],
+  "LUM-08": [[6,10],[7,10],[8,10],[9,10],[6,11],[7,11],[8,11],[9,11],[6,12],[7,12],[8,12],[9,12],[7,13],[8,13],[9,13],[8,14]],
+  "LUM-09": [[4,17],[2,18],[3,18],[4,18],[5,18],[2,19],[3,19],[4,19],[5,19],[2,20],[3,20],[4,20],[5,20],[3,21],[4,21],[3,22]],
+  "LUM-10": [[10,10],[10,11],[11,11],[10,12],[11,12],[12,11],[10,13],[11,13],[10,14],[11,14],[12,14],[10,15],[11,15],[12,15],[11,16],[12,16]],
+  "LUM-11": [[0,13],[1,13],[2,13],[3,13],[0,14],[1,14],[2,14],[3,14],[1,15],[2,15],[3,15],[4,15],[2,16],[3,16],[4,16],[3,17]],
+  "LUM-12": [[-5,16],[-5,15],[-4,15],[-3,15],[-2,14],[-1,14],[-4,16],[-4,17],[-3,17],[-2,16],[-1,16],[-1,17],[-2,18],[-3,16],[-1,18],[-6,15]],
+  "LUM-17": [[-8,16],[-7,16],[-6,16],[-8,17],[-7,17],[-6,17],[-5,17],[-7,18],[-6,18],[-5,18],[-4,18],[-6,19],[-5,19],[-4,19],[-5,20],[-4,20]],
+  "LUM-13": [[-9,16],[-9,17],[-10,17],[-10,18],[-11,19],[-10,19],[-11,20],[-11,21],[-10,21],[-9,21],[-10,22],[-11,22],[-12,22],[-12,23],[-13,23],[-14,23]],
+  "LUM-14": [[9,14],[8,15],[9,15],[8,16],[7,17],[8,17],[7,18],[6,18],[6,17],[5,17],[6,19],[6,20],[5,21],[4,22],[3,23],[2,23]],
+  "LUM-20": [[-11,10],[-10,10],[-9,10],[-9,11],[-10,12],[-10,13],[-9,13],[-8,13],[-7,13],[-13,13],[-12,12],[-13,12],[-14,13],[-14,14],[-13,14],[-12,14]],
+  
+  // LUM-16: Moved to bottom center area
+  "LUM-16": [[-3,21],[-2,20],[-1,19],[0,18],[1,18],[0,19],[1,19],[1,20],[0,17],[1,17],[2,17],[2,21],[0,21],[-1,22],[-2,23],[-1,23]],
+  
+  // LUM-19: Western snake (unchanged)
+  "LUM-19": [[-3,6],[-2,7],[-3,8],[-2,9],[-3,10],[-2,11],[-3,12],[-2,13],[-3,14],[-2,15],[-1,15],[-2,17],[-3,18],[-2,19],[-3,20],[-2,21]]
+};
+
+// ── Collab Nexus Points — gap hexes between territories ──
+// Each is a single hex sitting in the natural void between 2-3 territories
+const COLLAB_HEXES = {
+  'NEXUS-01': { q: -4, r: 10, name: 'Convergence',    touches: ['LUM-06','LUM-18','LUM-19'], lore: 'A three-way crossroads of ancient ley lines.' },
+  'NEXUS-02': { q:  5, r: 16, name: 'Southern Crossing',  touches: ['LUM-09','LUM-11','LUM-14'], lore: 'Where southern trade routes once converged.' },
+  'NEXUS-03': { q:  0, r: 15, name: 'The Meridian',       touches: ['LUM-11','LUM-12','LUM-19'], lore: "The exact centre of Luminaea's known world." },
+  'NEXUS-04': { q:  4, r:  5, name: 'Twin Peak Gate',     touches: ['LUM-01','LUM-02'],          lore: 'Gateway between the two founding territories.' },
+  'NEXUS-05': { q: -4, r:  4, name: 'Ember Reach',        touches: ['LUM-03','LUM-18'],          lore: 'An ember-lit passage through the northern wilds.' },
+  'NEXUS-06': { q: -7, r: 14, name: 'Shadow Crossing',    touches: ['LUM-06','LUM-20'],          lore: 'A forgotten crossing in the shadow of the highlands.' },
+  'NEXUS-07': { q:  6, r:  9, name: 'The Brightway',      touches: ['LUM-07','LUM-08'],          lore: 'The brightest gap in the eastern reach.' },
+  'NEXUS-08': { q: -2, r:  6, name: 'The Wandering Fork', touches: ['LUM-04','LUM-19'],          lore: 'A fork in the ancient road where travellers made fateful choices.' },
+  'NEXUS-09': { q:-12, r: 11, name: 'Northern Passage',   touches: ['LUM-05','LUM-20'],          lore: 'A narrow corridor carved through the northern highlands.' },
+  'NEXUS-10': { q:  9, r: 16, name: 'East Lookout',       touches: ['LUM-10','LUM-14'],          lore: 'A high vantage point overlooking the eastern coastline.' },
+  'NEXUS-11': { q:-12, r: 20, name: 'The Deep Hollow',    touches: ['LUM-13','LUM-15'],          lore: 'A sunken clearing deep in the southern forest, quiet and forgotten.' },
+  'NEXUS-12': { q:  2, r: 22, name: 'Veilgate',           touches: ['LUM-09','LUM-14','LUM-16'], lore: 'A misty three-way threshold where southern worlds blur together.' },
+  'NEXUS-13': { q: -3, r: 19, name: 'The Drift',          touches: ['LUM-12','LUM-17','LUM-19'], lore: 'Drifting fog and overlapping signals mark this contested junction.' },
+  'NEXUS-14': { q:-12, r: 15, name: 'The Long Step',      touches: ['LUM-15','LUM-20'],          lore: 'A lonely crossing between the highlands and the southern reaches.' },
+  'NEXUS-15': { q: -6, r: 14, name: 'Gloom\'s Edge',      touches: ['LUM-06','LUM-12'],          lore: 'Where Gloomhaven\'s shadow spills into the Mirewood borderlands.' },
+  'NEXUS-16': { q:  2, r:  7, name: 'The Middle Path',   touches: ['LUM-04','LUM-07'],          lore: 'A quiet corridor linking Emberveil and Halcyon through the midlands.' },
+  'NEXUS-17': { q: -8, r:  6, name: 'Frost Notch',       touches: ['LUM-03','LUM-18'],          lore: 'A cold gap between Driftmere and Stormgate where winds converge.' },
+  'NEXUS-18': { q: 10, r:  9, name: 'The Upper Watch',   touches: ['LUM-08','LUM-10'],          lore: 'A high lookout point above Ironmere and Kelpwater.' },
+  'NEXUS-19': { q:  4, r:  1, name: 'The Twin Gate',     touches: ['LUM-01','LUM-02'],          lore: 'A second crossing between the two founding territories, further north.' },
+  'NEXUS-20': { q:  2, r:  5, name: 'Emberveil Pass',    touches: ['LUM-01','LUM-04'],          lore: 'A narrow pass between Aurvandil and Emberveil used by early settlers.' },
+  'NEXUS-21': { q:-12, r: 11, name: 'The Fen Bridge',    touches: ['LUM-05','LUM-20'],          lore: 'A mossy bridge spanning the wetland border between Fenwild and Umbral.' },
+  'NEXUS-22': { q: -9, r: 18, name: 'Darkfen Crossing',  touches: ['LUM-13','LUM-17'],          lore: 'A murky junction deep in the southern fens where Northfen meets Ravenholm.' },
+  'NEXUS-23': { q: -4, r: 21, name: 'The Southern Knot', touches: ['LUM-16','LUM-17','LUM-19'], lore: 'Three southern territories meet at this tangled crossroads.' },
+};
+
+const DIRS = [
+  {q:1,r:0},{q:1,r:-1},{q:0,r:-1},{q:-1,r:0},{q:-1,r:1},{q:0,r:1}
+];
+
+function key(q,r){ return `${q},${r}`; }
+
+function axialToPixel(q,r){
+  const x = HEX_SIZE * Math.sqrt(3) * (q + r/2);
+  const y = HEX_SIZE * 3/2 * r;
+  return {x,y};
+}
+
+function pixelToAxial(x,y){
+  const q = (Math.sqrt(3)/3 * x - 1/3 * y) / HEX_SIZE;
+  const r = (2/3 * y) / HEX_SIZE;
+  return axialRound(q,r);
+}
+
+function axialRound(q,r){
+  let x=q, z=r, y=-x-z;
+  let rx=Math.round(x), ry=Math.round(y), rz=Math.round(z);
+  const xd=Math.abs(rx-x), yd=Math.abs(ry-y), zd=Math.abs(rz-z);
+  if (xd>yd && xd>zd) rx=-ry-rz;
+  else if (yd>zd) ry=-rx-rz;
+  else rz=-rx-ry;
+  return {q:rx,r:rz};
+}
+
+function screenToWorld(sx,sy){
+  // Use getBoundingClientRect so any canvas offset from viewport top is accounted for
+  const rect = canvas.getBoundingClientRect();
+  const cssW = rect.width;
+  const cssH = rect.height;
+  return {
+    x:(sx - rect.left - cssW/2)/camera.zoom + camera.x,
+    y:(sy - rect.top  - cssH/2)/camera.zoom + camera.y
+  };
+}
+
+function hexPoints(px,py){
+  const PADDING = 2; // 2px padding between hexagons
+  const effectiveSize = HEX_SIZE - (PADDING / camera.zoom);
+  const pts=[];
+  for(let i=0;i<6;i++){
+    const a = (Math.PI/180)*(60*i - 30);
+    pts.push({x:px + effectiveSize*Math.cos(a), y:py + effectiveSize*Math.sin(a)});
+  }
+  return pts;
+}
+
+// Pre-computed rgba strings for frequently used colours — avoids parseInt every frame
+const _rgbaCache = new Map();
+function hexToRgba(hex, alpha=1){
+  const cacheKey = hex + alpha;
+  if (_rgbaCache.has(cacheKey)) return _rgbaCache.get(cacheKey);
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  const result = `rgba(${r},${g},${b},${alpha})`;
+  _rgbaCache.set(cacheKey, result);
+  return result;
+}
+
+const land = new Set();
+const spaceOfHex = new Map();
+const unitCodeOfHex = new Map();
+
+// ── Performance caches — populated by buildMap() / loadPlayers() ──
+const hexPixel = new Map();          // key -> {x,y}  — avoids split+parse every frame
+const hexFillColor = new Map();      // key -> rgba string — avoids hexToRgba every frame
+const unitOwnerByCode = new Map();   // unitCode -> player — O(1) tooltip lookup
+
+const forSaleUnits  = new Set();
+const auctionUnits  = new Set();
+
+// Live players fetched from DB — populated by loadPlayers()
+let DB_PLAYERS = [];
+const PLAYER_COLORS = [
+  '#FFE08A','#B388FF','#80DEEA','#F48FB1','#60FFAB',
+  '#FF8A65','#A5D6A7','#FF6B6B','#4FC3F7','#FFD54F',
+  '#CE93D8','#80CBC4','#EF9A9A','#90CAF9','#FFCC02',
+  '#AED581','#FFA726','#26C6DA','#EC407A','#7E57C2'
+];
+
+// Deterministic color from player UUID — always same color for same player
+function playerColorFromId(id) {
+  // hash the id string into a number
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
+  }
+  return PLAYER_COLORS[Math.abs(h) % PLAYER_COLORS.length];
+}
+
+const collabHexKeys = new Map(); // key -> nexus id
+const collabHexData = new Map(); // key -> collab hex data object
+
+function buildMap(){
+  land.clear();
+  spaceOfHex.clear();
+  unitCodeOfHex.clear();
+  collabHexKeys.clear();
+  collabHexData.clear();
+  hexPixel.clear();
+
+  for(const [spaceCode, hexagons] of Object.entries(SPACE_HEXAGONS)){
+    for(let i = 0; i < hexagons.length; i++){
+      const [q, r] = hexagons[i];
+      const k = key(q, r);
+      land.add(k);
+      spaceOfHex.set(k, spaceCode);
+      unitCodeOfHex.set(k, `${spaceCode}-${UNIT_LETTERS[i]}`);
+      hexPixel.set(k, axialToPixel(q, r)); // cache pixel coords — no more split+parse per frame
+    }
+  }
+
+  // Register collab nexus hexes
+  for(const [nexusId, data] of Object.entries(COLLAB_HEXES)){
+    const k = key(data.q, data.r);
+    collabHexKeys.set(k, nexusId);
+    collabHexData.set(k, data);
+    hexPixel.set(k, axialToPixel(data.q, data.r));
+  }
+}
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function drawBackground(){
+  ctx.fillStyle = "#07070b";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawHex(px, py, fill, stroke, lineWidth){
+  const pts = hexPoints(px, py);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for(let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+let hoveredKey=null;
+let selectedKey=null;
+let hoveredSpace=null;
+let highlightedSpaces = new Set(); // For player highlighting - supports multiple spaces
+let highlightedUnits  = new Set(); // Per-unit highlight for partial territory ownership
+let highlightedPlayerId = null;
+
+function draw(){
+  drawBackground();
+
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.scale(camera.zoom, camera.zoom);
+  ctx.translate(-camera.x, -camera.y);
+
+  // ── Pass 1: Draw all base hexes — NO shadow blur, no save/restore per hex ──
+  // Shadow blur is batched into Pass 2 for glow hexes only
+  for(const k of land){
+    const sc = spaceOfHex.get(k);
+    if(!sc) continue;
+
+    const p = hexPixel.get(k);
+    const unitCode = unitCodeOfHex.get(k);
+
+    const isClaimed         = claimedSpaces.has(sc);
+    const isHoveredHex      = (k === hoveredKey);
+    const isInHoveredSpace  = (hoveredSpace && sc === hoveredSpace);
+    const isInSelectedSpace = (selectedKey && sc === spaceOfHex.get(selectedKey));
+    const isHighlightedSpace = (highlightedSpaces && highlightedSpaces.size > 0 && highlightedSpaces.has(sc))
+                             || (highlightedUnits && highlightedUnits.size > 0 && unitCode && highlightedUnits.has(unitCode));
+    const isUserOwnedAndSelected = (selectedKey && userOwnedSpaces.has(sc) && userOwnedSpaces.has(spaceOfHex.get(selectedKey)));
+    const isForSaleUnit = unitCode && forSaleUnits.has(unitCode);
+    const isAuctionUnit = unitCode && auctionUnits.has(unitCode);
+
+    let fill;
+    if(isHoveredHex){
+      fill = hexToRgba(THEME.gold, 0.9);
+    } else if(isForSaleUnit){
+      fill = hexToRgba('#00E5FF', 0.55);
+    } else if(isAuctionUnit){
+      fill = hexToRgba('#FF6D00', 0.55);
+    } else if(isClaimed){
+      const unitColor = unitCode ? unitOwnerColors.get(unitCode) : null;
+      // If territory is claimed but this specific unit has no owner, render grey
+      if(!unitColor){
+        fill = hexToRgba(THEME.grey, 0.80);
+      } else {
+        fill = hexToRgba(unitColor, 0.75);
+      }
+    } else {
+      fill = hexToRgba(THEME.grey, 0.80);
+    }
+
+    let stroke = "rgba(255,255,255,0.10)";
+    let lw = 0.8 / camera.zoom;
+
+    if(isForSaleUnit && !isHoveredHex) { stroke = hexToRgba('#00E5FF', 0.7); lw = 1.8 / camera.zoom; }
+    if(isAuctionUnit && !isHoveredHex) { stroke = hexToRgba('#FF6D00', 0.8); lw = 2.0 / camera.zoom; }
+    if(isInHoveredSpace)  { stroke = hexToRgba(THEME.gold, 0.85); lw = 2.2 / camera.zoom; }
+    if(isInSelectedSpace) { stroke = hexToRgba(THEME.gold, 0.95); lw = 2.8 / camera.zoom; }
+    if(isUserOwnedAndSelected && !isInSelectedSpace) { stroke = "rgba(96,255,171,0.7)"; lw = 2.5 / camera.zoom; }
+    if(isHighlightedSpace) {
+      const activePlayer = highlightedPlayerId ? DB_PLAYERS.find(p => p.id === highlightedPlayerId) : null;
+      stroke = hexToRgba(activePlayer ? activePlayer.color : THEME.gold, 1.0);
+      lw = 3.5 / camera.zoom;
+    }
+
+    drawHex(p.x, p.y, fill, stroke, lw);
+  }
+
+  // ── Pass 2: Glow layer — only hexes that actually need shadow blur ──
+  // Batched: set shadow once per glow group, draw all hexes in that group
+  // This avoids save/restore + shadowBlur change per individual hex
+  const needsGlow = camera.zoom > 0.25; // skip glow entirely when zoomed far out — invisible anyway
+  if(needsGlow){
+    // Collect glow groups: sale, auction, hover, selected, highlight, userOwned
+    // Draw each group with a single ctx.save/shadowBlur/restore
+
+    // ── Sale glow (cyan) ──
+    const saleGlowHexes = [];
+    const auctionGlowHexes = [];
+    const highlightGlowHexes = [];
+
+    for(const k of land){
+      const sc = spaceOfHex.get(k);
+      const unitCode = unitCodeOfHex.get(k);
+      if(unitCode && forSaleUnits.has(unitCode) && k !== hoveredKey) saleGlowHexes.push(k);
+      if(unitCode && auctionUnits.has(unitCode) && k !== hoveredKey) auctionGlowHexes.push(k);
+      if(
+        highlightedSpaces.has(sc) ||
+        (highlightedUnits.size > 0 && unitCode && highlightedUnits.has(unitCode)) ||
+        (selectedKey && userOwnedSpaces.has(sc) && userOwnedSpaces.has(spaceOfHex.get(selectedKey)) && sc !== spaceOfHex.get(selectedKey))
+      ) highlightGlowHexes.push(k);
+    }
+
+    if(saleGlowHexes.length){
+      const pulse = 0.55 + 0.45 * Math.sin(ANIM_T / 520);
+      ctx.save();
+      ctx.shadowColor = `rgba(0,229,255,${0.7 * pulse})`;
+      ctx.shadowBlur = (18 * pulse) / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      for(const k of saleGlowHexes){
+        const p = hexPixel.get(k);
+        drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba('#00E5FF', 0.5), 0.5 / camera.zoom);
+      }
+      ctx.restore();
+    }
+
+    if(auctionGlowHexes.length){
+      const pulse = 0.55 + 0.45 * Math.sin(ANIM_T / 380);
+      ctx.save();
+      ctx.shadowColor = `rgba(255,109,0,${0.8 * pulse})`;
+      ctx.shadowBlur = (24 * pulse) / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      for(const k of auctionGlowHexes){
+        const p = hexPixel.get(k);
+        drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba('#FF6D00', 0.6), 0.5 / camera.zoom);
+      }
+      ctx.restore();
+    }
+
+    if(highlightGlowHexes.length){
+      const activePlayer = highlightedPlayerId ? DB_PLAYERS.find(p => p.id === highlightedPlayerId) : null;
+      const glowColor = activePlayer ? activePlayer.color : '#60FFAB';
+      ctx.save();
+      ctx.shadowColor = hexToRgba(glowColor, 0.7);
+      ctx.shadowBlur = 28 / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      for(const k of highlightGlowHexes){
+        const p = hexPixel.get(k);
+        drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba(glowColor, 0.5), 0.5 / camera.zoom);
+      }
+      ctx.restore();
+    }
+
+    // ── Hover hex glow (single hex — gold) ──
+    if(hoveredKey && land.has(hoveredKey)){
+      const p = hexPixel.get(hoveredKey);
+      ctx.save();
+      ctx.shadowColor = hexToRgba(THEME.gold, 0.9);
+      ctx.shadowBlur = 22 / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba(THEME.gold, 0.8), 1.5 / camera.zoom);
+      ctx.restore();
+    }
+
+    // ── Selected space glow (gold territory border) ──
+    if(selectedKey){
+      const selSc = spaceOfHex.get(selectedKey);
+      ctx.save();
+      ctx.shadowColor = hexToRgba(THEME.gold, 0.8);
+      ctx.shadowBlur = 20 / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      for(const k of land){
+        if(spaceOfHex.get(k) === selSc){
+          const p = hexPixel.get(k);
+          drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba(THEME.gold, 0.7), 0.5 / camera.zoom);
+        }
+      }
+      ctx.restore();
+    }
+
+    // ── Claimed territory soft glow — batched by colour to minimise blur kernel resets ──
+    if(camera.zoom > 0.5){
+      const pulse = 0.65 + 0.35 * Math.sin(ANIM_T / 650);
+      const blurSize = (8 * pulse) / camera.zoom;
+
+      // Group hexes by their glow colour — one shadow pass per unique colour (~19 players)
+      // instead of resetting shadowColor on every one of 304 hexes
+      const byColour = new Map(); // glowCol -> [{p, glowCol}]
+      for(const k of land){
+        const sc = spaceOfHex.get(k);
+        const unitCode = unitCodeOfHex.get(k);
+        if(!claimedSpaces.has(sc)) continue;
+        if(unitCode && (forSaleUnits.has(unitCode) || auctionUnits.has(unitCode))) continue;
+        const unitColor = unitCode ? unitOwnerColors.get(unitCode) : null;
+        const glowCol = unitColor || claimedSpaces.get(sc);
+        if(!byColour.has(glowCol)) byColour.set(glowCol, []);
+        byColour.get(glowCol).push({ p: hexPixel.get(k), glowCol });
+      }
+
+      // One save/restore per colour group
+      for(const [glowCol, hexes] of byColour){
+        ctx.save();
+        ctx.shadowColor = hexToRgba(glowCol, 0.45 * pulse);
+        ctx.shadowBlur  = blurSize;
+        ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+        for(const { p } of hexes){
+          drawHex(p.x, p.y, 'rgba(0,0,0,0)', hexToRgba(glowCol, 0.3), 0.3 / camera.zoom);
+        }
+        ctx.restore();
+      }
+    }
+  }
+
+  // ── Draw collab nexus hexes — two passes: non-hovered (batch) + hovered (single) ──
+  if(collabHexData.size > 0){
+    const pulse = 0.55 + 0.45 * Math.sin(ANIM_T / 900);
+    const nonHovered = [];
+    let hoveredNexus = null;
+
+    for(const [k, data] of collabHexData){
+      const isHovered = (k === hoveredKey);
+      const hexPulse = 0.55 + 0.45 * Math.sin((ANIM_T / 900) + (data.q * 0.7 + data.r * 0.5));
+      if(isHovered) hoveredNexus = { k, data, hexPulse };
+      else nonHovered.push({ k, data, hexPulse });
+    }
+
+    // Batch pass — all non-hovered nexus hexes share same colour and similar blur
+    if(nonHovered.length){
+      ctx.save();
+      ctx.shadowColor = `rgba(0,255,220,0.65)`;
+      ctx.shadowBlur  = 22 * pulse / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      for(const { k, data, hexPulse } of nonHovered){
+        const p = hexPixel.get(k);
+        const glowAlpha = 0.55 + 0.35 * hexPulse;
+        const fillAlpha = 0.18 + 0.12 * hexPulse;
+        drawHex(p.x, p.y,
+          `rgba(0,230,200,${fillAlpha})`,
+          `rgba(0,255,220,0.65)`,
+          1.8 / camera.zoom
+        );
+      }
+      ctx.restore();
+    }
+
+    // Single pass — hovered nexus hex (different blur size)
+    if(hoveredNexus){
+      const { k, hexPulse } = hoveredNexus;
+      const p = hexPixel.get(k);
+      ctx.save();
+      ctx.shadowColor = `rgba(0,255,220,0.95)`;
+      ctx.shadowBlur  = 40 * hexPulse / camera.zoom;
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+      drawHex(p.x, p.y, `rgba(0,230,200,0.45)`, `rgba(0,255,220,0.95)`, 3.0 / camera.zoom);
+      ctx.restore();
+    }
+
+    // ✦ labels (separate pass, no shadow needed)
+    if(camera.zoom > 0.6){
+      ctx.save();
+      ctx.font = `bold ${Math.max(8, Math.floor(14 / camera.zoom))}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for(const [k, data] of collabHexData){
+        const p = hexPixel.get(k);
+        const isHovered = (k === hoveredKey);
+        ctx.fillStyle = `rgba(0,255,220,${isHovered ? 0.95 : 0.6})`;
+        ctx.fillText('✦', p.x, p.y);
+      }
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
+function bounds(){
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const k of land){
+    const [q,r]=k.split(",").map(Number);
+    const p=axialToPixel(q,r);
+    minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+    minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+  }
+  const pad=HEX_SIZE*8;
+  return {minX:minX-pad,maxX:maxX+pad,minY:minY-pad,maxY:maxY+pad};
+}
+
+function fit(){
+  const b=bounds();
+  const w=b.maxX-b.minX, h=b.maxY-b.minY;
+  const z=Math.min(canvas.width/w, canvas.height/h);
+  camera.zoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, z*0.9));
+  camera.x = (b.minX+b.maxX)/2;
+  camera.y = (b.minY+b.maxY)/2;
+}
+
+let dragging=false;
+let dragStart=null;
+let camStart=null;
+
+canvas.addEventListener("mousedown",(e)=>{
+  dragging=true;
+  dragStart={x:e.clientX,y:e.clientY};
+  camStart={x:camera.x,y:camera.y};
+});
+
+window.addEventListener("mouseup",()=>{
+  dragging=false; dragStart=null; camStart=null;
+});
+
+let _lastHoveredKey = null; // track previous hover to skip redundant redraws
+
+window.addEventListener("mousemove",(e)=>{
+  if(dragging && dragStart && camStart){
+    const dx=(e.clientX-dragStart.x)/camera.zoom;
+    const dy=(e.clientY-dragStart.y)/camera.zoom;
+    camera.x = camStart.x - dx;
+    camera.y = camStart.y - dy;
+    requestDraw();
+    return;
+  }
+
+  const w=screenToWorld(e.clientX,e.clientY);
+  const ax=pixelToAxial(w.x,w.y);
+  const k=key(ax.q,ax.r);
+  hoveredKey = (land.has(k) || collabHexKeys.has(k)) ? k : null;
+  hoveredSpace = hoveredKey ? (spaceOfHex.get(hoveredKey) || null) : null;
+
+  // Only update tooltip and redraw if the hovered hex actually changed
+  if(hoveredKey !== _lastHoveredKey){
+    _lastHoveredKey = hoveredKey;
+
+    const tooltip = document.getElementById('hexTooltip');
+    const tooltipUnitId = document.getElementById('tooltipUnitId');
+
+    if(hoveredKey && land.has(k)){
+      const unitCode = unitCodeOfHex.get(k);
+      if(unitCode && tooltip && tooltipUnitId){
+        // O(1) lookup via pre-built Map instead of DB_PLAYERS.find() linear scan
+        const owningPlayer = unitOwnerByCode.get(unitCode);
+        const ownerText = owningPlayer ? ' • ' + owningPlayer.name : '';
+        tooltipUnitId.textContent = unitCode + ownerText;
+        tooltip.classList.add('active');
+      }
+    } else {
+      if(tooltip) tooltip.classList.remove('active');
+    }
+
+    requestDraw();
+  }
+
+  // Always update tooltip position on move (cheap DOM write, no redraw)
+  const tooltip = document.getElementById('hexTooltip');
+  if(tooltip && tooltip.classList.contains('active')){
+    tooltip.style.left = (e.clientX + 20) + 'px';
+    tooltip.style.top  = (e.clientY + 10) + 'px';
+  }
+});
+
+canvas.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  const old=camera.zoom;
+  const factor = (e.deltaY>0) ? 0.88 : 1.14;
+  const nz = Math.max(camera.minZoom, Math.min(camera.maxZoom, old*factor));
+
+  const before=screenToWorld(e.clientX,e.clientY);
+  camera.zoom = nz;
+  const after=screenToWorld(e.clientX,e.clientY);
+
+  camera.x += (before.x-after.x);
+  camera.y += (before.y-after.y);
+  requestDraw();
+},{passive:false});
+
+
+// ── NEXUS LOCATION TYPES ──
+const NEXUS_LOCATION_TYPES = {
+  'NEXUS-01':'junction', 'NEXUS-02':'junction', 'NEXUS-03':'junction',
+  'NEXUS-04':'exposed',  'NEXUS-05':'exposed',  'NEXUS-06':'sheltered',
+  'NEXUS-07':'sheltered','NEXUS-08':'sheltered', 'NEXUS-09':'exposed',
+  'NEXUS-10':'exposed',  'NEXUS-11':'exposed',  'NEXUS-12':'exposed',
+  'NEXUS-13':'junction', 'NEXUS-14':'sheltered','NEXUS-15':'sheltered',
+  'NEXUS-16':'sheltered','NEXUS-17':'exposed',  'NEXUS-18':'exposed',
+  'NEXUS-19':'exposed',  'NEXUS-20':'sheltered','NEXUS-21':'exposed',
+  'NEXUS-22':'sheltered','NEXUS-23':'junction'
+};
+
+const LUM_COLORS = {
+  'LUM-01':'#FFE08A','LUM-02':'#B388FF','LUM-03':'#80DEEA','LUM-04':'#F48FB1',
+  'LUM-05':'#60FFAB','LUM-06':'#FF8A65','LUM-07':'#A5D6A7','LUM-08':'#FFA726',
+  'LUM-09':'#FF6B6B','LUM-10':'#4FC3F7','LUM-11':'#CE93D8','LUM-12':'#80CBC4',
+  'LUM-13':'#FFCC80','LUM-14':'#80D8FF','LUM-15':'#EF9A9A','LUM-16':'#C5E1A5',
+  'LUM-17':'#BCAAA4','LUM-18':'#F48FB1','LUM-19':'#B0BEC5','LUM-20':'#B39DDB'
+};
+
+// ── NEXUS HEX SVG — hex-grid style, fills imgwrap (130px wide, full card height) ──
+function generateNexusSVG(nexusId, locationType, color1, color2) {
+  const W = 130, H = 320;
+  const uid = nexusId.replace(/-/g,'_');
+  const c2 = color2 || color1;
+
+  function hx(h){ return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+  const [r1,g1,b1] = hx(color1);
+  const [r2,g2,b2] = hx(c2);
+
+  const bgD = `rgb(${(r1*.06)|0},${(g1*.08)|0},${(b1*.07)|0})`;
+  const bgM = `rgb(${(r1*.12)|0},${(g1*.15)|0},${(b1*.13)|0})`;
+
+  const HEX = 34;
+  function hexPts(hx,hy,hr){
+    return Array.from({length:6},(_,i)=>{
+      const a = Math.PI/3*i - Math.PI/6;
+      return `${(hx+hr*Math.cos(a)).toFixed(1)},${(hy+hr*Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+  }
+
+  function nexusStar(cx,cy,r){
+    const pts=[];
+    for(let i=0;i<8;i++){
+      const a=Math.PI/4*i;
+      const rad=i%2===0?r:r*0.42;
+      pts.push(`${(cx+rad*Math.cos(a)).toFixed(1)},${(cy+rad*Math.sin(a)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  }
+
+  // Junction point sits at vertical centre
+  const jY = H * 0.42;
+  const hex1x = W * 0.35, hex1y = jY - HEX * 0.95;
+  const hex2x = W * 0.65, hex2y = jY + HEX * 0.95;
+  const nx = W / 2, ny = jY;
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="45%" r="70%">
+    <stop offset="0%" stop-color="${bgM}"/>
+    <stop offset="100%" stop-color="${bgD}"/>
+  </radialGradient>
+  <radialGradient id="gl1${uid}" cx="35%" cy="35%" r="50%">
+    <stop offset="0%" stop-color="${color1}" stop-opacity="0.2"/>
+    <stop offset="100%" stop-color="${color1}" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gl2${uid}" cx="65%" cy="65%" r="50%">
+    <stop offset="0%" stop-color="${c2}" stop-opacity="0.16"/>
+    <stop offset="100%" stop-color="${c2}" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gln${uid}" cx="50%" cy="42%" r="18%">
+    <stop offset="0%" stop-color="rgba(255,255,255,0.24)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <linearGradient id="conn${uid}" x1="${hex1x}" y1="${hex1y}" x2="${hex2x}" y2="${hex2y}" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="${color1}" stop-opacity="0.7"/>
+    <stop offset="50%" stop-color="rgba(255,255,255,0.9)"/>
+    <stop offset="100%" stop-color="${c2}" stop-opacity="0.7"/>
+  </linearGradient>
+  <filter id="blur${uid}"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="blur2${uid}"><feGaussianBlur stdDeviation="9"/></filter>
+  <clipPath id="cp${uid}"><rect width="${W}" height="${H}"/></clipPath>
+</defs>
+<g clip-path="url(#cp${uid})">
+<rect width="${W}" height="${H}" fill="url(#bg${uid})"/>
+<circle cx="${hex1x}" cy="${hex1y}" r="65" fill="url(#gl1${uid})" filter="url(#blur2${uid})"/>
+<circle cx="${hex2x}" cy="${hex2y}" r="65" fill="url(#gl2${uid})" filter="url(#blur2${uid})"/>`;
+
+  // ── TYPE-SPECIFIC WATER/BACKGROUND ──
+  if (locationType === 'exposed') {
+    const waveYs = [H*0.6,H*0.66,H*0.72,H*0.78,H*0.84,H*0.90,H*0.96];
+    waveYs.forEach((wy,i) => {
+      const op=(0.06+i*0.022).toFixed(2);
+      s += `<line x1="0" y1="${wy.toFixed(1)}" x2="${W}" y2="${wy.toFixed(1)}" stroke="rgba(0,200,255,${op})" stroke-width="${(0.7+i*0.15).toFixed(1)}" stroke-dasharray="${3+i},${5+i*2}"/>`;
+    });
+    [[W/2-14,H*0.67],[W/2+18,H*0.76],[W/2-3,H*0.86]].forEach(([px,py]) => {
+      s += `<line x1="${(px-3).toFixed(1)}" y1="${(py-3).toFixed(1)}" x2="${(px+3).toFixed(1)}" y2="${(py+3).toFixed(1)}" stroke="rgba(255,150,50,0.22)" stroke-width="0.8"/>`;
+      s += `<line x1="${(px+3).toFixed(1)}" y1="${(py-3).toFixed(1)}" x2="${(px-3).toFixed(1)}" y2="${(py+3).toFixed(1)}" stroke="rgba(255,150,50,0.22)" stroke-width="0.8"/>`;
+    });
+  }
+  if (locationType === 'sheltered') {
+    s += `<path d="M 0 ${(H*0.63).toFixed(0)} Q ${W/2} ${(H*0.53).toFixed(0)} ${W} ${(H*0.63).toFixed(0)} L ${W} ${H} L 0 ${H} Z" fill="rgba(0,60,120,0.2)"/>`;
+    [H*0.73,H*0.81,H*0.89].forEach((wy,i) => {
+      s += `<ellipse cx="${W/2}" cy="${wy.toFixed(1)}" rx="${(42+i*14)}" ry="${(5+i*2)}" fill="none" stroke="rgba(0,200,255,${(0.07-i*0.015).toFixed(2)})" stroke-width="0.8"/>`;
+    });
+    s += `<path d="M -5 ${(H*0.61).toFixed(0)} Q ${W/2} ${(H*0.50).toFixed(0)} ${W+5} ${(H*0.61).toFixed(0)}" fill="none" stroke="rgba(0,200,255,0.2)" stroke-width="1.2"/>`;
+  }
+  if (locationType === 'junction') {
+    s += `<rect x="0" y="${(H*0.63).toFixed(0)}" width="${W}" height="${(H*0.37).toFixed(0)}" fill="rgba(0,40,100,0.22)"/>`;
+    [210,270,330].forEach(deg => {
+      const rad=deg*Math.PI/180;
+      s += `<line x1="${nx.toFixed(1)}" y1="${ny.toFixed(1)}" x2="${(nx+Math.cos(rad)*90).toFixed(1)}" y2="${(ny+Math.sin(rad)*110).toFixed(1)}" stroke="rgba(0,200,255,0.1)" stroke-width="9"/>`;
+    });
+    [1,2,3].forEach(i => {
+      s += `<circle cx="${nx.toFixed(1)}" cy="${(ny+18).toFixed(1)}" r="${i*20}" fill="none" stroke="rgba(0,200,255,${(0.07-i*0.018).toFixed(2)})" stroke-width="1"/>`;
+    });
+  }
+
+  // ── HEX 1 ──
+  const [tr1,tg1,tb1] = [r1,g1,b1];
+  s += `<polygon points="${hexPts(hex1x,hex1y,HEX+6)}" fill="${color1}" opacity="0.09" filter="url(#blur${uid})"/>`;
+  s += `<polygon points="${hexPts(hex1x,hex1y,HEX)}" fill="rgba(${(tr1*.3)|0},${(tg1*.35)|0},${(tb1*.3)|0},0.72)"/>`;
+  s += `<polygon points="${hexPts(hex1x,hex1y,HEX)}" fill="none" stroke="${color1}" stroke-width="1.8" opacity="0.72"/>`;
+  s += `<polygon points="${hexPts(hex1x,hex1y,HEX-7)}" fill="none" stroke="${color1}" stroke-width="0.6" opacity="0.3"/>`;
+
+  // ── HEX 2 ──
+  const [tr2,tg2,tb2] = [r2,g2,b2];
+  s += `<polygon points="${hexPts(hex2x,hex2y,HEX+6)}" fill="${c2}" opacity="0.09" filter="url(#blur${uid})"/>`;
+  s += `<polygon points="${hexPts(hex2x,hex2y,HEX)}" fill="rgba(${(tr2*.3)|0},${(tg2*.35)|0},${(tb2*.3)|0},0.72)"/>`;
+  s += `<polygon points="${hexPts(hex2x,hex2y,HEX)}" fill="none" stroke="${c2}" stroke-width="1.8" opacity="0.72"/>`;
+  s += `<polygon points="${hexPts(hex2x,hex2y,HEX-7)}" fill="none" stroke="${c2}" stroke-width="0.6" opacity="0.3"/>`;
+
+  // Third faint hex for junction
+  if (locationType === 'junction') {
+    const h3x = W*0.18, h3y = jY + HEX*0.55;
+    s += `<polygon points="${hexPts(h3x,h3y,HEX*0.62)}" fill="rgba(255,255,255,0.04)"/>`;
+    s += `<polygon points="${hexPts(h3x,h3y,HEX*0.62)}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.9"/>`;
+  }
+
+  // Connection line
+  s += `<line x1="${hex1x.toFixed(1)}" y1="${hex1y.toFixed(1)}" x2="${hex2x.toFixed(1)}" y2="${hex2y.toFixed(1)}" stroke="url(#conn${uid})" stroke-width="1.4" opacity="0.55" stroke-dasharray="4,3"/>`;
+
+  // Nexus star
+  s += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="22" fill="url(#gln${uid})" filter="url(#blur${uid})"/>`;
+  s += `<polygon points="${nexusStar(nx,ny,10)}" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.55)" stroke-width="0.9"/>`;
+  s += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="3.5" fill="rgba(255,255,255,0.92)"/>`;
+  s += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="15" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="3,4"/>`;
+
+  // Type label
+  const typeLabels = {exposed:'EXPOSED POINT', sheltered:'SHELTERED BAY', junction:'TRIPLE JUNCTION'};
+  const typeColors = {exposed:'rgba(255,180,80,0.65)', sheltered:'rgba(0,200,255,0.65)', junction:'rgba(160,130,255,0.65)'};
+  s += `<text x="${W/2}" y="${H-20}" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="7.5" font-weight="700" letter-spacing="1.4" fill="${typeColors[locationType]}">${typeLabels[locationType]}</text>`;
+  s += `<line x1="${W/2-26}" y1="${H-12}" x2="${W/2+26}" y2="${H-12}" stroke="${typeColors[locationType]}" stroke-width="0.5" opacity="0.5"/>`;
+
+  s += `</g></svg>`;
+  return s;
+}
+
+
+// Open info card for a collab nexus hex
+function openCollabCard(k) {
+  const nexusId = collabHexKeys.get(k);
+  const data = collabHexData.get(k);
+  if (!data) return;
+
+  const card = document.getElementById('card');
+  if (!card) return;
+
+  // Always fully reset nexus UI before populating (fixes nexus→nexus stale content bug)
+  const staleNexusSvg = card.querySelector('.nexus-chart-svg');
+  if (staleNexusSvg) staleNexusSvg.remove();
+  const staleNexusInfo = card.querySelector('.nexus-info');
+  if (staleNexusInfo) staleNexusInfo.remove();
+  const iw = card.querySelector('.imgwrap');
+  if (iw) { iw.style.padding = '0'; iw.style.background = 'transparent'; }
+
+  // Populate card text fields
+  const nameEl = document.getElementById('minalienName');
+  const distEl = document.getElementById('districtName');
+  const unitEl = document.getElementById('unitIdV');
+  const imgEl  = document.getElementById('minalienImg');
+
+  if (nameEl) { nameEl.innerHTML = '<a href="nexus.html?id=' + nexusId + '" style="color:inherit;text-decoration:none;border-bottom:1px solid rgba(0,255,220,0.4);transition:border-color .2s;" onmouseover="this.style.borderColor=\'rgba(0,255,220,0.9)\'" onmouseout="this.style.borderColor=\'rgba(0,255,220,0.4)\'">✦ ' + data.name + '</a>'; nameEl.classList.add('nexus-title'); }
+  const distLabelEl = document.getElementById('districtLabel');
+  if (distLabelEl) distLabelEl.textContent = 'Nexus Point';
+  if (distEl) distEl.textContent = '';
+  if (unitEl) unitEl.textContent = data.touches.join(' · ');
+  if (imgEl)  imgEl.style.display = 'none';
+  // Hide unit page link — nexus has no unit page
+  const vub = document.getElementById('viewUnitPageBtn');
+  if (vub) vub.style.display = 'none';
+  const osl = document.getElementById('ownersSection');
+  if (osl) osl.style.display = 'none';
+
+  // Inject nexus SVG graphic into imgwrap
+  const imgwrap = card.querySelector('.imgwrap');
+  if (imgwrap) {
+    imgwrap.style.padding = '0';
+    imgwrap.style.background = 'transparent';
+    const locType = NEXUS_LOCATION_TYPES[nexusId] || 'sheltered';
+    const touches = data.touches || [];
+    const col1 = LUM_COLORS[touches[0]] || '#FFE08A';
+    const col2 = LUM_COLORS[touches[1]] || col1;
+    // Remove any old nexus svg
+    const oldSvg = imgwrap.querySelector('.nexus-chart-svg');
+    if (oldSvg) oldSvg.remove();
+    const svgWrap = document.createElement('div');
+    svgWrap.className = 'nexus-chart-svg';
+    // Absolutely fill the imgwrap so it covers the minister img completely
+    svgWrap.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;line-height:0;z-index:2;';
+    svgWrap.innerHTML = generateNexusSVG(nexusId, locType, col1, col2);
+    const svgEl = svgWrap.querySelector('svg');
+    if (svgEl) { svgEl.style.width='100%'; svgEl.style.height='100%'; svgEl.setAttribute('preserveAspectRatio','xMidYMid slice'); }
+    imgwrap.style.position = 'relative';
+    imgwrap.appendChild(svgWrap);
+  }
+
+  // Hide owner-specific fields
+  const kvEls = card.querySelectorAll('.kv');
+  kvEls.forEach(el => el.style.display = 'none');
+
+  // Inject nexus description (always fresh — stale version removed above)
+  const nexusInfo = document.createElement('div');
+  nexusInfo.className = 'nexus-info';
+  nexusInfo.style.cssText = 'margin-top:12px;padding:12px;background:rgba(0,255,220,0.06);border:1px solid rgba(0,255,220,0.2);border-radius:8px;';
+  card.querySelector('.bottom').insertBefore(nexusInfo, card.querySelector('.bottom').firstChild);
+  nexusInfo.style.display = 'block';
+  nexusInfo.innerHTML = `
+    <div style="font-size:11px;color:rgba(0,255,220,0.7);font-weight:700;letter-spacing:.08em;margin-bottom:6px;">COLLABORATIVE NEXUS</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;font-style:italic;">${data.lore}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Adjacent territories:</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+      ${data.touches.map(t => `<span style="padding:2px 8px;border-radius:4px;background:rgba(0,255,220,0.1);border:1px solid rgba(0,255,220,0.25);font-size:11px;color:rgba(0,255,220,0.8);">${t}</span>`).join('')}
+    </div>
+    <div style="font-size:11px;color:rgba(255,224,138,0.6);">🤝 Collaborative builds coming soon — requires players from all adjacent territories.</div>
+  `;
+
+  card.style.display = 'grid';
+  selectedKey = k;
+}
+
+canvas.addEventListener("click",(e)=>{
+  const w=screenToWorld(e.clientX,e.clientY);
+  const ax=pixelToAxial(w.x,w.y);
+  const k=key(ax.q,ax.r);
+
+  // Collab nexus hex clicked
+  if(collabHexKeys.has(k)){
+    openCollabCard(k);
+    requestDraw();
+    return;
+  }
+
+  if(!land.has(k)){
+    selectedKey=null;
+    if(!highlightedPlayerId) highlightedSpaces.clear(); highlightedUnits.clear();
+    updatePlayerHighlights(null);
+    closeCard();
+    requestDraw();
+    return;
+  }
+  selectedKey=k;
+  openCardFor(k);
+  requestDraw();
+});
+
+window.addEventListener("keydown",(e)=>{ 
+  if(e.key==="Escape") { 
+    selectedKey=null;
+    highlightedSpaces.clear(); highlightedUnits.clear();
+    highlightedPlayerId=null;
+    updatePlayerHighlights(null);
+    closeCard(); 
+    draw(); 
+  }
+});
+
+const card=document.getElementById("card");
+const pills=document.getElementById("pills");
+const unitIdV=document.getElementById("unitIdV");
+const statusV=document.getElementById("statusV");
+const minalienInfo=document.getElementById("minalien-info");
+const minalienName=document.getElementById("minalienName");
+const minalienImg=document.getElementById("minalienImg");
+
+document.getElementById("close").addEventListener("click", closeCard);
+
+let cardRequestId = 0;
+
+// Best-effort claim lookup via Supabase.
+// Tries an `areas` table first (if you have one), otherwise falls back to `users` + `minaliens`.
+function toDbAreaCode(spaceCode){
+  const m = String(spaceCode).match(/^([A-Za-z]+)-0*([0-9]+)$/);
+  if (m) return `${m[1].toUpperCase()}${parseInt(m[2], 10)}`;
+  return spaceCode;
+}
+
+// ── Preload cache: all territory data fetched once at boot ──
+// Avoids 3-4 serial DB round-trips per click
+const _territoryCache = new Map(); // dbCode -> { area, user, minalien }
+let _territoryCacheReady = false;
+
+async function preloadTerritoryData() {
+  const db = window.supabaseClient || window.supabase;
+  if (!db || typeof db.from !== 'function') return;
+  try {
+    const [areasRes, usersRes, miniRes] = await Promise.all([
+      db.from('areas').select('area_code,territory_name,territory_lore,territory_color,biome,population,area_type'),
+      db.from('users').select('id,username,avatar,avatar_url,x_username,area_code,nft_token_id,territory_color,mina_wallet_address'),
+      db.from('minaliens').select('token_id,area_code,name,image_url,rarity'),
+    ]);
+    const areas     = areasRes.data || [];
+    const users     = usersRes.data || [];
+    const minaliens = miniRes.data  || [];
+
+    // Index by area_code (DB format: LUM1..LUM20)
+    // Index areas by both formats
+    const areaMap = {};
+    areas.forEach(a => {
+      if (a.area_code) {
+        areaMap[a.area_code] = a;
+        const noDash = a.area_code.replace(/-0?/, '').replace('-', '');
+        areaMap[noDash] = a;
+      }
+    });
+    // Index users by both area_code formats ('LUM-19' and 'LUM19') for robustness
+    const userMap = {};
+    users.forEach(u => {
+      if (u.area_code) {
+        userMap[u.area_code] = u; // original format e.g. 'LUM-19'
+        // Also index without dash e.g. 'LUM19' to match dbCode format
+        const noDash = u.area_code.replace('-0', '').replace('-', '');
+        userMap[noDash] = u;
+      }
+    });
+    const miniMap  = Object.fromEntries(minaliens.map(m => [m.area_code, m]));
+
+    // Also index minaliens by token_id for fallback
+    const miniByToken = Object.fromEntries(minaliens.map(m => [String(m.token_id), m]));
+
+    for (let i = 1; i <= 20; i++) {
+      const dbCode = 'LUM' + i;
+      const area   = areaMap[dbCode]  || null;
+      const user   = userMap[dbCode]  || null;
+      let minalien = miniMap[dbCode]  || null;
+      // Fallback: find minalien via user's nft_token_id
+      if (!minalien && user) {
+        const tid = user.nft_token_id ?? user.nftTokenId ?? null;
+        if (tid != null) minalien = miniByToken[String(tid)] || null;
+      }
+      _territoryCache.set(dbCode, { area, user, minalien, dbCode });
+    }
+    _territoryCacheReady = true;
+    console.log('✅ Territory data preloaded for', _territoryCache.size, 'territories');
+  } catch(e) {
+    console.warn('Could not preload territory data:', e.message);
+  }
+}
+
+// Claim + Minalien lookup via Supabase.
+// Uses DB area codes like LUM1..LUM20 (map codes are LUM-01..LUM-20).
+async function fetchClaimForSpace(spaceCode){
+  const dbCode = toDbAreaCode(spaceCode);
+
+  // ── Fast path: use preloaded cache ──
+  if (_territoryCacheReady && _territoryCache.has(dbCode)) {
+    const cached = _territoryCache.get(dbCode);
+    if (!cached.area && !cached.user && !cached.minalien) return null;
+    return cached;
+  }
+
+  // ── Fallback: live DB fetch (cache not ready yet or miss) ──
+  const db = window.supabaseClient || window.supabase;
+  if (!db || typeof db.from !== 'function'){
+    return { area: null, user: null, minalien: null, dbCode };
+  }
+
+  let area = null, user = null, minalien = null;
+  try {
+    const [areaRes, userRes, miniRes] = await Promise.all([
+      db.from('areas').select('*').eq('area_code', dbCode).maybeSingle(),
+      db.from('users').select('*').eq('area_code', dbCode).maybeSingle(),
+      db.from('minaliens').select('*').eq('area_code', dbCode).maybeSingle(),
+    ]);
+    if (!areaRes.error && areaRes.data) {
+      area = areaRes.data;
+    } else {
+      // areas table may use dashed format — try it
+      const dashedCode2 = dbCode.replace(/^([A-Za-z]+)(\d+)$/, (_, l, n) => `${l}-${n.padStart(2,'0')}`);
+      try {
+        const { data: a2 } = await db.from('areas').select('*').eq('area_code', dashedCode2).maybeSingle();
+        if (a2) area = a2;
+      } catch(_) {}
+    }
+    if (!userRes.error && userRes.data) {
+      user = userRes.data;
+    } else {
+      // Users table stores area_code with dash (e.g. 'LUM-19') — try dashed format
+      const dashedCode = dbCode.replace(/^([A-Za-z]+)(\d+)$/, (_, l, n) => `${l}-${n.padStart(2,'0')}`);
+      try {
+        const { data: u2 } = await db.from('users').select('*').eq('area_code', dashedCode).maybeSingle();
+        if (u2) user = u2;
+      } catch(_) {}
+    }
+    if (!miniRes.error && miniRes.data) minalien = miniRes.data;
+  } catch(_e) { /* ignore */ }
+
+  // Backward-compat: find minalien via user's token id
+  if (!minalien && user) {
+    const tokenId = user.nft_token_id ?? user.nftTokenId ?? null;
+    if (tokenId != null) {
+      try {
+        const { data } = await db.from('minaliens').select('*').eq('token_id', String(tokenId)).maybeSingle();
+        if (data) minalien = data;
+      } catch(_e) {}
+    }
+  }
+
+  if (!area && !user && !minalien) return null;
+  return { area, user, minalien, dbCode };
+}
+
+function pickMinalienImageUrl(minalien){
+  if(!minalien) return null;
+
+  // Base URL handling:
+  // - If running on the server, window.location.origin works.
+  // - If opened as a local file (origin === "null"), default to the live domain.
+  const LIVE_ORIGIN_FALLBACK = "https://play.minaliens.xyz";
+  const origin = (window.location && window.location.origin && window.location.origin !== "null")
+    ? window.location.origin
+    : LIVE_ORIGIN_FALLBACK;
+
+  const direct =
+    minalien.image_url ||
+    minalien.image ||
+    minalien.imagePath ||
+    minalien.image_path ||
+    minalien.nft_image_url ||
+    minalien.nft_image ||
+    minalien.imageURI ||
+    minalien.image_uri;
+
+  if (direct){
+    // If the DB stores a root-relative path like "/nfts/1_TALHA.png",
+    // make it absolute so it works even when opened locally.
+    if (typeof direct === "string" && direct.startsWith("/")){
+      // Your hosting stores images under /nfts (public URL: https://play.minaliens.xyz/nfts/)
+      // If DB contains "/play/nfts/..", rewrite to "/nfts/..".
+      if (direct.startsWith("/nfts/")){
+        return origin + direct; // -> /nfts/...
+      }
+      return origin + direct;
+    }
+    return direct;
+  }
+
+  const tokenId = minalien.token_id ?? minalien.tokenId ?? minalien.id ?? null;
+  const name = minalien.name ?? minalien.display_name ?? minalien.title ?? null;
+
+  // If we have both, match your real filename format: /nfts/{id}_{NAME}.png
+  if (tokenId != null && name){
+    const safe = String(name).trim().toUpperCase().replace(/\s+/g, "_");
+    return origin + `/nfts/${tokenId}_${safe}.png`;
+  }
+
+  if (tokenId != null){
+    // Last-resort (may not exist on your server, but better than nothing)
+    return origin + `/nfts/${tokenId}.png`;
+  }
+
+  return null;
+}
+
+function pickMinalienName(minalien){
+  if(!minalien) return "—";
+  return minalien.name || minalien.title || minalien.nickname || minalien.display_name || "Minalien";
+}
+
+async function openCardFor(k){
+  // ── Purge any nexus leftovers from a previous nexus click ──
+  card.querySelectorAll('.nexus-info').forEach(el => el.remove());
+  const badge = document.getElementById('unitStatusBadge');
+  if (badge) { badge.style.display = 'none'; badge.className = 'unit-status-badge'; }
+  card.querySelectorAll('.nexus-chart-svg').forEach(el => el.remove());
+  const titleEl2 = card.querySelector('.title');
+  if (titleEl2) titleEl2.classList.remove('nexus-title');
+  // Restore any nexus-hidden elements
+  card.querySelectorAll('.kv').forEach(el => el.style.display = '');
+  const sc = spaceOfHex.get(k) || "—";
+  const uc = unitCodeOfHex.get(k) || "—";
+  const unitLetter = uc.split('-').pop();
+
+  pills.innerHTML="";
+
+  unitIdV.innerHTML = `<a href="unit.html?code=${encodeURIComponent(uc)}" style="color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.2);transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.7)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">${uc.replace(/(-[A-P])$/, m => `<span class="unit-letter-highlight">${m}</span>`)}</a>`;
+
+  // Populate district name as link to district page
+  const distLabelEl2 = document.getElementById('districtLabel');
+  if (distLabelEl2) distLabelEl2.textContent = 'District';
+  const districtEl = document.getElementById('districtName');
+  if (districtEl) {
+    const tname = getTerritoryName(sc);
+    districtEl.innerHTML = `<a href="district.html?code=${encodeURIComponent(sc)}" style="color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.15);transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.6)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">${tname}</a>`;
+  }
+
+  statusV.style.display = '';
+  statusV.innerHTML = 'Loading claim data…';
+
+  // reset UI — also restore imgwrap inline styles set by nexus card
+  const imgwrapEl = card.querySelector('.imgwrap');
+  if (imgwrapEl) {
+    imgwrapEl.style.position = '';
+    imgwrapEl.style.background = '';
+    imgwrapEl.style.padding = '';
+  }
+  if (minalienInfo) minalienInfo.style.display = "none";
+  minalienName.textContent = "—";
+  if (minalienImg) {
+    minalienImg.removeAttribute("src");
+    minalienImg.style.display = "none";
+  }
+
+  const reqId = ++cardRequestId;
+
+  // Claim status: prefer DB, fall back to local claimedSpaces map
+  let claim = null;
+  try{
+    claim = await fetchClaimForSpace(sc);
+  }catch(_e){ /* ignore */ }
+
+  // If user clicked another unit while we were loading, abort
+  if (reqId !== cardRequestId || selectedKey !== k) return;
+
+  const areaLooksClaimed = !!(claim?.area && (
+    claim.area.claimed_by ||
+    claim.area.owner ||
+    claim.area.owner_id ||
+    claim.area.user_id ||
+    claim.area.wallet_address ||
+    claim.area.mina_wallet_address
+  ));
+
+  const isClaimed = !!(claim?.user) || areaLooksClaimed || claimedSpaces.has(sc)
+                || !!(claim?.minalien); // minalien presence = territory is claimed
+
+  const looksForSale = !!(
+  (claim?.area && (
+    claim.area.for_sale === true ||
+    claim.area.is_for_sale === true ||
+    claim.area.forSale === true ||
+    claim.area.sale_price != null ||
+    claim.area.price != null
+  )) ||
+  (claim?.user && (
+    claim.user.for_sale === true ||
+    claim.user.is_for_sale === true ||
+    claim.user.forSale === true ||
+    claim.user.sale_price != null ||
+    claim.user.price != null
+  ))
+);
+
+const status = looksForSale ? "FOR SALE" : (isClaimed ? "CLAIMED" : "UNCLAIMED");
+
+  // Status badge under the minister image — use preloaded sets as primary source
+  const statusBadge = document.getElementById('unitStatusBadge');
+  if (statusBadge) {
+    const isAuction = auctionUnits.has(uc);
+    const isForSale = forSaleUnits.has(uc) || status === 'FOR SALE';
+    if (isAuction) {
+      statusBadge.textContent = '⬡ In Auction';
+      statusBadge.className = 'unit-status-badge badge--auction';
+      statusBadge.style.display = 'block';
+    } else if (isForSale) {
+      statusBadge.textContent = '◈ For Sale';
+      statusBadge.className = 'unit-status-badge badge--sale';
+      statusBadge.style.display = 'block';
+    } else {
+      statusBadge.style.display = 'none';
+    }
+  }
+
+const claimPill = document.getElementById("claimPill");
+if (claimPill) {
+  claimPill.textContent = status;
+  claimPill.classList.toggle("is-claimed", status === "CLAIMED");
+  claimPill.classList.toggle("is-unclaimed", status === "UNCLAIMED");
+  claimPill.classList.toggle("is-forsale", status === "FOR SALE");
+}
+
+// Always show unit page link, never show unclaimed text
+statusV.innerHTML = "";
+statusV.style.display = "none";
+const viewUnitBtn = document.getElementById('viewUnitPageBtn');
+if (viewUnitBtn) {
+  viewUnitBtn.href = `unit.html?code=${encodeURIComponent(uc)}`;
+  viewUnitBtn.style.display = 'block';
+}
+
+// Show owner(s) information
+const ownersSection = document.getElementById('ownersSection');
+const ownersList = document.getElementById('ownersList');
+
+if (status !== "UNCLAIMED") {
+  // Each UNIT has ONE owner - determine who owns THIS specific unit
+  const unitCode = (unitIdV.textContent || '').trim().substring(0, 8); // e.g. LUM-01-L
+  const spaceCode = unitCode ? unitCode.substring(0, 6) : sc;
+  const sessionData = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+  const currentUserId = sessionData?.user?.id || null;
+
+  let owner = null;
+
+  // Live fetch owner from DB for this specific unit — never stale
+  const db = window.supabaseClient || window.supabase;
+  if (db && unitCode && unitCode.length >= 8) {
+    try {
+      const { data: unitRow } = await db
+        .from('units')
+        .select('owner_id')
+        .eq('unit_code', unitCode)
+        .maybeSingle();
+
+      if (unitRow && unitRow.owner_id) {
+        const { data: userRow } = await db
+          .from('users')
+          .select('id, username, avatar, avatar_url, x_username, territory_color')
+          .eq('id', unitRow.owner_id)
+          .maybeSingle();
+
+        if (userRow) {
+          // Also update local cache so tooltip stays current without full reload
+          const livePlayer = {
+            id: userRow.id,
+            name: userRow.username,
+            avatar: resolveAvatar(userRow.avatar, userRow.x_username, userRow.username, userRow.avatar_url) || null,
+            color: (userRow.territory_color && userRow.territory_color !== '#FFE08A') ? userRow.territory_color : playerColorFromId(userRow.id),
+            ownedUnitCodes: [unitCode],
+            spaces: [spaceCode],
+            units: 1,
+            overallScore: 0
+          };
+          unitOwnerByCode.set(unitCode, livePlayer);
+          unitOwnerColors.set(unitCode, livePlayer.color);
+          owner = {
+            username: userRow.username,
+            avatar: livePlayer.avatar,
+            overallScore: 0,
+            userId: userRow.id,
+            unitsOwned: null,
+            isCurrentUser: userRow.id === currentUserId,
+            color: livePlayer.color
+          };
+        }
+      } else if (unitRow && !unitRow.owner_id) {
+        // Unit is vacant — clear from cache
+        unitOwnerByCode.delete(unitCode);
+        unitOwnerColors.delete(unitCode);
+        owner = null;
+      }
+    } catch(e) {
+      console.warn('Live owner fetch failed, falling back to cache:', e.message);
+      // Fallback to cached DB_PLAYERS
+      const owningPlayer = DB_PLAYERS.find(p => p.ownedUnitCodes.includes(unitCode));
+      if (owningPlayer) {
+        owner = {
+          username: owningPlayer.name,
+          avatar: owningPlayer.avatar,
+          overallScore: owningPlayer.overallScore ?? 0,
+          userId: owningPlayer.id,
+          unitsOwned: owningPlayer.units,
+          isCurrentUser: owningPlayer.id === currentUserId,
+          color: owningPlayer.color
+        };
+      }
+    }
+  }
+  
+  if (owner) {
+    ownersSection.style.display = 'block';
+    
+    console.log('🎴 Generating owner card:', {
+      username: owner.username,
+      userId: owner.userId,
+      spaceCode: spaceCode,
+      unitCode: unitCode,
+      profileLink: `profile.html?user=${owner.username}`
+    });
+    
+    // Build avatar HTML — fall back to coloured initial if no image
+    const _initBg = owner.color || '#FFE08A';
+    const _initial = (owner.username || '?').charAt(0).toUpperCase();
+    const _fallbackHTML = `<div style="width:100%;height:100%;border-radius:6px;background:${_initBg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#0a0615;">${_initial}</div>`;
+    let avatarHTML;
+    if (owner.avatar) {
+      const img = document.createElement('img');
+      img.src = owner.avatar;
+      img.alt = owner.username || '';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:6px;';
+      img.loading = 'lazy';
+      img.addEventListener('error', function() {
+        const wrap = this.closest('.owner-avatar');
+        if (wrap) wrap.innerHTML = _fallbackHTML;
+      });
+      avatarHTML = img.outerHTML;
+    } else {
+      avatarHTML = _fallbackHTML;
+    }
+    
+    // Owner: avatar + username as profile link, no buttons
+    const profileUrl = owner.isCurrentUser ? 'profile.html' : `profile.html?user=${owner.username}`;
+    ownersList.innerHTML = `
+      <div class="owner-inline">
+        <div class="owner-inline-label">Unit Owner</div>
+        <div class="owner-inline-row">
+          <div class="owner-avatar">${avatarHTML}</div>
+          <a href="${profileUrl}" class="owner-username-link">${owner.username}${owner.isCurrentUser ? ' (You)' : ''}</a>
+        </div>
+      </div>
+    `;
+
+    // Show "View Unit Page" link
+    const viewUnitBtn = document.getElementById('viewUnitPageBtn');
+    if (viewUnitBtn) {
+      const unitCode = unitIdV.textContent.replace(/\s/g,'');
+      viewUnitBtn.href = `unit.html?code=${encodeURIComponent(uc)}`;
+      viewUnitBtn.style.display = 'block';
+    }
+  } else {
+    ownersSection.style.display = 'none';
+    const viewUnitBtn = document.getElementById('viewUnitPageBtn');
+    if (viewUnitBtn) viewUnitBtn.style.display = 'none';
+  }
+} else {
+  ownersSection.style.display = 'none';
+  const viewUnitBtn = document.getElementById('viewUnitPageBtn');
+  if (viewUnitBtn) viewUnitBtn.style.display = 'none';
+}
+
+  // If DB says it's claimed, add to claimedSpaces so the map can colour it (best-effort)
+  if (isClaimed && !claimedSpaces.has(sc)) claimedSpaces.set(sc, "#4D96FF");
+
+  // Show minister for this territory — always hardcoded, no DB lookup needed
+  const minister = MINISTER_BY_TERRITORY[sc] || null;
+  if (minister) {
+    minalienName.textContent = minister.name;
+    if (minalienImg) {
+      minalienImg.src = minister.img;
+      minalienImg.style.display = "block";
+      minalienImg.style.cursor = "pointer";
+      minalienImg.title = `View ${minister.name}'s profile`;
+      minalienImg.onclick = () => {
+        window.location.href = `minalien.html?id=${minister.name.toLowerCase()}`;
+      };
+      minalienImg.onerror = () => {
+        // Try /play/nfts/ prefix as fallback
+        const cur = minalienImg.getAttribute("src") || "";
+        if (cur.startsWith("/nfts/")) {
+          minalienImg.onerror = null;
+          minalienImg.src = cur.replace("/nfts/", "/play/nfts/");
+        } else {
+          minalienImg.onerror = null;
+        }
+      };
+    }
+    if (minalienInfo) minalienInfo.style.display = "block";
+  } else {
+    if (minalienInfo) minalienInfo.style.display = "none";
+  }
+
+  // Show profile link if user owns this unit (dev mode: LUM-01 units)
+  const ownerLink = document.getElementById('ownerLink');
+  const viewMyUnitBtn = document.getElementById('viewMyUnitBtn');
+  const DEV_MODE = window.location.search.includes('dev=1');
+  
+  if (DEV_MODE && sc === 'LUM-01' && ownerLink && viewMyUnitBtn) {
+    ownerLink.style.display = 'block';
+    viewMyUnitBtn.href = `profile.html?dev=1#unit-${uc}`;
+    viewMyUnitBtn.onclick = (e) => {
+      e.preventDefault();
+      window.location.href = `profile.html?dev=1#unit-${uc}`;
+    };
+  } else if (ownerLink) {
+    ownerLink.style.display = 'none';
+  }
+
+  // Highlight the owning player in the panel if this unit is owned
+  const unitCode = unitIdV.textContent;
+  const spaceCode = unitCode ? unitCode.substring(0, 6) : sc;
+  const owningPlayer = DB_PLAYERS.find(p => p.spaces.includes(spaceCode));
+  
+  if (owningPlayer && status !== "UNCLAIMED") {
+    let resolvedOwner = owningPlayer;
+
+    if (resolvedOwner) {
+      highlightedPlayerId = resolvedOwner.id;
+      highlightedSpaces = new Set([spaceCode]);
+      updatePlayerHighlights(resolvedOwner.id);
+    }
+  }
+
+  card.style.display="block";
+}
+
+function closeCard(){ 
+  card.style.display="none";
+  // Clean up nexus SVG
+  const oldSvg = card.querySelector('.nexus-chart-svg');
+  if (oldSvg) oldSvg.remove();
+  // Restore imgwrap padding for normal territory cards
+  const iw = card.querySelector('.imgwrap');
+  if (iw) { iw.style.padding = ''; iw.style.background = ''; }
+  // Remove nexus-info entirely
+  card.querySelectorAll('.nexus-info').forEach(el => el.remove());
+  // Remove nexus-title class from title
+  const titleEl = card.querySelector('.title');
+  if (titleEl) titleEl.classList.remove('nexus-title');
+}
+
+function boot(){
+  resize();
+  buildMap();
+  fit();
+  draw();
+
+  // Delay player panel load — let the canvas render first, then fetch players
+  setTimeout(loadPlayers, 200); // Load quickly so map colours are correct
+  setInterval(loadPlayers, 60000); // Refresh every 60s to pick up ownership changes
+
+  // Preload territory card data after initial render — deferred so it doesn't
+  // compete with loadPlayers and updateMarketplaceStats on boot
+  setTimeout(preloadTerritoryData, 2500);
+
+  // Update marketplace stats and ticker from DB — restart animation after data arrives
+  updateMarketplaceStats().then(() => requestDraw());
+  buildTickerFromDB();
+  
+  // Clickable stat boxes
+  const forSaleBox = document.getElementById('forSaleBox');
+  const auctionBox = document.getElementById('auctionBox');
+  
+  if (forSaleBox) {
+    forSaleBox.addEventListener('click', () => {
+      alert('For Sale marketplace coming soon!');
+    });
+  }
+  
+  if (auctionBox) {
+    auctionBox.addEventListener('click', () => {
+      alert('Auction marketplace coming soon!');
+    });
+  }
+}
+
+// ── TERRITORY NAMES — derived from UNIT_DATA (single source of truth) ──
+const TERRITORY_NAMES = {
+  'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+  'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+  'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+  'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+  'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+};
+function getTerritoryName(spaceCode) {
+  return TERRITORY_NAMES[spaceCode] || spaceCode;
+}
+
+
+// ── Avatar URL resolver ──
+// Priority: OG local image → avatar_url (Supabase Storage upload) → avatar (legacy) → unavatar.io → null
+function resolveAvatar(av, xUsername, username, avatarUrl) {
+  // Always prefer real uploaded avatar from DB over any hardcoded fallback
+  if (avatarUrl && (avatarUrl.startsWith('http') || avatarUrl.startsWith('/'))) return avatarUrl;
+  if (av && (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/'))) return av;
+  if (av && av.length > 8 && !/\p{Emoji}/u.test(av)) return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+  if (xUsername) return 'https://unavatar.io/twitter/' + xUsername.replace(/^@/, '');
+  return null;
+};
+
+async function loadPlayers() {
+  const list = document.getElementById('playerList');
+  if (!list) return;
+
+  const client = window.supabaseClient || window.supabase;
+  if (!client) return;
+
+  try {
+    // Fetch all users with avatars
+    const { data: users, error: usersErr } = await client
+      .from('users')
+      .select('id, username, avatar, avatar_url, x_username, mina_wallet_address, territory_color')
+      .not('username', 'is', null);
+
+    if (usersErr || !users) { console.warn('Could not load players:', usersErr); return; }
+
+    // Fetch all owned units — filter server-side to skip unowned rows
+    const { data: units } = await client
+      .from('units')
+      .select('owner_id, unit_code')
+      .not('owner_id', 'is', null);
+
+    // Build player objects (attributes deferred — not needed for map rendering)
+    DB_PLAYERS = users.map((u, i) => {
+      const ownedUnits = units ? units.filter(un => un.owner_id === u.id) : [];
+      const spaces = [...new Set(ownedUnits.map(un => un.unit_code.substring(0, 6)))];
+      const overallScore = 0; // attributes loaded on demand if needed
+      return {
+        id: u.id,
+        name: u.username,
+        avatar: resolveAvatar(u.avatar, u.x_username, u.username, u.avatar_url) || null,
+        spaces,
+        ownedUnitCodes: ownedUnits.map(un => un.unit_code),
+        partialSpaces: [],
+        units: ownedUnits.length,
+        color: (u.territory_color && u.territory_color !== '#FFE08A') ? u.territory_color : playerColorFromId(u.id),
+        overallScore
+      };
+    }).filter(p => p.units > 0); // only show players who own units
+
+    // Sync per-unit ownership colors and territory claimed status
+    // Clear the static hardcoded claimedSpaces so DB data takes over
+    claimedSpaces.clear();
+    unitOwnerByCode.clear(); // reset O(1) tooltip lookup map
+    DB_PLAYERS.forEach(player => {
+      // Color each individual unit with the player's color
+      player.ownedUnitCodes.forEach(uc => {
+        unitOwnerColors.set(uc, player.color);
+        unitOwnerByCode.set(uc, player); // O(1) lookup for tooltip
+        // Mark territory as claimed (any ownership = claimed territory)
+        const territory = uc.substring(0, 6);
+        if (!claimedSpaces.has(territory)) {
+          claimedSpaces.set(territory, player.color); // first owner sets territory colour
+        }
+      });
+    });
+
+    // Render player list
+    list.innerHTML = '';
+    DB_PLAYERS.forEach(player => {
+      const item = document.createElement('div');
+      item.className = 'player-item';
+      item.dataset.playerId = player.id;
+
+      const avatarEl = document.createElement('div');
+      avatarEl.className = 'player-avatar';
+
+      if (player.avatar) {
+        const img = document.createElement('img');
+        img.loading = 'lazy';  // browser-native lazy load
+        img.src = player.avatar;
+        img.alt = player.name;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
+        img.onerror = () => { img.style.display='none'; avatarEl.textContent = player.name[0].toUpperCase(); };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = player.name[0].toUpperCase();
+      }
+
+      const infoEl = document.createElement('div');
+      infoEl.className = 'player-info';
+      infoEl.innerHTML = `
+        <div class="player-name">${player.name}</div>
+        <div class="player-units">${player.units} unit${player.units !== 1 ? 's' : ''} &middot; ${player.spaces.join(', ')}</div>
+      `;
+
+      const dotEl = document.createElement('div');
+      dotEl.className = 'player-dot';
+      dotEl.style.background = player.color;
+
+      item.appendChild(avatarEl);
+      item.appendChild(infoEl);
+      item.appendChild(dotEl);
+      item.onclick = () => highlightPlayer(player);
+      list.appendChild(item);
+    });
+
+  } catch(e) {
+    console.warn('loadPlayers error:', e.message);
+  }
+}
+
+function highlightPlayer(player) {
+  // Toggle off if already selected
+  if (highlightedPlayerId === player.id) {
+    highlightedPlayerId = null;
+    highlightedSpaces.clear(); highlightedUnits.clear();
+    highlightedUnits.clear();
+    updatePlayerHighlights(null);
+    draw();
+    return;
+  }
+
+  highlightedPlayerId = player.id;
+
+  // Per-unit highlight set — used for partial territory ownership
+  highlightedUnits = new Set(player.ownedUnitCodes || []);
+
+  // highlightedSpaces: only include territories the player owns entirely (all 16 units)
+  // Partial territories are handled by highlightedUnits per-hex instead
+  const unitCountByTerritory = {};
+  (player.ownedUnitCodes || []).forEach(uc => {
+    const t = uc.substring(0, 6);
+    unitCountByTerritory[t] = (unitCountByTerritory[t] || 0) + 1;
+  });
+  highlightedSpaces = new Set(
+    player.spaces.filter(t => (unitCountByTerritory[t] || 0) >= 16)
+  );
+
+  // Pan to the territory where the player owns the most units
+  const primarySpace = Object.entries(unitCountByTerritory).sort((a,b) => b[1]-a[1])[0]?.[0]
+                    || player.spaces[0];
+  if (primarySpace && SPACE_HEXAGONS[primarySpace]) {
+    const hexes = SPACE_HEXAGONS[primarySpace];
+    let sumQ = 0, sumR = 0;
+    for (const [q, r] of hexes) { sumQ += q; sumR += r; }
+    camera.x = axialToPixel(sumQ / hexes.length, sumR / hexes.length).x;
+    camera.y = axialToPixel(sumQ / hexes.length, sumR / hexes.length).y;
+    camera.zoom = player.spaces.length > 1 ? 1.0 : 1.5;
+  }
+
+  updatePlayerHighlights(player.id);
+  draw();
+}
+
+function updatePlayerHighlights(playerId) {
+  document.querySelectorAll('.player-item').forEach(item => {
+    const isActive = item.dataset.playerId === playerId;
+    item.classList.toggle('active', isActive);
+    
+    // Auto-scroll to active player
+    if (isActive) {
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
+
+function highlightSpace(spaceCode) {
+  // Legacy single-space highlight - still used by card clicks
+  highlightedPlayerId = null;
+  highlightedSpaces = new Set([spaceCode]);
+  updatePlayerHighlights(null);
+  requestDraw();
+}
+
+async function updateMarketplaceStats() {
+  const forSaleCount = document.getElementById('forSaleCount');
+  const auctionCount = document.getElementById('auctionCount');
+  const totalPopEl   = document.getElementById('totalPopCount');
+
+  try {
+    const db = window.supabase;
+    if (db && typeof db.from === 'function') {
+      const [saleRes, auctionRes, popRes] = await Promise.all([
+        db.from('units').select('unit_code').eq('for_sale', true),
+        db.from('units').select('unit_code').eq('auction_active', true),
+        db.from('territories').select('territory_population')
+      ]);
+      if (saleRes.data)    saleRes.data.forEach(r => forSaleUnits.add(r.unit_code));
+      if (auctionRes.data) auctionRes.data.forEach(r => auctionUnits.add(r.unit_code));
+      if (popRes.data && totalPopEl) {
+        const total = popRes.data.reduce((sum, r) => sum + (r.territory_population || 0), 0);
+        if (total > 0) totalPopEl.textContent = total.toLocaleString();
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load marketplace stats:', e.message);
+  }
+
+  if (forSaleCount) forSaleCount.textContent = forSaleUnits.size;
+  if (auctionCount) auctionCount.textContent = auctionUnits.size;
+}
+ 
+
+// ── Performance: smart animation loop ──
+// Only run rAF continuously when there are animating hexes (for-sale/auction pulse).
+// Otherwise draw once and go idle; interactions call draw() directly.
+let _rafId = null;
+let _animating = false;
+
+function _needsAnimation() {
+  // Collab nexus hexes always pulse; also animate for-sale/auction units
+  return collabHexData.size > 0 || forSaleUnits.size > 0 || auctionUnits.size > 0;
+}
+
+function tick(t) {
+  ANIM_T = t;
+  draw();
+  if (_needsAnimation()) {
+    _rafId = requestAnimationFrame(tick);
+  } else {
+    _rafId = null;
+    _animating = false;
+  }
+}
+
+function requestDraw() {
+  // Called by interaction events instead of draw() directly
+  // If we need animation, ensure loop is running; otherwise just draw once
+  if (_needsAnimation()) {
+    if (!_animating) {
+      _animating = true;
+      _rafId = requestAnimationFrame(tick);
+    }
+  } else {
+    // One-shot draw — cancel any running loop first
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; _animating = false; }
+    draw();
+  }
+}
+
+// Start initial draw (will auto-stop if no animated hexes)
+_animating = true;
+_rafId = requestAnimationFrame(tick);
+
+window.addEventListener("resize", ()=>{ resize(); fit(); requestDraw(); });
+window.addEventListener("load", () => {
+  boot();
+  
+  // Check for highlight parameter from minister pages
+  const params = new URLSearchParams(window.location.search);
+  const highlightSpace = params.get('highlight');
+  if (highlightSpace) {
+    // Find and highlight the space
+    setTimeout(() => {
+      const spaceHexes = [];
+      for (const [hex, space] of spaceOfHex.entries()) {
+        if (space === highlightSpace) {
+          spaceHexes.push(hex);
+        }
+      }
+      if (spaceHexes.length > 0) {
+        // Click the first hex of the space to show it
+        const firstHex = spaceHexes[0];
+        openCardFor(firstHex);
+        console.log(`🎯 Highlighted space: ${highlightSpace}`);
+      }
+    }, 500); // Wait for map to load
+  }
+});
+
+// Show Luminaea detailed information
+function engageUser(username) {
+  window.location.href = 'profile.html?user=' + encodeURIComponent(username);
+}
+
+function showLuminaeaInfo(e) {
+  if (e) e.preventDefault();
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `;
+  
+  modal.innerHTML = `
+    <div style="
+      background: linear-gradient(135deg, #1a1520 0%, #0a0a0f 100%);
+      border: 2px solid rgba(255,224,138,0.3);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    ">
+      <button onclick="this.closest('div').parentElement.remove()" style="
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.7);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      " onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.color='rgba(255,255,255,0.7)'">×</button>
+      
+      <h2 style="
+        font-size: 28px;
+        background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+        font-weight: 900;
+      ">LUMINAEA</h2>
+      
+      <h3 style="
+        font-size: 18px;
+        color: rgba(255,224,138,0.85);
+        margin-bottom: 24px;
+        font-weight: 600;
+      ">The Continent of Light and Harmony</h3>
+      
+      <div style="color: rgba(255,255,255,0.85); line-height: 1.8; font-size: 14px;">
+        <p style="margin-bottom: 16px;">
+          A glowing land of natural beauty, bioluminescent forests, and harmony. 
+          Luminaea is home to Minaliens inspired by <span style="color: #FFE08A; font-weight: 600;">light, creativity, and connection with nature</span>.
+        </p>
+        
+        <p style="margin-bottom: 16px;">
+          The territory features <strong style="color: #FFE08A;">20 unique spaces</strong>, each governed by a Minister 
+          from the Minaliens collection. These Ministers oversee <strong style="color: #FFE08A;">320 hexagonal units</strong> 
+          available for ownership and development.
+        </p>
+        
+        <div style="
+          background: rgba(255,224,138,0.08);
+          border: 1px solid rgba(255,224,138,0.2);
+          border-radius: 12px;
+          padding: 16px;
+          margin: 20px 0;
+        ">
+          <h4 style="color: #FFE08A; font-size: 14px; margin-bottom: 12px; font-weight: 700;">Territory Characteristics</h4>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li style="margin-bottom: 8px;">🌿 <strong>Ecosystem:</strong> Bioluminescent forests and natural wonders</li>
+            <li style="margin-bottom: 8px;">🎨 <strong>Culture:</strong> Creativity, artistic expression, and innovation</li>
+            <li style="margin-bottom: 8px;">☀️ <strong>Energy:</strong> Light-based renewable power systems</li>
+            <li style="margin-bottom: 8px;">🤝 <strong>Community:</strong> Harmony and environmental stewardship</li>
+          </ul>
+        </div>
+        
+        <p style="margin-bottom: 0; color: rgba(255,255,255,0.6); font-size: 13px;">
+          More territories will be revealed as MINALIA expands across the planet.
+        </p>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  // Close on Escape key
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
+// Toggle Active Players panel show/hide
+function togglePlayerPanel() {
+  const panel = document.getElementById('playerPanel');
+  const isCurrentlyCollapsed = panel.classList.contains('collapsed');
+  // On first expand: trigger load if not already loaded
+  if (isCurrentlyCollapsed && !panel.dataset.loaded) {
+    panel.dataset.loaded = '1';
+    // loadPlayers already scheduled via setTimeout — just ensure it runs now
+    loadPlayers();
+  }
+  if (panel) panel.classList.toggle('collapsed');
+}
+
+</script>
+  <div class="earth-footer"><img src="images/minalia.png" alt="" /></div>
+<script src="lum-time.js?v=20260306c"></script>
+<script>document.addEventListener('DOMContentLoaded', function(){ if(typeof startLumClock==='function') startLumClock(); });</script>
+<script src="nav-audio.js"></script>
+</body>
+</html>

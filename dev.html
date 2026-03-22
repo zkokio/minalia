@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Developments — MINALIA</title>
+<link rel="stylesheet" href="style.css?v=20260316a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=20260320a"></script>
+<script src="auth_auro.js?v=20260320a"></script>
+<style>
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+    background-size:64px 64px; pointer-events:none; z-index:0;
+  }
+  .page-wrap { max-width:1200px; margin:0 auto; padding:100px 24px 80px; }
+  .filter-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px; }
+  .filter-btn { font-size:10px; font-weight:700; letter-spacing:.06em; padding:5px 12px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:rgba(255,255,255,0.4); cursor:pointer; text-transform:uppercase; transition:all .15s; }
+  .filter-btn:hover,.filter-btn.active { border-color:rgba(255,224,138,0.35); color:rgba(255,224,138,0.85); background:rgba(255,224,138,0.06); }
+  .hero { display:grid; grid-template-columns:320px 1fr; gap:28px; margin-bottom:28px; align-items:start; }
+  @media(max-width:820px){.hero{grid-template-columns:1fr;}}
+  .visual-col { display:flex; flex-direction:column; gap:12px; }
+  .dev-art-card { background:rgba(14,10,22,0.97); border:2px solid rgba(255,224,138,0.2); border-radius:20px; overflow:hidden; position:relative; min-height:280px; display:flex; align-items:center; justify-content:center; }
+  .dev-art-card svg { width:100%; height:auto; display:block; }
+  .dev-nav { display:flex; align-items:center; gap:10px; }
+  .dev-nav-btn { color:rgba(255,224,138,0.7); font-weight:700; font-size:12px; transition:color .2s; cursor:pointer; background:none; border:none; padding:0; white-space:nowrap; }
+  .dev-nav-btn:hover { color:#FFE08A; }
+  .dev-nav-btn:disabled { color:rgba(255,255,255,0.2); cursor:default; }
+  .dev-nav-center { flex:1; text-align:center; font-size:11px; color:rgba(255,255,255,0.3); font-weight:600; letter-spacing:.04em; }
+  .dev-info { display:flex; flex-direction:column; gap:12px; }
+  .dev-meta { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+  .dev-title { font-size:clamp(22px,3vw,32px); font-weight:900; color:#fff; letter-spacing:-.01em; line-height:1.1; margin:0; }
+  .dev-purpose { font-size:13px; color:rgba(255,255,255,0.4); font-style:italic; }
+  .dev-desc { font-size:14px; color:rgba(255,255,255,0.6); line-height:1.7; }
+  .tier-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .tier-badge.common    { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.5); }
+  .tier-badge.uncommon  { background:rgba(80,200,120,0.1);   border:1px solid rgba(80,200,120,0.25);  color:rgba(100,220,140,0.9); }
+  .tier-badge.rare      { background:rgba(80,160,255,0.1);   border:1px solid rgba(80,160,255,0.25);  color:rgba(120,190,255,0.9); }
+  .tier-badge.legendary { background:rgba(255,200,60,0.12);  border:1px solid rgba(255,200,60,0.3);   color:rgba(255,220,80,0.95); }
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-item { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; }
+  .stat-label { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,0.35); margin-bottom:5px; font-weight:700; }
+  .stat-value { font-size:18px; font-weight:700; color:rgba(255,255,255,0.9); line-height:1; }
+  .yield-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 16px; }
+  .yield-block-title { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:10px; }
+  .yield-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:12px; }
+  .yield-row:last-child { margin-bottom:0; }
+  .yield-token { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; }
+  .yield-equiv { font-size:11px; color:rgba(255,255,255,0.3); text-align:right; white-space:nowrap; }
+  .yield-none { font-size:12px; color:rgba(255,255,255,0.25); font-style:italic; }
+  .tok-arkis{color:rgba(255,200,60,0.95);} .tok-plasm{color:rgba(200,120,255,0.95);} .tok-wire{color:rgba(80,160,255,0.95);} .tok-lichen{color:rgba(70,220,130,0.95);} .tok-spore{color:rgba(190,90,255,0.95);}
+  .protection-box { background:rgba(255,80,80,0.07); border:1px solid rgba(255,80,80,0.2); border-radius:10px; padding:12px 16px; font-size:12px; color:rgba(255,140,140,0.9); display:flex; align-items:flex-start; gap:8px; }
+  .bottom-section { background:rgba(20,15,30,0.97); border:2px solid rgba(255,224,138,0.12); border-radius:16px; padding:20px 24px; margin-bottom:24px; }
+  .bottom-heading { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,224,138,0.5); margin-bottom:14px; }
+  .levels-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  @media(max-width:600px){.levels-grid{grid-template-columns:repeat(3,1fr);}}
+  .level-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:12px 8px; text-align:center; display:flex; flex-direction:column; gap:5px; }
+  .level-num { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); }
+  .level-name { font-size:11px; font-weight:700; line-height:1.2; }
+  .level-name.l1{color:rgba(255,255,255,0.45);} .level-name.l2{color:rgba(34,197,94,0.9);} .level-name.l3{color:rgba(59,130,246,0.9);} .level-name.l4{color:rgba(168,85,247,0.9);} .level-name.l5{color:#FFE08A;}
+  .level-mult { font-size:16px; font-weight:800; color:rgba(255,255,255,0.8); }
+  .level-income { font-size:10px; color:rgba(255,255,255,0.45); }
+  .level-cost { font-size:9px; color:rgba(255,255,255,0.25); line-height:1.4; margin-top:2px; }
+  .level-cost em { color:rgba(255,200,60,0.65); font-style:normal; font-weight:600; }
+  .builton-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .builton-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); text-decoration:none; transition:all .15s; }
+  .builton-pill:hover { background:rgba(255,224,138,0.07); border-color:rgba(255,224,138,0.2); }
+  .builton-unit { font-size:12px; font-weight:700; color:rgba(255,224,138,0.8); }
+  .builton-owner { font-size:10px; color:rgba(255,255,255,0.35); }
+  .builton-lvl { font-size:9px; font-weight:700; padding:1px 6px; border-radius:4px; }
+  .builton-lvl.l1{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);}
+  .builton-lvl.l2{background:rgba(34,197,94,0.1);color:rgba(34,197,94,0.8);}
+  .builton-lvl.l3{background:rgba(59,130,246,0.1);color:rgba(59,130,246,0.8);}
+  .builton-lvl.l4{background:rgba(168,85,247,0.1);color:rgba(168,85,247,0.8);}
+  .builton-lvl.l5{background:rgba(255,200,60,0.1);color:#FFE08A;}
+  .builton-none { font-size:12px; color:rgba(255,255,255,0.25); font-style:italic; }
+  .loading-state { text-align:center; padding:80px 24px; color:rgba(255,255,255,0.3); font-size:14px; }
+
+  .in-dev-panel {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,224,138,0.15);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .in-dev-title { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,224,138,0.6); margin-bottom:12px; }
+  .in-dev-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+  .in-dev-row:last-child { border-bottom:none; }
+  .in-dev-icon { font-size:16px; flex-shrink:0; }
+  .in-dev-name { color:rgba(255,255,255,0.85); flex:1; }
+  .in-dev-eta  { font-size:11px; color:rgba(255,255,255,0.3); font-family:'Share Tech Mono',monospace; white-space:nowrap; }
+  .in-dev-back { font-size:11px; color:rgba(255,224,138,0.5); text-decoration:none; margin-top:12px; display:inline-block; }
+  .in-dev-back:hover { color:rgba(255,224,138,0.9); }
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="page-wrap">
+  <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:20px;letter-spacing:.04em;">
+    <a href="map.html" style="color:rgba(255,255,255,0.3);text-decoration:none;">Map</a>
+    <span style="margin:0 6px;opacity:.5;">›</span>
+    <span style="color:rgba(255,224,138,0.6);">Developments</span>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" data-cat="all"        onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" data-cat="economy"           onclick="setFilter('economy',this)">💰 Economy</button>
+    <button class="filter-btn" data-cat="science"           onclick="setFilter('science',this)">🔬 Science</button>
+    <button class="filter-btn" data-cat="nature"            onclick="setFilter('nature',this)">🌿 Nature</button>
+    <button class="filter-btn" data-cat="culture"           onclick="setFilter('culture',this)">🎭 Culture</button>
+    <button class="filter-btn" data-cat="housing"           onclick="setFilter('housing',this)">🏠 Housing</button>
+    <button class="filter-btn" data-cat="health"            onclick="setFilter('health',this)">💊 Health</button>
+    <button class="filter-btn" data-cat="prestige"          onclick="setFilter('prestige',this)">✦ Prestige</button>
+    <button class="filter-btn" data-cat="defence"           onclick="setFilter('defence',this)">🛡️ Defence</button>
+    <button class="filter-btn" data-cat="biological"        onclick="setFilter('biological',this)">🍄 Biological</button>
+  </div>
+
+  <!-- Development picker — jump directly to any dev in the current filter -->
+  <div id="devPickerWrap" style="display:none;margin-bottom:18px;overflow-x:auto;padding-bottom:4px;">
+    <div id="devPickerList" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  </div>
+  <div id="inDevPanel" style="display:none;"></div>
+  <div id="devPage"><div class="loading-state">Loading developments…</div></div>
+
+  <!-- ── SPECIAL COLLABORATION BUILDINGS ── -->
+  <div style="margin-top:56px;padding-top:32px;border-top:1px solid rgba(255,224,138,0.1);">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,224,138,0.8);">⭐ Special Collaboration Buildings</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);">One per territory · Requires 2 players · Paid in tokens</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:12px;line-height:1.6;">
+      Special buildings can only be built by players who own units in the native territory or an adjacent nexus-connected territory.
+      Costs shown are <strong style="color:rgba(255,255,255,0.5);">per player</strong>, paid in the territory's native token.
+      <a href="realestate.html" style="color:rgba(255,224,138,0.5);text-decoration:none;margin-left:6px;">Register interest on Real Estate →</a>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,224,138,0.35);background:rgba(255,224,138,0.04);border:1px solid rgba(255,224,138,0.1);border-radius:8px;padding:9px 14px;margin-bottom:20px;line-height:1.7;">
+      ⏱ <strong style="color:rgba(255,224,138,0.6);">Luminaea time:</strong> 1 IRL hour = 1 Lum day · 30 IRL hours = 1 Lum month · ~120 IRL hours = 1 Lum season
+      <span style="color:rgba(255,255,255,0.2);margin:0 6px;">·</span>
+      All yields shown are per Lum month. Initial costs recover in <strong style="color:rgba(255,224,138,0.6);">3–5 Lum months</strong> (~4–6 IRL days).
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:10px;">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:rgba(96,255,171,0.7);display:inline-block;"></span>Native territory — 100% yield</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:rgba(255,200,60,0.7);display:inline-block;"></span>Nexus-adjacent — 75% yield</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.15);display:inline-block;"></span>Not eligible</span>
+    </div>
+
+    <div id="specialBuildingsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+      <div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── NEXUS COLLABORATION BUILDINGS ── -->
+  <div style="margin-top:56px;padding-top:32px;border-top:1px solid rgba(80,160,255,0.15);">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,200,255,0.8);">⬡ Nexus Collaboration Buildings</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);">Built at nexus junction points · Requires 2–3 players · Shared yield</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:20px;line-height:1.6;">
+      Nexus buildings sit at the junction of 2 or 3 territories. Any player owning a unit in a touching territory is eligible to co-build.
+      <a href="nexus.html" style="color:rgba(80,200,255,0.5);text-decoration:none;margin-left:6px;">View active nexus projects →</a>
+    </div>
+
+    <!-- Tier tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="nexusTabRare" onclick="setNexusTab('rare')" style="padding:5px 14px;border-radius:20px;cursor:pointer;font-size:11px;font-family:'Share Tech Mono',monospace;border:1px solid rgba(255,160,60,0.4);background:rgba(255,160,60,0.1);color:rgba(255,180,80,0.9);">⚙ Rare</button>
+      <button id="nexusTabLegendary" onclick="setNexusTab('legendary')" style="padding:5px 14px;border-radius:20px;cursor:pointer;font-size:11px;font-family:'Share Tech Mono',monospace;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);">★ Legendary</button>
+    </div>
+
+    <div id="nexusBuildingsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+      <div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;">Loading…</div>
+    </div>
+  </div>
+</div>
+<script src="load-nav.js?v=20260316a"></script>
+<script src="nav-audio.js"></script>
+<script src="lum-time.js?v=20260306b"></script>
+<script>document.addEventListener('DOMContentLoaded', function(){ if(typeof startLumClock==='function') startLumClock(); });</script>
+<script>document.addEventListener('navLoaded',()=>{if(window.initNavAudio)window.initNavAudio();});</script>
+<script>
+const RATES = { PLASM:0.9, WIRE:2.2, LICHEN:2.7, SPORE:3.5 };
+const LEVELS = [
+  {n:1,cls:'l1',name:'Standard',mult:1.0, upgMult:0  },
+  {n:2,cls:'l2',name:'Enhanced',mult:1.4, upgMult:0.5},
+  {n:3,cls:'l3',name:'Advanced',mult:1.9, upgMult:1.0},
+  {n:4,cls:'l4',name:'Superior',mult:2.6, upgMult:2.0},
+  {n:5,cls:'l5',name:'Ultimate',mult:3.5, upgMult:4.0},
+];
+const LEVEL_NAMES = ['','Standard','Enhanced','Advanced','Superior','Ultimate'];
+const PROTECTION = {
+  flood_defence:   '55% reduction in tidal wave & flood damage',
+  drainage_system: '40% reduction in torrential rain & flood damage',
+  defence_tower:   '60% reduction in alien invasion impact',
+  arborist_station:'Protects nature buildings from Tree Blight events',
+};
+const CAT_ACCENT = {
+  economy:'#60ffab', science:'#60c8ff', nature:'#64dc82',
+  culture:'#c8a0ff', housing:'#ffe08a', health:'#ff8c8c',
+  prestige:'#ffc850', defence:'#ff6b6b', biological:'#be5aff',
+};
+
+// ── SVG art generator ────────────────────────────────────────
+function buildArtSVG(dev) {
+  const acc = CAT_ACCENT[dev.category] || '#FFE08A';
+  const c   = dev.category;
+
+  const stars = Array.from({length:20},(_,i)=>{
+    const x=15+(i*53)%290, y=8+(i*71)%110, r=i%4===0?1.4:0.7;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(255,255,255,${0.25+i%4*0.15})"/>`;
+  }).join('');
+
+  const glowBg = `<radialGradient id="glow" cx="50%" cy="60%" r="50%">
+    <stop offset="0%" stop-color="${acc}" stop-opacity="0.12"/>
+    <stop offset="100%" stop-color="${acc}" stop-opacity="0"/>
+  </radialGradient>`;
+
+  const ground = `<ellipse cx="160" cy="236" rx="120" ry="14" fill="${acc}" opacity="0.06"/>`;
+
+  const art = {
+    economy:`
+      <rect x="82" y="138" width="156" height="84" rx="4" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <rect x="102" y="118" width="116" height="22" rx="3" fill="${acc}" opacity="0.13"/>
+      <line x1="82" y1="162" x2="238" y2="162" stroke="${acc}" stroke-width="0.8" stroke-opacity="0.25"/>
+      <rect x="97"  y="170" width="26" height="30" rx="2" fill="${acc}" opacity="0.18"/>
+      <rect x="134" y="170" width="26" height="30" rx="2" fill="${acc}" opacity="0.22"/>
+      <rect x="171" y="170" width="26" height="30" rx="2" fill="${acc}" opacity="0.18"/>
+      <rect x="133" y="115" width="54" height="6" rx="2" fill="${acc}" opacity="0.45"/>
+      <circle cx="160" cy="100" r="12" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.55"/>
+      <line x1="154" y1="100" x2="166" y2="100" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.55"/>
+      <line x1="160" y1="94"  x2="160" y2="106" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.55"/>
+      <line x1="160" y1="88" x2="160" y2="115" stroke="${acc}" stroke-width="1" stroke-opacity="0.2" stroke-dasharray="3,3"/>`,
+    science:`
+      <circle cx="160" cy="172" r="58" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.2"/>
+      <circle cx="160" cy="172" r="38" fill="none" stroke="${acc}" stroke-width="1"   stroke-opacity="0.15"/>
+      <circle cx="160" cy="172" r="18" fill="${acc}" opacity="0.08"/>
+      <circle cx="160" cy="172" r="7"  fill="${acc}" opacity="0.5"/>
+      <line x1="160" y1="114" x2="160" y2="230" stroke="${acc}" stroke-width="0.6" stroke-opacity="0.2"/>
+      <line x1="102" y1="172" x2="218" y2="172" stroke="${acc}" stroke-width="0.6" stroke-opacity="0.2"/>
+      <line x1="119" y1="131" x2="201" y2="213" stroke="${acc}" stroke-width="0.6" stroke-opacity="0.12"/>
+      <line x1="201" y1="131" x2="119" y2="213" stroke="${acc}" stroke-width="0.6" stroke-opacity="0.12"/>
+      <path d="M148 152 L172 152 L160 130 Z" fill="none" stroke="${acc}" stroke-width="1.2" stroke-opacity="0.45"/>
+      <circle cx="205" cy="138" r="5" fill="${acc}" opacity="0.4"/>
+      <circle cx="118" cy="210" r="4" fill="${acc}" opacity="0.3"/>
+      <circle cx="200" cy="205" r="3" fill="${acc}" opacity="0.2"/>`,
+    nature:`
+      <path d="M160 100 Q120 130 105 175 Q90 220 160 232 Q230 220 215 175 Q200 130 160 100Z" fill="${acc}" opacity="0.06" stroke="${acc}" stroke-width="1" stroke-opacity="0.25"/>
+      <path d="M160 118 Q130 145 118 180 Q108 215 160 224 Q212 215 202 180 Q190 145 160 118Z" fill="${acc}" opacity="0.09"/>
+      <path d="M160 138 Q140 160 136 190 Q132 218 160 222 Q188 218 184 190 Q180 160 160 138Z" fill="${acc}" opacity="0.14"/>
+      <line x1="160" y1="138" x2="160" y2="232" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.3"/>
+      <path d="M160 165 Q145 158 132 162" fill="none" stroke="${acc}" stroke-width="1" stroke-opacity="0.35"/>
+      <path d="M160 183 Q175 175 188 180" fill="none" stroke="${acc}" stroke-width="1" stroke-opacity="0.35"/>
+      <path d="M160 200 Q147 193 136 197" fill="none" stroke="${acc}" stroke-width="1" stroke-opacity="0.3"/>
+      ${Array.from({length:7},(_,i)=>`<circle cx="${95+i*18}" cy="${230-Math.sin(i*.9)*6}" r="2" fill="${acc}" opacity="${.15+i%3*.08}"/>`).join('')}`,
+    culture:`
+      <path d="M68 222 Q68 160 160 148 Q252 160 252 222" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.2"/>
+      <path d="M88 222 Q88 168 160 158 Q232 168 232 222" fill="none" stroke="${acc}" stroke-width="1"   stroke-opacity="0.18"/>
+      <path d="M108 222 Q108 176 160 167 Q212 176 212 222" fill="rgba(255,255,255,0.02)" stroke="${acc}" stroke-width="1.2" stroke-opacity="0.35"/>
+      <rect x="142" y="182" width="36" height="5" rx="1" fill="${acc}" opacity="0.4"/>
+      <line x1="150" y1="182" x2="150" y2="158" stroke="${acc}" stroke-width="1" stroke-opacity="0.35"/>
+      <line x1="170" y1="182" x2="170" y2="158" stroke="${acc}" stroke-width="1" stroke-opacity="0.35"/>
+      <path d="M146 158 Q160 146 174 158" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.6"/>
+      <circle cx="160" cy="143" r="7" fill="${acc}" opacity="0.28"/>
+      <circle cx="160" cy="143" r="3" fill="${acc}" opacity="0.6"/>
+      <circle cx="138" cy="198" r="3.5" fill="${acc}" opacity="0.25"/>
+      <circle cx="182" cy="198" r="3.5" fill="${acc}" opacity="0.25"/>
+      <circle cx="118" cy="208" r="2.5" fill="${acc}" opacity="0.18"/>
+      <circle cx="202" cy="208" r="2.5" fill="${acc}" opacity="0.18"/>`,
+    housing:`
+      <path d="M88 175 L160 118 L232 175" fill="${acc}" opacity="0.1" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.45"/>
+      <rect x="102" y="173" width="116" height="60" rx="3" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <rect x="145" y="193" width="30" height="40" rx="2" fill="${acc}" opacity="0.18"/>
+      <rect x="110" y="185" width="22" height="17" rx="2" fill="${acc}" opacity="0.2"/>
+      <rect x="188" y="185" width="22" height="17" rx="2" fill="${acc}" opacity="0.2"/>
+      <circle cx="160" cy="140" r="9"  fill="${acc}" opacity="0.22"/>
+      <rect x="158" y="131" width="4" height="18" rx="1" fill="${acc}" opacity="0.5"/>
+      ${Array.from({length:5},(_,i)=>`<circle cx="${100+i*14}" cy="${164+i%2*3}" r="1.5" fill="${acc}" opacity=".3"/>`).join('')}`,
+    health:`
+      <rect x="112" y="145" width="96" height="82" rx="5" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <rect x="147" y="128" width="26" height="19" rx="3" fill="${acc}" opacity="0.2" stroke="${acc}" stroke-width="1" stroke-opacity="0.5"/>
+      <path d="M154 137.5 L166 137.5 M160 131.5 L160 143.5" stroke="${acc}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+      <rect x="142" y="188" width="36" height="39" rx="2" fill="${acc}" opacity="0.14"/>
+      <circle cx="112" cy="172" r="18" fill="none" stroke="${acc}" stroke-width="1" stroke-opacity="0.2"/>
+      <circle cx="208" cy="172" r="18" fill="none" stroke="${acc}" stroke-width="1" stroke-opacity="0.2"/>
+      <circle cx="160" cy="162" r="24" fill="${acc}" opacity="0.06"/>
+      ${Array.from({length:6},(_,i)=>`<circle cx="${128+i*8}" cy="228" r="2" fill="${acc}" opacity="${.12+i%3*.06}"/>`).join('')}`,
+    prestige:`
+      <path d="M82 168 L160 112 L238 168" fill="${acc}" opacity="0.07" stroke="${acc}" stroke-width="1.2" stroke-opacity="0.4"/>
+      <rect x="82" y="166" width="156" height="66" rx="2" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      ${Array.from({length:5},(_,i)=>`<rect x="${92+i*28}" y="${148}" width="14" height="20" rx="1" fill="${acc}" opacity=".18" stroke="${acc}" stroke-width=".8" stroke-opacity=".35"/>`).join('')}
+      <rect x="74" y="164" width="172" height="5" rx="1" fill="${acc}" opacity="0.28"/>
+      <rect x="70" y="230" width="180" height="4" rx="1" fill="${acc}" opacity="0.2"/>
+      <circle cx="160" cy="109" r="9"  fill="${acc}" opacity="0.4"/>
+      <circle cx="160" cy="109" r="4"  fill="${acc}" opacity="0.8"/>
+      <rect x="143" y="185" width="34" height="47" rx="2" fill="${acc}" opacity="0.18"/>`,
+    defence:`
+      <rect x="132" y="105" width="56" height="128" rx="3" fill="rgba(255,255,255,0.04)" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.45"/>
+      <path d="M132 105 L132 88 L144 88 L144 105 M150 105 L150 88 L162 88 L162 105 M168 105 L168 88 L180 88 L180 105 M186 88 L186 105" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.5"/>
+      <rect x="88"  y="188" width="44" height="44" rx="2" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.2" stroke-opacity="0.3"/>
+      <rect x="188" y="188" width="44" height="44" rx="2" fill="rgba(255,255,255,0.03)" stroke="${acc}" stroke-width="1.2" stroke-opacity="0.3"/>
+      <circle cx="160" cy="150" r="16" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <line x1="152" y1="150" x2="168" y2="150" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.55"/>
+      <line x1="160" y1="142" x2="160" y2="158" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.55"/>
+      <rect x="72" y="230" width="176" height="4" rx="1" fill="${acc}" opacity="0.18"/>`,
+    biological:`
+      <ellipse cx="160" cy="192" rx="68" ry="38" fill="${acc}" opacity="0.05" stroke="${acc}" stroke-width="1" stroke-opacity="0.25"/>
+      <ellipse cx="160" cy="192" rx="42" ry="24" fill="${acc}" opacity="0.09"/>
+      ${Array.from({length:8},(_,i)=>{
+        const a=(i/8)*Math.PI*2, x=(160+Math.cos(a)*60).toFixed(1), y=(192+Math.sin(a)*32).toFixed(1);
+        return `<circle cx="${x}" cy="${y}" r="5.5" fill="${acc}" opacity="${.12+i%3*.08}"/>
+                <line x1="160" y1="192" x2="${x}" y2="${y}" stroke="${acc}" stroke-width="0.8" stroke-opacity="0.18" stroke-dasharray="3,3"/>`;
+      }).join('')}
+      <circle cx="160" cy="192" r="16" fill="${acc}" opacity="0.18"/>
+      <circle cx="160" cy="192" r="7"  fill="${acc}" opacity="0.55"/>
+      <path d="M160 142 Q144 162 154 184" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <path d="M160 142 Q176 162 166 184" fill="none" stroke="${acc}" stroke-width="1.5" stroke-opacity="0.4"/>
+      <circle cx="160" cy="136" r="9"  fill="${acc}" opacity="0.32"/>`,
+  };
+
+  return `<svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg">
+    <defs>${glowBg}</defs>
+    <rect width="320" height="260" fill="#0a0812"/>
+    <rect width="320" height="260" fill="url(#glow)"/>
+    ${stars}
+    ${ground}
+    ${art[c] || art.economy}
+  </svg>`;
+}
+
+// ── State ──────────────────────────────────────────────────────
+let ALL_DEVS  = [];
+let ALL_BUILT    = {};  // slug → [{unit_code, username, level}]
+let ALL_BUILDING = {};  // slug → [{unit_code, username, completed_at}]
+let FILTERED  = [];
+let currentIdx = 0;
+let _specialPageShown = false; // guard: prevents retry of loadDevs overwriting special page
+
+
+function getParam(k){return new URLSearchParams(window.location.search).get(k)||null;}
+function setParam(k,v){const p=new URLSearchParams(window.location.search);p.set(k,v);history.replaceState(null,'','?'+p.toString());}
+
+async function loadDevs() {
+  if (_specialPageShown) return; // special building page already rendered — don't overwrite
+  const sb = window.supabaseClient || window.supabase;
+  if (!sb) { setTimeout(loadDevs, 400); return; }
+
+  const [catRes, builtRes, buildingRes] = await Promise.allSettled([
+    sb.from('development_catalog')
+      .select('slug,name,icon,category,tier,purpose,description,cost_arkis,yield_arkis,yield_plasm,yield_wire,yield_lichen,yield_spore,build_time_days,active,is_special_collab')
+      .order('sort_order',{ascending:true,nullsFirst:false})
+      .order('cost_arkis',{ascending:true}),
+    sb.from('developments')
+      .select('unit_code, level, development_catalog!developments_catalog_id_fkey(slug), users!developments_owner_id_fkey(username)')
+      .eq('status','completed'),
+    sb.from('developments')
+      .select('unit_code, completed_at, development_catalog!developments_catalog_id_fkey(slug), users!developments_owner_id_fkey(username)')
+      .eq('status','building')
+  ]);
+
+  if (catRes.status !== 'fulfilled' || catRes.value.error) {
+    document.getElementById('devPage').innerHTML = '<div class="loading-state">Failed to load. Please refresh.</div>';
+    return;
+  }
+
+  const allCatalog = catRes.value.data || [];
+  ALL_DEVS = allCatalog.filter(d => d.active);
+
+  // Build slug → instances map
+  if (builtRes.status === 'fulfilled' && !builtRes.value.error && builtRes.value.data) {
+    builtRes.value.data.forEach(row => {
+      const dc   = row['development_catalog!developments_catalog_id_fkey'] || row.development_catalog || {};
+      const slug = dc.slug;
+      if (!slug) return;
+      if (!ALL_BUILT[slug]) ALL_BUILT[slug] = [];
+      const owner = row['users!developments_owner_id_fkey'] || row.users || {};
+      ALL_BUILT[slug].push({ unit_code:row.unit_code, level:row.level||1, username:owner.username||'—' });
+    });
+  }
+
+  // Build slug → under-construction instances map
+  if (buildingRes.status === 'fulfilled' && !buildingRes.value.error && buildingRes.value.data) {
+    buildingRes.value.data.forEach(row => {
+      const dc   = row['development_catalog!developments_catalog_id_fkey'] || row.development_catalog || {};
+      const slug = dc.slug;
+      if (!slug) return;
+      if (!ALL_BUILDING[slug]) ALL_BUILDING[slug] = [];
+      const owner = row['users!developments_owner_id_fkey'] || row.users || {};
+      ALL_BUILDING[slug].push({ unit_code: row.unit_code, username: owner.username||'—', completed_at: row.completed_at });
+    });
+  }
+  const catParam  = getParam('cat') || 'all';
+  const slugParam = getParam('slug') || null;
+  const unitParam = getParam('unit') || null;
+
+  // ── If ?unit= is present, show active builds for that unit at the top ──
+  if (unitParam) {
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const userId  = session?.user?.id;
+    const panel   = document.getElementById('inDevPanel');
+    if (panel && userId) {
+      try {
+        const { data: activeDevs } = await sb
+          .from('developments')
+          .select('building_name, building_type, status, completed_at, development_catalog!developments_catalog_id_fkey(icon, slug)')
+          .eq('unit_code', unitParam)
+          .eq('owner_id', userId)
+          .in('status', ['building', 'completed'])
+          .order('started_at', { ascending: false });
+
+        if (activeDevs && activeDevs.length) {
+          const now = Date.now();
+          const rows = activeDevs.map(d => {
+            const dc   = d['development_catalog!developments_catalog_id_fkey'] || {};
+            const icon = dc.icon || '🏗️';
+            const name = d.building_name || 'Development';
+            const slug = dc.slug || d.building_type || '';
+            const href = slug ? 'dev.html?slug=' + slug : '#';
+            let eta = '';
+            if (d.status === 'building' && d.completed_at) {
+              const msLeft = new Date(d.completed_at).getTime() - now;
+              if (msLeft > 0) {
+                const h = Math.floor(msLeft / 3600000);
+                const m = Math.floor((msLeft % 3600000) / 60000);
+                eta = h > 0 ? h + 'h ' + m + 'm left' : m + 'm left';
+              } else {
+                eta = 'Complete soon';
+              }
+            } else if (d.status === 'completed') {
+              eta = '✅ Complete';
+            }
+            return '<div class="in-dev-row">'
+              + '<span class="in-dev-icon">' + icon + '</span>'
+              + '<a class="in-dev-name" href="' + href + '" style="text-decoration:none;color:rgba(255,255,255,0.85);">' + name + '</a>'
+              + (eta ? '<span class="in-dev-eta">' + eta + '</span>' : '')
+              + '</div>';
+          }).join('');
+
+          panel.innerHTML = '<div class="in-dev-panel">'
+            + '<div class="in-dev-title">⏳ Developments on ' + unitParam + '</div>'
+            + rows
+            + '<a class="in-dev-back" href="profile.html">← Back to Profile</a>'
+            + '</div>';
+          panel.style.display = 'block';
+        }
+      } catch(e) { console.warn('in-dev panel error:', e); }
+    }
+  }
+
+  applyFilter(catParam, false);
+  if (slugParam) {
+    const i = FILTERED.findIndex(d => d.slug === slugParam);
+    if (i >= 0) {
+      currentIdx = i;
+    } else {
+      // Slug not in active catalog — look in the full catalog already fetched (special/inactive items)
+      const special = allCatalog.find(d => d.slug === slugParam);
+      if (special) {
+        _specialPageShown = true;
+        showSpecialBuildingPage(special);
+        return;
+      }
+    }
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === catParam));
+  render();
+  renderPicker();
+}
+
+async function showSpecialBuildingPage(b) {
+  const page = document.getElementById('devPage');
+  if (!page) return;
+
+  // Find which territory this building belongs to
+  const terrEntry = Object.entries(SPECIAL_BUILDINGS_MAP).find(([, v]) => v.slug === b.slug);
+  const terrCode  = terrEntry ? terrEntry[0] : null;
+  const bMeta     = terrEntry ? terrEntry[1] : {};
+
+  // Render static content immediately, fill eligibility async below
+  const YIELD_COL = { yield_arkis:'#FFE08A', yield_plasm:'rgba(200,160,255,0.9)', yield_wire:'rgba(160,216,255,0.9)', yield_lichen:'rgba(128,224,160,0.9)', yield_spore:'rgba(240,192,96,0.9)' };
+  const YIELD_TOK = { yield_arkis:'ARKIS', yield_plasm:'PLASM', yield_wire:'WIRE', yield_lichen:'LICHEN', yield_spore:'SPORE' };
+  const yieldParts = ['yield_arkis','yield_plasm','yield_wire','yield_lichen','yield_spore']
+    .filter(k => Number(b[k]) > 0)
+    .map(k => ({ key:k, amt:Number(b[k]), col:YIELD_COL[k], tok:YIELD_TOK[k] }));
+
+  page.innerHTML = `
+    <div style="max-width:620px;margin:0 auto;padding:20px 0;">
+      <a href="dev.html" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-bottom:20px;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">← All Developments</a>
+
+      <!-- Main card -->
+      <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,224,138,0.2);border-radius:16px;overflow:hidden;margin-bottom:16px;">
+
+        <!-- Header -->
+        <div style="padding:24px 24px 18px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex;align-items:flex-start;gap:16px;">
+            <span style="font-size:38px;line-height:1;flex-shrink:0;">${b.icon || '⭐'}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:#FFE08A;margin-bottom:6px;">${b.name}</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <span style="font-size:9px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:.1em;padding:3px 8px;border-radius:20px;background:rgba(255,224,138,0.1);border:1px solid rgba(255,224,138,0.25);color:rgba(255,224,138,0.7);">⭐ Special Collaboration</span>
+                ${b.tier ? `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);">${b.tier}</span>` : ''}
+                ${terrCode ? `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.25);">Native to ${bMeta.native || terrCode}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          ${b.description ? `<p style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.65;margin:14px 0 0;">${b.description}</p>` : ''}
+        </div>
+
+        <!-- Stats: yield + cost -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="padding:16px 20px;border-right:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:8px;">Yield per player / Lum month</div>
+            ${yieldParts.length
+              ? yieldParts.map(y => `<div style="font-size:17px;font-weight:800;color:${y.col};">${y.amt.toLocaleString()} <span style="font-size:11px;font-weight:500;opacity:.7;">${y.tok}/mo</span></div>`).join('')
+              : '<div style="font-size:12px;color:rgba(255,255,255,0.2);font-style:italic;">No direct income</div>'}
+          </div>
+          <div style="padding:16px 20px;">
+            <div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:8px;">Initial cost per player</div>
+            <div style="font-size:17px;font-weight:800;color:rgba(255,255,255,0.85);">${bMeta.cost || '—'}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;">Split equally between 2 players</div>
+          </div>
+        </div>
+
+        <!-- How to build -->
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:8px;">How to Build</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.65;">Requires 2 players who each own a unit in <strong style="color:rgba(255,255,255,0.65);">${bMeta.native || 'the native territory'}</strong> or a nexus-adjacent territory. Each pays the cost above in tokens. Both players must confirm before construction begins.</div>
+        </div>
+
+        <!-- Eligibility panel — filled async -->
+        <div id="sbEligibilityPanel" style="padding:16px 20px;">
+          <div style="font-size:11px;color:rgba(255,255,255,0.2);font-family:'Share Tech Mono',monospace;">Checking your eligibility…</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Async: check eligibility + existing interest ──
+  try {
+    const sb = window.supabaseClient || window.supabase;
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session')||'{}'); } catch(e) { return {}; } })();
+    const userId = session?.user?.id || null;
+    const panel = document.getElementById('sbEligibilityPanel');
+    if (!panel) return;
+
+    if (!userId) {
+      panel.innerHTML = `<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,0.3);"><span style="font-size:18px;">🔒</span><span><a href="login.html" style="color:rgba(255,224,138,0.7);text-decoration:none;">Log in</a> to check your eligibility and register interest.</span></div>`;
+      return;
+    }
+
+    // Get player's territories
+    const { data: myUnits } = await sb.from('units').select('unit_code').eq('owner_id', userId);
+    const myTerrs = new Set((myUnits||[]).map(u => u.unit_code.substring(0,6)));
+
+    // Check eligibility
+    const isNative   = terrCode && myTerrs.has(terrCode);
+    const isAdjacent = terrCode && !isNative && [...myTerrs].some(t => (SPECIAL_NEXUS_NEIGHBOURS[terrCode]||new Set()).has(t));
+    const eligible   = isNative || isAdjacent;
+
+    // Check existing interest
+    let alreadyInterested = false;
+    let alreadyConfirmed  = false;
+    if (terrCode) {
+      const { data: myCollab } = await sb.from('special_building_collaborations')
+        .select('status').eq('player_id', userId).eq('territory_code', terrCode).eq('building_slug', b.slug).maybeSingle();
+      alreadyInterested = myCollab?.status === 'interested';
+      alreadyConfirmed  = myCollab?.status === 'confirmed';
+    }
+
+    // Count other interested players
+    const { data: allCollabs } = await sb.from('special_building_collaborations')
+      .select('player_id, status, unit_code').eq('territory_code', terrCode).eq('building_slug', b.slug);
+    const interested = (allCollabs||[]).filter(c => c.status === 'interested' || c.status === 'confirmed');
+    const canConfirm = alreadyInterested && interested.length >= 2;
+
+    // Yield multiplier
+    const mult = isNative ? 1 : isAdjacent ? 0.75 : 1;
+    const adjYieldHtml = yieldParts.map(y => {
+      const adj = Math.round(y.amt * mult);
+      return `<span style="color:${y.col};font-weight:700;">${adj.toLocaleString()} ${y.tok}/mo</span>` +
+             (!isNative && isAdjacent ? `<span style="color:rgba(255,255,255,0.2);font-size:10px;"> (${y.amt.toLocaleString()} at native)</span>` : '');
+    }).join('  ');
+
+    // Build eligibility HTML
+    let eligHtml = '';
+    if (eligible) {
+      const eligCol    = isNative ? 'rgba(96,255,171' : 'rgba(255,200,60';
+      const eligLabel  = isNative ? '✓ Native territory — 100% yield' : '⬡ Nexus-adjacent — 75% yield';
+      const myTerrsStr = [...myTerrs].join(', ');
+
+      // Action button
+      let actionBtn = '';
+      if (canConfirm) {
+        actionBtn = `<button onclick="confirmSpecialCollab('${terrCode}','${b.slug}','${bMeta.cost}',this)" style="width:100%;padding:11px;border-radius:9px;border:1px solid rgba(96,255,171,0.45);background:rgba(96,255,171,0.1);color:rgba(96,255,171,0.95);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;animation:pulse 1.5s infinite;">✦ Confirm Build — Pay ${bMeta.cost}</button>`;
+      } else if (alreadyConfirmed) {
+        actionBtn = `<div style="width:100%;padding:11px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;font-size:11px;text-align:center;">✓ You've confirmed — waiting for your partner</div>`;
+      } else if (alreadyInterested) {
+        actionBtn = `<button id="sbInterestBtn" onclick="sbToggleInterest('${terrCode}','${b.slug}',this)" style="width:100%;padding:11px;border-radius:9px;border:1px solid rgba(255,100,100,0.3);background:rgba(255,100,100,0.06);color:rgba(255,130,130,0.9);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;">✕ Cancel Interest</button>`;
+      } else {
+        actionBtn = `<button id="sbInterestBtn" onclick="sbToggleInterest('${terrCode}','${b.slug}',this)" style="width:100%;padding:11px;border-radius:9px;border:1px solid ${eligCol},0.35);background:${eligCol},0.08);color:${eligCol},0.95);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;">✦ Register Interest</button>`;
+      }
+
+      eligHtml = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:${eligCol},0.8);display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:12px;font-weight:700;color:${eligCol},0.9);">${eligLabel}</span>
+        </div>
+        ${adjYieldHtml ? `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:12px;">Your yield: ${adjYieldHtml}</div>` : ''}
+        ${interested.length ? `<div style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;margin-bottom:12px;">👥 ${interested.length} player${interested.length>1?'s':''} interested${interested.length>=2?' · Ready to build!':''}</div>` : ''}
+        ${actionBtn}`;
+    } else if (!myTerrs.size) {
+      eligHtml = `
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-size:20px;flex-shrink:0;">🔒</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:4px;">Not eligible — no units owned</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.6;">You need to own a unit in <strong style="color:rgba(255,255,255,0.5);">${bMeta.native||terrCode}</strong> or a nexus-adjacent territory to collaborate on this building. <a href="realestate.html" style="color:rgba(255,224,138,0.6);text-decoration:none;">Browse units for sale →</a></div>
+          </div>
+        </div>`;
+    } else {
+      // Build territory name lookup from SPECIAL_BUILDINGS_MAP
+      const TERR_NAMES = {};
+      Object.entries(SPECIAL_BUILDINGS_MAP).forEach(([code, v]) => { TERR_NAMES[code] = v.native; });
+
+      const terrLink = (code, col='rgba(255,255,255,0.55)') =>
+        `<a href="district.html?code=${code}" style="color:${col};text-decoration:none;font-weight:700;border-bottom:1px solid ${col.replace('0.55','0.25').replace('0.8','0.3')};" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">${code} (${TERR_NAMES[code]||code})</a>`;
+
+      // Player's own territories — plain links
+      const myTerrLinks = [...myTerrs].map(t => terrLink(t)).join(', ');
+
+      // Native territory — highlighted
+      const nativeLink = terrCode ? terrLink(terrCode, 'rgba(255,224,138,0.8)') : (bMeta.native || '—');
+
+      // Adjacent territories — linked with code + name
+      const adjCodes = terrCode ? [...(SPECIAL_NEXUS_NEIGHBOURS[terrCode]||[])].filter(t=>t!==terrCode) : [];
+      const adjLinks = adjCodes.map(t => terrLink(t, 'rgba(255,200,60,0.8)')).join(', ');
+
+      eligHtml = `
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-size:20px;flex-shrink:0;">⛔</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:6px;">Not eligible — wrong territory</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.9;">
+              Your units are in ${myTerrLinks}.<br>
+              This building requires units in ${nativeLink}${adjLinks ? `<br>or adjacent: ${adjLinks}` : ''}.
+            </div>
+          </div>
+        </div>`;
+    }
+
+    panel.innerHTML = eligHtml;
+  } catch(e) {
+    const panel = document.getElementById('sbEligibilityPanel');
+    if (panel) panel.innerHTML = `<div style="font-size:11px;color:rgba(255,100,100,0.5);">Could not load eligibility: ${e.message}</div>`;
+  }
+}
+
+// Toggle interest on/off from the special building detail page
+async function sbToggleInterest(terrCode, slug, btn) {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session')||'{}'); } catch(e){return {};} })();
+  const userId = session?.user?.id;
+  if (!userId || !sb) return;
+
+  const isCancel = btn.textContent.includes('Cancel');
+  btn.disabled = true;
+  btn.textContent = isCancel ? 'Cancelling…' : 'Registering…';
+
+  if (isCancel) {
+    const { error } = await sb.from('special_building_collaborations')
+      .delete().eq('player_id', userId).eq('territory_code', terrCode).eq('building_slug', slug);
+    if (error) { btn.disabled=false; btn.textContent='✕ Cancel Interest'; alert('Error: '+error.message); return; }
+    btn.textContent = '✦ Register Interest';
+    btn.style.borderColor = 'rgba(255,224,138,0.35)';
+    btn.style.background  = 'rgba(255,224,138,0.08)';
+    btn.style.color       = 'rgba(255,224,138,0.95)';
+  } else {
+    // Need unit_code — use first unit in an eligible territory
+    const { data: myUnits } = await sb.from('units').select('unit_code').eq('owner_id', userId);
+    const myTerrs = (myUnits||[]).map(u=>u.unit_code.substring(0,6));
+    const eligibleUnit = myUnits?.find(u => {
+      const t = u.unit_code.substring(0,6);
+      return t === terrCode || (SPECIAL_NEXUS_NEIGHBOURS[terrCode]||new Set()).has(t);
+    });
+    if (!eligibleUnit) { btn.disabled=false; btn.textContent='✦ Register Interest'; alert('No eligible unit found.'); return; }
+
+    const { error } = await sb.from('special_building_collaborations').insert({
+      player_id: userId, territory_code: terrCode, building_slug: slug,
+      unit_code: eligibleUnit.unit_code, status: 'interested'
+    });
+    if (error) { btn.disabled=false; btn.textContent='✦ Register Interest'; alert('Error: '+error.message); return; }
+    btn.textContent = '✕ Cancel Interest';
+    btn.style.borderColor = 'rgba(255,100,100,0.3)';
+    btn.style.background  = 'rgba(255,100,100,0.06)';
+    btn.style.color       = 'rgba(255,130,130,0.9)';
+  }
+  btn.disabled = false;
+}
+
+function applyFilter(cat, resetIdx=true) {
+  FILTERED = cat === 'all' ? [...ALL_DEVS] : ALL_DEVS.filter(d => d.category === cat);
+  if (resetIdx) currentIdx = 0;
+}
+
+function renderPicker() {
+  const wrap = document.getElementById('devPickerWrap');
+  const list = document.getElementById('devPickerList');
+  if (!wrap || !list || !FILTERED.length) { if (wrap) wrap.style.display = 'none'; return; }
+  list.innerHTML = FILTERED.map((d, i) => {
+    const isActive = i === currentIdx;
+    return `<button onclick="goTo(${i})" style="
+      padding:5px 12px;border-radius:20px;cursor:pointer;font-size:11px;font-family:'Share Tech Mono',monospace;
+      border:1px solid ${isActive ? 'rgba(255,224,138,0.5)' : 'rgba(255,255,255,0.1)'};
+      background:${isActive ? 'rgba(255,224,138,0.1)' : 'rgba(255,255,255,0.03)'};
+      color:${isActive ? '#FFE08A' : 'rgba(255,255,255,0.5)'};
+      white-space:nowrap;transition:all .15s;
+    " onmouseover="if(${!isActive})this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="if(${!isActive})this.style.borderColor='rgba(255,255,255,0.1)'">${d.icon || '🏗'} ${d.name}</button>`;
+  }).join('');
+  wrap.style.display = 'block';
+}
+
+function setFilter(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(cat);
+  setParam('cat', cat);
+  renderPicker();
+  render();
+}
+
+function goTo(idx) {
+  currentIdx = Math.max(0, Math.min(idx, FILTERED.length - 1));
+  setParam('slug', FILTERED[currentIdx]?.slug || '');
+  renderPicker();
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function render() {
+  if (!FILTERED.length) {
+    document.getElementById('devPage').innerHTML = '<div class="loading-state">No developments in this category.</div>';
+    return;
+  }
+
+  const dev       = FILTERED[currentIdx];
+  const total     = FILTERED.length;
+  const buildCost = Number(dev.cost_arkis) || 0;
+
+  // Yields + conversions
+  const yieldRows = [];
+  if (Number(dev.yield_arkis)  > 0) yieldRows.push({token:'ARKIS', cls:'tok-arkis', sym:'✦', amt:Number(dev.yield_arkis),  equiv:null});
+  if (Number(dev.yield_plasm)  > 0) yieldRows.push({token:'PLASM', cls:'tok-plasm', sym:'◈', amt:Number(dev.yield_plasm),  equiv:Math.round(Number(dev.yield_plasm)*RATES.PLASM)});
+  if (Number(dev.yield_wire)   > 0) yieldRows.push({token:'WIRE',  cls:'tok-wire',  sym:'⚡', amt:Number(dev.yield_wire),   equiv:Math.round(Number(dev.yield_wire)*RATES.WIRE)});
+  if (Number(dev.yield_lichen) > 0) yieldRows.push({token:'LICHEN',cls:'tok-lichen',sym:'🌿', amt:Number(dev.yield_lichen), equiv:Math.round(Number(dev.yield_lichen)*RATES.LICHEN)});
+  if (Number(dev.yield_spore)  > 0) yieldRows.push({token:'SPORE', cls:'tok-spore', sym:'🍄', amt:Number(dev.yield_spore),  equiv:Math.round(Number(dev.yield_spore)*RATES.SPORE)});
+
+  const totalArkis = yieldRows.reduce((s,r)=>s+(r.equiv??r.amt),0);
+  const payback    = totalArkis > 0 ? Math.ceil(buildCost/totalArkis) : null;
+  // lum-time.js: 1 Lum day = 1 IRL hour, 1 Lum month = 365/12 = 30.4167 Lum days = 30.4167 IRL hours
+  const LUM_MONTH_REAL_HOURS = 365 / 12; // ≈ 30.42 IRL hours per Luminaea month
+  const paybackRealHours = payback ? Math.round(payback * LUM_MONTH_REAL_HOURS) : null;
+  const paybackRealStr = (() => {
+    if (!paybackRealHours) return null;
+    const d = Math.floor(paybackRealHours / 24);
+    const h = Math.round((paybackRealHours % 24) * 10) / 10; // 1dp hours
+    if (d === 0) return `${h}h`;
+    if (h === 0) return `${d}d`;
+    return `${d}d ${h}h`;
+  })();
+
+  const yieldsHtml = yieldRows.length
+    ? `<div class="yield-block">
+        <div class="yield-block-title">Monthly Yield</div>
+        ${yieldRows.map(r=>`
+          <div class="yield-row">
+            <span class="yield-token ${r.cls}">${r.sym} ${r.amt.toLocaleString()} ${r.token}/mo</span>
+            <span class="yield-equiv">${r.equiv!==null?`≈ ${r.equiv.toLocaleString()} ARKIS/mo`:''}</span>
+          </div>`).join('')}
+        ${payback?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:rgba(255,255,255,0.3);">
+          Total ≈ <strong style="color:rgba(255,255,255,0.55);">${totalArkis.toLocaleString()} ARKIS/mo</strong>
+          &nbsp;·&nbsp; Build cost paid back in ~<strong style="color:rgba(255,255,255,0.55);">${payback} Lum months</strong>
+          <span style="color:rgba(255,255,255,0.2);">(≈ ${paybackRealStr} IRL · 1 Lum month = 30.4 IRL hours)</span>
+        </div>`:''}
+      </div>`
+    : `<div class="yield-block"><div class="yield-block-title">Monthly Yield</div><span class="yield-none">No direct income — this building provides protection or territory effects</span></div>`;
+
+  // Protection
+  const protText = PROTECTION[dev.slug];
+  const protHtml = protText ? `<div class="protection-box"><span style="font-size:16px;flex-shrink:0;">🛡️</span><span>${protText}</span></div>` : '';
+
+  // Upgrade levels
+  const levelsHtml = LEVELS.map(l=>{
+    const upgCost    = l.upgMult>0 ? Math.round(buildCost*l.upgMult) : null;
+    const levelIncome= totalArkis>0 ? Math.round(totalArkis*l.mult) : null;
+    return `<div class="level-card">
+      <div class="level-num">LV${l.n}</div>
+      <div class="level-name ${l.cls}">${l.name}</div>
+      <div class="level-mult">${l.mult}×</div>
+      ${levelIncome?`<div class="level-income">${levelIncome.toLocaleString()} ARKIS/Lum mo</div>`:''}
+      <div class="level-cost">${upgCost?`+<em>${upgCost.toLocaleString()}</em> ARKIS`:'Included'}</div>
+    </div>`;
+  }).join('');
+
+  // Built on
+  const instances = ALL_BUILT[dev.slug] || [];
+  const building  = ALL_BUILDING[dev.slug] || [];
+
+  // Under construction pills
+  const buildingHtml = building.length ? `
+    <div style="margin-top:10px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,60,0.6);margin-bottom:6px;">⏳ Under Construction</div>
+      <div class="builton-grid">${building.map(inst => {
+        const msLeft = inst.completed_at ? new Date(inst.completed_at) - Date.now() : 0;
+        const lumDays = msLeft > 0 ? Math.ceil(msLeft / 3600000) : 0;
+        const irlStr  = msLeft <= 0 ? 'Complete soon'
+          : msLeft < 3600000 ? Math.ceil(msLeft/60000) + ' IRL min'
+          : lumDays + ' Lum day' + (lumDays !== 1 ? 's' : '') + ' (' + (msLeft/3600000).toFixed(1) + ' IRL hrs)';
+        return `<a href="unit.html?code=${inst.unit_code}" class="builton-pill" style="border-color:rgba(255,200,60,0.3);background:rgba(255,200,60,0.05);">
+          <span class="builton-unit">${inst.unit_code}</span>
+          <span class="builton-owner">${inst.username}</span>
+          <span style="font-size:9px;color:rgba(255,200,60,0.7);font-weight:600;">${irlStr}</span>
+        </a>`;
+      }).join('')}</div>
+    </div>` : '';
+
+  const builtHtml = instances.length
+    ? `<div class="builton-grid">${instances.map(inst=>`
+        <a href="unit.html?code=${inst.unit_code}" class="builton-pill">
+          <span class="builton-unit">${inst.unit_code}</span>
+          <span class="builton-owner">${inst.username}</span>
+          <span class="builton-lvl l${inst.level}">${LEVEL_NAMES[inst.level]||'Standard'}</span>
+        </a>`).join('')}</div>${buildingHtml}`
+    : `<span class="builton-none">Not yet built anywhere in Luminaea — be the first.</span>${buildingHtml}`;
+
+  document.getElementById('devPage').innerHTML = `
+    <div class="hero">
+      <div class="visual-col">
+        <div class="dev-art-card">${buildArtSVG(dev)}</div>
+        <a href="profile.html" class="btn btn-primary" style="text-align:center;width:100%;box-sizing:border-box;">← My Profile</a>
+        <div class="dev-nav">
+          <button class="dev-nav-btn" onclick="goTo(${currentIdx-1})" ${currentIdx===0?'disabled':''}>← Prev</button>
+          <span class="dev-nav-center">${currentIdx+1} / ${total}</span>
+          <button class="dev-nav-btn" onclick="goTo(${currentIdx+1})" ${currentIdx===total-1?'disabled':''}>Next →</button>
+        </div>
+      </div>
+      <div class="dev-info">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="tier-badge ${dev.tier}">${dev.tier}</span>
+          <span class="dev-meta">${dev.category}</span>
+        </div>
+        <h1 class="dev-title">${dev.name}</h1>
+        ${dev.purpose?`<div class="dev-purpose">— ${dev.purpose}</div>`:''}
+        <div class="dev-desc">${dev.description||''}</div>
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-label">Build Cost</div>
+            <div class="stat-value" style="font-size:16px;color:#FFE08A;">${buildCost.toLocaleString()}<span style="font-size:10px;color:rgba(255,200,60,0.5);margin-left:4px;">ARKIS</span></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Build Time</div>
+            <div class="stat-value">${dev.build_time_days}<span style="font-size:12px;color:rgba(255,255,255,0.3);margin-left:3px;">days</span></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Max Level</div>
+            <div class="stat-value" style="font-size:14px;color:#FFE08A;">Ultimate</div>
+          </div>
+        </div>
+        ${yieldsHtml}
+        ${protHtml}
+      </div>
+    </div>
+
+    <div class="bottom-section">
+      <div class="bottom-heading">⬆️ Upgrade Levels — additional cost on top of build price</div>
+      <div class="levels-grid">${levelsHtml}</div>
+    </div>
+
+    <div class="bottom-section">
+      <div class="bottom-heading">🏗️ Currently built on — ${instances.length} unit${instances.length!==1?'s':''} in Luminaea</div>
+      ${builtHtml}
+    </div>
+  `;
+}
+
+
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',loadDevs);
+else setTimeout(loadDevs,300);
+
+// ── SPECIAL COLLABORATION BUILDINGS ─────────────────────────────────────────
+
+// Special collab costs: total ~160,000 ARKIS equivalent split equally (80,000 each)
+// Rates: WIRE=2.2, PLASM=0.9, LICHEN=2.7, SPORE=3.5
+// Cost shown is per player (total ÷ 2), denominated in the territory's native token
+const SPECIAL_BUILDINGS_MAP = {
+  'LUM-01': { slug:'canopy_observatory',      icon:'🔭', name:'Canopy Observatory',        native:'Aurellia',    cost:'36,000 WIRE'    }, // 36K×2.2=79.2K ARKIS each
+  'LUM-02': { slug:'biolum_market',           icon:'🛒', name:'Biolum Market (Gourmet)',   native:'Celestara',   cost:'88,000 PLASM'   }, // 88K×0.9=79.2K ARKIS each
+  'LUM-03': { slug:'energy_garden',           icon:'🌱', name:'Energy Garden',             native:'Willow Head', cost:'30,000 LICHEN'  }, // 30K×2.7=81K ARKIS each
+  'LUM-04': { slug:'skybridge_trading_post',  icon:'🌉', name:'Skybridge Trading Post',    native:'Emberveil',   cost:'36,000 WIRE'    },
+  'LUM-05': { slug:'luminaea_art_gallery',    icon:'🖼️', name:'Luminaea Art Gallery',      native:'Fenwild',     cost:'30,000 LICHEN'  },
+  'LUM-06': { slug:'starlight_amphitheater',  icon:'🎭', name:'Starlight Amphitheater',    native:'Firesky',     cost:'88,000 PLASM'   },
+  'LUM-07': { slug:'prismatic_wellspring',    icon:'🌊', name:'Prismatic Wellspring',      native:'Pieve',       cost:'30,000 LICHEN'  },
+  'LUM-08': { slug:'harmonic_sound_node',     icon:'🔊', name:'Harmonic Sound Node',       native:'Oakland',     cost:'36,000 WIRE'    },
+  'LUM-09': { slug:'spore_silk_loom',         icon:'🧵', name:'Spore-Silk Loom (Fashion)', native:'Jadehollow',  cost:'23,000 SPORE'   }, // 23K×3.5=80.5K ARKIS each
+  'LUM-10': { slug:'meditation_sanctuary',    icon:'🧘', name:'Meditation Sanctuary',      native:'Astral Peaks',  cost:'88,000 PLASM'   },
+  'LUM-11': { slug:'parkour_athletics_hub',   icon:'🏃', name:'Parkour Athletics Hub',     native:'Lumenvast',   cost:'30,000 LICHEN'  },
+  'LUM-12': { slug:'comedy_social_club',      icon:'😂', name:'Comedy Social Club',        native:'Mirewood',    cost:'88,000 PLASM'   },
+  'LUM-13': { slug:'adaptive_living_units',   icon:'🔧', name:'Adaptive Living Units',     native:'Northfen',    cost:'36,000 WIRE'    },
+  'LUM-14': { slug:'nectar_infusion_clinic',  icon:'💉', name:'Nectar-Infusion Clinic',    native:'Oldmarch',    cost:'88,000 PLASM'   },
+  'LUM-15': { slug:'archivists_spire',        icon:'📚', name:"Archivist's Spire",          native:'Mugugno',   cost:'36,000 WIRE'    },
+  'LUM-16': { slug:'energy_efficiency_hub',   icon:'⚡', name:'Energy-Efficiency Hub',     native:'Bauscia', cost:'36,000 WIRE'    },
+  'LUM-17': { slug:'galactic_banquet_hall',   icon:'🍽️', name:'Galactic Banquet Hall',     native:'Ravenholm',   cost:'23,000 SPORE'   },
+  'LUM-18': { slug:'mineral_extraction_lab',  icon:'⛏️', name:'Mineral Extraction Lab',    native:'Stormgate',   cost:'36,000 WIRE'    },
+  'LUM-19': { slug:'holographic_theater',     icon:'🎬', name:'Holographic Theater',       native:'The Spine',   cost:'88,000 PLASM'   },
+  'LUM-20': { slug:'acoustic_power_plant',    icon:'🔋', name:'Acoustic Power Plant',      native:'Umbralia',    cost:'23,000 SPORE'   },
+};
+
+let _myTerritories = new Set(); // populated by loadSpecialBuildings
+const SPECIAL_NEXUS_TOUCHES = [
+  ['LUM-06','LUM-18','LUM-19'],['LUM-09','LUM-11','LUM-14'],['LUM-11','LUM-12','LUM-19'],
+  ['LUM-01','LUM-02'],['LUM-03','LUM-18'],['LUM-06','LUM-20'],['LUM-07','LUM-08'],
+  ['LUM-04','LUM-19'],['LUM-05','LUM-20'],['LUM-10','LUM-14'],['LUM-13','LUM-15'],
+  ['LUM-09','LUM-14','LUM-16'],['LUM-12','LUM-17','LUM-19'],['LUM-15','LUM-20'],
+  ['LUM-06','LUM-12'],['LUM-04','LUM-07'],['LUM-03','LUM-18'],['LUM-08','LUM-10'],
+  ['LUM-01','LUM-02'],['LUM-01','LUM-04'],['LUM-05','LUM-20'],['LUM-13','LUM-17'],
+  ['LUM-16','LUM-17','LUM-19'],
+];
+
+// Build adjacency map
+const SPECIAL_NEXUS_NEIGHBOURS = {};
+SPECIAL_NEXUS_TOUCHES.forEach(group => {
+  group.forEach(terr => {
+    if (!SPECIAL_NEXUS_NEIGHBOURS[terr]) SPECIAL_NEXUS_NEIGHBOURS[terr] = new Set([terr]);
+    group.forEach(other => SPECIAL_NEXUS_NEIGHBOURS[terr].add(other));
+  });
+});
+
+async function loadSpecialBuildings() {
+  const grid = document.getElementById('specialBuildingsGrid');
+  if (!grid) return;
+
+  let sb = null;
+  for (let i = 0; i < 30; i++) {
+    sb = window.supabaseClient || window.supabase;
+    if (sb?.from) break;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  if (!sb) return;
+
+  // Get session user's territories
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id || null;
+
+  let myTerritories = new Set();
+  if (userId) {
+    try {
+      const { data: myUnits } = await sb.from('units').select('unit_code').eq('owner_id', userId);
+      (myUnits || []).forEach(u => myTerritories.add(u.unit_code.substring(0, 6)));
+      _myTerritories = myTerritories; // store globally for nexus grid
+    } catch(e) {}
+  }
+
+  // Fetch existing collab interest/status
+  let collabMap = {}; // "territory_code|building_slug" → [{player_id, status, unit_code}]
+  try {
+    const { data: collabs } = await sb.from('special_building_collaborations')
+      .select('territory_code, building_slug, player_id, status, unit_code');
+    (collabs || []).forEach(c => {
+      const key = c.territory_code + '|' + c.building_slug;
+      if (!collabMap[key]) collabMap[key] = [];
+      collabMap[key].push(c);
+    });
+  } catch(e) {}
+
+  // Fetch usernames for collab entries
+  const allPlayerIds = [...new Set(Object.values(collabMap).flat().map(c => c.player_id))];
+  const usernameMap = {};
+  if (allPlayerIds.length) {
+    try {
+      const { data: users } = await sb.from('users').select('id, username').in('id', allPlayerIds);
+      (users || []).forEach(u => { usernameMap[u.id] = u.username; });
+    } catch(e) {}
+  }
+
+  const fmt = n => Number(n) > 0 ? Number(n).toLocaleString() : null;
+
+  // Cost amounts per territory (for payback calc)
+  const COST_AMOUNTS = {
+    'LUM-01':36000,'LUM-02':88000,'LUM-03':30000,'LUM-04':36000,
+    'LUM-05':30000,'LUM-06':88000,'LUM-07':30000,'LUM-08':36000,
+    'LUM-09':23000,'LUM-10':88000,'LUM-11':30000,'LUM-12':88000,
+    'LUM-13':36000,'LUM-14':88000,'LUM-15':36000,'LUM-16':36000,
+    'LUM-17':23000,'LUM-18':36000,'LUM-19':88000,'LUM-20':23000,
+  };
+  const YIELD_COLORS = { arkis:'#FFE08A', plasm:'rgba(200,160,255,0.9)', wire:'rgba(160,216,255,0.9)', lichen:'rgba(128,224,160,0.9)', spore:'rgba(240,192,96,0.9)' };
+
+  // DB yields map
+  const DB_YIELDS = {
+    // Yields balanced for 3-5 Lum month payback (1 Lum month = 30 IRL hrs)
+    canopy_observatory:      { wire:9250 },
+    biolum_market:           { arkis:19900 },
+    energy_garden:           { plasm:7150 },
+    skybridge_trading_post:  { arkis:8500 },
+    luminaea_art_gallery:    { lichen:7850 },
+    starlight_amphitheater:  { lichen:22800 },
+    prismatic_wellspring:    { plasm:8100 },
+    harmonic_sound_node:     { plasm:8250 },
+    spore_silk_loom:         { lichen:5650 },
+    meditation_sanctuary:    { plasm:19950 },
+    parkour_athletics_hub:   { lichen:7100 },
+    comedy_social_club:      { wire:22000 },
+    adaptive_living_units:   { lichen:8150 },
+    nectar_infusion_clinic:  { plasm:20650 },
+    archivists_spire:        { lichen:9250 },
+    energy_efficiency_hub:   { wire:9100 },
+    galactic_banquet_hall:   { arkis:5450 },
+    mineral_extraction_lab:  { plasm:9150 },
+    holographic_theater:     { wire:23350 },
+    acoustic_power_plant:    { wire:5200 },
+  };
+
+  grid.innerHTML = Object.entries(SPECIAL_BUILDINGS_MAP).map(([terrCode, b]) => {
+    const isNative   = myTerritories.has(terrCode);
+    const isAdjacent = !isNative && userId && [...myTerritories].some(t => (SPECIAL_NEXUS_NEIGHBOURS[terrCode] || new Set()).has(t));
+    const eligible   = isNative || isAdjacent;
+
+    // Eligibility styling
+    let borderColor, bgColor, statusPill;
+    if (isNative) {
+      borderColor = 'rgba(96,255,171,0.35)';
+      bgColor     = 'rgba(96,255,171,0.04)';
+      statusPill  = `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:20px;background:rgba(96,255,171,0.12);border:1px solid rgba(96,255,171,0.35);color:rgba(96,255,171,0.9);">✓ Native · 100% yield</span>`;
+    } else if (isAdjacent) {
+      borderColor = 'rgba(255,200,60,0.3)';
+      bgColor     = 'rgba(255,200,60,0.03)';
+      statusPill  = `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:20px;background:rgba(255,200,60,0.1);border:1px solid rgba(255,200,60,0.3);color:rgba(255,200,60,0.9);">⬡ Adjacent · 75% yield</span>`;
+    } else if (!userId) {
+      borderColor = 'rgba(255,255,255,0.07)';
+      bgColor     = 'rgba(255,255,255,0.02)';
+      statusPill  = `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.2);">Log in to check eligibility</span>`;
+    } else {
+      borderColor = 'rgba(255,255,255,0.06)';
+      bgColor     = 'rgba(255,255,255,0.01)';
+      statusPill  = `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.25);">🔒 Not eligible</span>`;
+    }
+
+    // Yields — show adjusted amount based on native vs adjacent
+    const yields = DB_YIELDS[b.slug] || {};
+    const yieldMultiplier = isNative ? 1 : isAdjacent ? 0.75 : 1;
+    const yieldHtml = Object.entries(yields).length ? (() => {
+      const parts = Object.entries(yields).map(([tok, nativeAmt]) => {
+        const yourAmt = Math.round(nativeAmt * yieldMultiplier);
+        const yourFmt = fmt(yourAmt);
+        if (!yourFmt) return null;
+        if (!isNative && isAdjacent) {
+          // Show adjusted amount + greyed native max
+          return `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${YIELD_COLORS[tok]};">${yourFmt} ${tok.toUpperCase()}/mo</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,0.18);margin-left:3px;">(${fmt(nativeAmt)} native)</span>`;
+        }
+        return `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${YIELD_COLORS[tok]};">${yourFmt} ${tok.toUpperCase()}/mo</span>`;
+      }).filter(Boolean);
+      const label = !userId ? 'Yield per player / mo' : isNative ? 'Yield per player / mo' : isAdjacent ? 'Yield per player / mo · 75%' : 'Yield per player / mo';
+      return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);font-family:'Orbitron',monospace;">${label}</span>
+        ${parts.join('<span style="color:rgba(255,255,255,0.15);margin:0 2px;">·</span>')}
+      </div>`;
+    })() : '';
+
+    // Existing interest
+    const collabs = collabMap[terrCode + '|' + b.slug] || [];
+    const alreadyInterested = userId && collabs.some(c => c.player_id === userId && (c.status === 'interested' || c.status === 'confirmed'));
+    const interestedHtml = collabs.length
+      ? `<div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.35);font-family:'Share Tech Mono',monospace;">
+          👥 ${collabs.map(c => usernameMap[c.player_id] || '…').join(', ')} interested
+         </div>`
+      : '';
+
+    const opacity = !userId || eligible ? '1' : '0.45';
+
+    return `<div style="
+        background:${bgColor};border:1px solid ${borderColor};border-radius:10px;
+        padding:14px;display:flex;flex-direction:column;gap:8px;
+        min-height:200px;
+        opacity:${opacity};transition:opacity .15s;
+      ">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;line-height:1;">${b.icon}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,${eligible?'0.9':'0.45'});">${b.name}</div>
+            <div style="font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.3);">${terrCode} · ${b.native}</div>
+          </div>
+        </div>
+        ${statusPill}
+      </div>
+      ${yieldHtml || ''}
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;">Initial cost per player: <strong style="color:rgba(255,255,255,0.5);">${b.cost}</strong></div>
+      ${(() => {
+        const yields = DB_YIELDS[b.slug] || {};
+        const totalYield = Object.values(yields).reduce((a,v)=>a+v,0);
+        const cost = COST_AMOUNTS[terrCode] || 36000;
+        const lumMonths = totalYield > 0 ? (cost / (isAdjacent ? totalYield*0.75 : totalYield)).toFixed(1) : null;
+        const irlHrs = lumMonths ? Math.round(lumMonths * 30) : null;
+        return lumMonths
+          ? `<div style="font-size:9px;color:rgba(255,255,255,0.2);font-family:'Share Tech Mono',monospace;">↩ Payback ~${lumMonths} Lum months <span style="color:rgba(255,255,255,0.12);">(≈${irlHrs} IRL hrs)</span></div>`
+          : '';
+      })()}
+      ${interestedHtml}
+      <div style="flex:1;min-height:4px;"></div>
+      ${eligible ? (alreadyInterested
+        ? `<button onclick="cancelCollabInterest('${terrCode}','${b.slug}',this)" style="display:block;width:100%;text-align:center;padding:7px;border-radius:7px;border:1px solid rgba(255,100,100,0.3);background:rgba(255,100,100,0.06);color:rgba(255,120,120,0.9);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;transition:all .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">✕ Cancel Interest</button>`
+        : `<a href="realestate.html" style="display:block;text-align:center;padding:7px;border-radius:7px;border:1px solid ${isNative?'rgba(96,255,171,0.3)':'rgba(255,200,60,0.3)'};background:${isNative?'rgba(96,255,171,0.06)':'rgba(255,200,60,0.06)'};color:${isNative?'rgba(96,255,171,0.9)':'rgba(255,200,60,0.9)'};font-family:'Share Tech Mono',monospace;font-size:10px;text-decoration:none;transition:all .15s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">Register Interest →</a>`
+      ) : ''}
+    </div>`;
+  }).join('');
+}
+
+
+// ── CANCEL COLLAB INTEREST ────────────────────────────────────────────────────
+async function cancelCollabInterest(terrCode, buildingSlug, btn) {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session')||'{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  if (!userId || !sb) return;
+
+  if (!confirm('Cancel your interest in ' + buildingSlug.replace(/_/g,' ') + '?')) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Cancelling…';
+
+  const { error } = await sb.from('special_building_collaborations')
+    .delete()
+    .eq('player_id', userId)
+    .eq('territory_code', terrCode)
+    .eq('building_slug', buildingSlug)
+    .in('status', ['interested', 'confirmed']);
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = '✕ Cancel Interest';
+    alert('Error: ' + error.message);
+    return;
+  }
+
+  btn.textContent = '✓ Cancelled';
+  btn.style.color = 'rgba(255,255,255,0.3)';
+  setTimeout(() => loadSpecialBuildings(), 800);
+}
+
+
+async function confirmSpecialCollab(terrCode, buildingSlug, costLabel, btn) {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session')||'{}'); } catch(e){return{};} })();
+  const userId = session?.user?.id;
+  if (!userId || !sb) { alert('Please log in to confirm.'); return; }
+  if (!confirm('Confirm build for ' + buildingSlug.replace(/_/g,' ') + ' in ' + terrCode + '?\n\nThis will deduct ' + costLabel + ' from your balance.')) return;
+  btn.disabled=true; btn.textContent='⏳ Confirming…';
+  try {
+    const { data, error } = await sb.rpc('confirm_special_collab', { p_player_id:userId, p_territory_code:terrCode, p_building_slug:buildingSlug });
+    if (error) throw error;
+    if (!data.ok) { btn.disabled=false; btn.textContent='✦ Confirm Build'; alert('Could not confirm: '+data.error); return; }
+    btn.textContent = data.started ? '🏗️ Build Started!' : '✓ Confirmed — waiting for partner';
+    btn.style.background='rgba(96,255,171,0.15)'; btn.style.animation='none';
+    setTimeout(() => window.location.reload(), 2000);
+  } catch(e) { btn.disabled=false; btn.textContent='✦ Confirm Build'; alert('Error: '+e.message); }
+}
+
+// Load after regular devs
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', loadSpecialBuildings);
+else setTimeout(loadSpecialBuildings, 500);
+
+// ── NEXUS COLLABORATION BUILDINGS ────────────────────────────────────────────
+
+let _nexusAll = [];
+let _nexusPoints = []; // {id, name, touches[]} from nexus_points table
+let _nexusTab = 'rare';
+
+function setNexusTab(tier) {
+  _nexusTab = tier;
+  document.getElementById('nexusTabRare').style.background      = tier === 'rare'      ? 'rgba(255,160,60,0.1)'  : 'rgba(255,255,255,0.03)';
+  document.getElementById('nexusTabRare').style.borderColor     = tier === 'rare'      ? 'rgba(255,160,60,0.4)'  : 'rgba(255,255,255,0.1)';
+  document.getElementById('nexusTabRare').style.color           = tier === 'rare'      ? 'rgba(255,180,80,0.9)'  : 'rgba(255,255,255,0.4)';
+  document.getElementById('nexusTabLegendary').style.background = tier === 'legendary' ? 'rgba(255,200,80,0.1)'  : 'rgba(255,255,255,0.03)';
+  document.getElementById('nexusTabLegendary').style.borderColor= tier === 'legendary' ? 'rgba(255,200,80,0.4)'  : 'rgba(255,255,255,0.1)';
+  document.getElementById('nexusTabLegendary').style.color      = tier === 'legendary' ? 'rgba(255,220,100,0.9)' : 'rgba(255,255,255,0.4)';
+  renderNexusGrid();
+}
+
+function renderNexusGrid() {
+  const grid = document.getElementById('nexusBuildingsGrid');
+  if (!grid) return;
+  const items = _nexusAll.filter(b => b.tier === _nexusTab);
+  if (!items.length) { grid.innerHTML = '<div style="color:rgba(255,255,255,0.2);font-size:12px;padding:16px 0;">No buildings in this tier.</div>'; return; }
+
+  const YIELD_COLORS = { yield_arkis:'#FFE08A', yield_plasm:'rgba(200,160,255,0.9)', yield_wire:'rgba(160,216,255,0.9)', yield_lichen:'rgba(128,224,160,0.9)', yield_spore:'rgba(240,192,96,0.9)' };
+  const YIELD_LABELS = { yield_arkis:'ARKIS', yield_plasm:'PLASM', yield_wire:'WIRE', yield_lichen:'LICHEN', yield_spore:'SPORE' };
+  const RATES = { yield_arkis:1, yield_plasm:0.9, yield_wire:2.2, yield_lichen:2.7, yield_spore:3.5 };
+
+  const tierBorder = _nexusTab === 'legendary' ? 'rgba(255,200,80,0.25)' : 'rgba(255,160,60,0.2)';
+  const tierBg     = _nexusTab === 'legendary' ? 'rgba(255,200,80,0.03)' : 'rgba(255,160,60,0.03)';
+  const tierBadge  = _nexusTab === 'legendary'
+    ? 'background:rgba(255,200,80,0.1);border:1px solid rgba(255,200,80,0.3);color:rgba(255,220,100,0.9);'
+    : 'background:rgba(255,160,60,0.1);border:1px solid rgba(255,160,60,0.3);color:rgba(255,180,80,0.9);';
+
+  const JUNCTION_LABEL = { '2way':'2-Territory junction', '3way':'3-Territory junction', 'any':'Any junction' };
+
+  grid.innerHTML = items.map(b => {
+    const yieldParts = [];
+    let totalArkisEquiv = 0;
+    ['yield_arkis','yield_plasm','yield_wire','yield_lichen','yield_spore'].forEach(k => {
+      const v = Number(b[k]);
+      if (v > 0) {
+        yieldParts.push(`<span style="font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;color:${YIELD_COLORS[k]};">${v.toLocaleString()} ${YIELD_LABELS[k]}/mo</span>`);
+        totalArkisEquiv += v * RATES[k];
+      }
+    });
+
+    const costEach = Math.round(Number(b.cost_arkis) / (Number(b.min_contributors) || 2));
+    const payback  = totalArkisEquiv > 0 ? Math.round(costEach / totalArkisEquiv * 10) / 10 : null;
+    const contribLabel = b.junction_type === '3way' ? '3 players' : '2 players';
+
+    // Nexus eligibility — find which SPECIAL_NEXUS_TOUCHES groups include player's territories
+    const junctionSize = b.junction_type === '3way' ? 3 : 2;
+    const myTerrArr = [..._myTerritories];
+    // Find nexus groups of matching size where player has a territory
+    const matchingGroups = SPECIAL_NEXUS_TOUCHES.filter(g => g.length === junctionSize && myTerrArr.some(t => g.includes(t)));
+    const nexusEligible = matchingGroups.length > 0;
+
+    // Match to actual nexus_points the player can build at
+    const eligibleNexusPoints = _nexusPoints.filter(np =>
+      np.touches.length === junctionSize && myTerrArr.some(t => np.touches.includes(t))
+    );
+
+    let nexusEligLabel = '';
+    if (nexusEligible && eligibleNexusPoints.length) {
+      const links = eligibleNexusPoints.map(np =>
+        `<a href="nexus.html?id=${np.id}" style="color:rgba(96,255,171,0.95);text-decoration:none;font-weight:700;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${np.id} ${np.name}</a>`
+      ).join(' · ');
+      nexusEligLabel = `✓ Eligible · ${links}`;
+    } else if (nexusEligible) {
+      nexusEligLabel = `✓ Eligible — your units touch ${matchingGroups.length} junction${matchingGroups.length>1?'s':''}`;
+    } else if (_myTerritories.size > 0) {
+      nexusEligLabel = `⛔ Not eligible — your territories don't touch a ${junctionSize}-way junction`;
+    }
+
+    const nexusEligStyle = nexusEligible
+      ? 'color:rgba(96,255,171,0.8);background:rgba(96,255,171,0.06);border:1px solid rgba(96,255,171,0.2);'
+      : 'color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);';
+
+    return `<div style="background:${tierBg};border:1px solid ${tierBorder};border-radius:10px;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="padding:16px 16px 12px;flex:1;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;line-height:1;">${b.icon}</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);">${b.name}</div>
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:20px;${tierBadge}">${b.tier}</span>
+            </div>
+          </div>
+          <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:20px;background:rgba(80,160,255,0.08);border:1px solid rgba(80,160,255,0.2);color:rgba(80,160,255,0.8);white-space:nowrap;flex-shrink:0;">⬡ ${JUNCTION_LABEL[b.junction_type]||b.junction_type}</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);line-height:1.5;">${b.description}</div>
+        ${yieldParts.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${yieldParts.join('')}</div>` : ''}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,0.3);">
+          <span>⬡ <strong style="color:rgba(255,255,255,0.55);">${Number(b.cost_arkis).toLocaleString()} ARKIS total</strong></span>
+          <span>👥 <strong style="color:rgba(255,255,255,0.55);">${contribLabel}</strong></span>
+          <span>≈ <strong style="color:rgba(255,255,255,0.55);">${costEach.toLocaleString()} ARKIS each</strong></span>
+          ${payback ? `<span>📈 payback ~<strong style="color:rgba(255,255,255,0.55);">${payback} mo</strong></span>` : ''}
+        </div>
+      </div>
+      ${nexusEligLabel ? `<div style="padding:8px 14px;font-size:10px;font-family:'Share Tech Mono',monospace;${nexusEligStyle}">${nexusEligLabel}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function loadNexusBuildings() {
+  const grid = document.getElementById('nexusBuildingsGrid');
+  if (!grid) return;
+
+  let sb = null;
+  for (let i = 0; i < 30; i++) {
+    sb = window.supabaseClient || window.supabase;
+    if (sb?.from) break;
+    await new Promise(r => setTimeout(r, 150));
+  }
+  if (!sb) return;
+
+  try {
+    const [{ data }, { data: nexusPointsData }] = await Promise.all([
+      sb.from('nexus_building_catalog')
+        .select('slug,name,icon,tier,description,cost_arkis,build_time_days,yield_arkis,yield_plasm,yield_wire,yield_lichen,yield_spore,junction_type,min_contributors')
+        .order('tier').order('cost_arkis'),
+      sb.from('nexus_points').select('id,name,touches')
+    ]);
+    _nexusAll = data || [];
+    _nexusPoints = nexusPointsData || [];
+    renderNexusGrid();
+  } catch(e) {
+    grid.innerHTML = '<div style="color:rgba(255,80,80,0.5);font-size:13px;">Could not load nexus buildings.</div>';
+  }
+}
+
+if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', loadNexusBuildings);
+else setTimeout(loadNexusBuildings, 700);
+</script>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Exchange — MINALIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260315b">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260315b"></script>
+  <script src="auth_auro.js?v=20260315b"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      padding-top: 92px;
+      background: #0a0a0f;
+      min-height: 100vh;
+    }
+    body::after { display:none; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+    .stars, .twinkling, .earth-footer { display:none !important; }
+    .ex-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; position:relative; z-index:2; }
+
+    /* Hero */
+    .ex-hero { margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .ex-hero-eyebrow { font-family:'Share Tech Mono',monospace; font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:.15em; text-transform:uppercase; margin-bottom:8px; }
+    .ex-hero-title { font-family:'Orbitron',sans-serif; font-size:clamp(28px,5vw,44px); font-weight:900; color:rgba(255,255,255,0.92); line-height:1.1; margin-bottom:8px; }
+    .ex-hero-title em { color:#FFE08A; font-style:normal; }
+    .ex-hero-sub { font-size:13px; color:rgba(255,255,255,0.3); font-family:'Share Tech Mono',monospace; margin-bottom:24px; }
+    .ex-hero-pills { display:flex; gap:12px; flex-wrap:wrap; }
+    .ex-hero-pill { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 16px; min-width:90px; text-align:center; }
+    .ex-hero-pill-val { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:700; color:#FFE08A; }
+    .ex-hero-pill-label { font-size:9px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:.1em; margin-top:2px; }
+
+    /* Section */
+    .ex-section { margin-bottom: 40px; }
+    .ex-sh { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+    .ex-sh-icon { font-size:16px; }
+    .ex-sh-title { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:.08em; text-transform:uppercase; }
+    .ex-sh-sub { font-size:11px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.25); margin-left:auto; }
+    .ex-sh-line { flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+    /* Two-col */
+    .ex-two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media (max-width:680px) { .ex-two-col { grid-template-columns:1fr; } }
+
+    /* Balance panel */
+    .ex-balance-panel { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:20px; }
+    .ex-panel-title { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:.1em; margin-bottom:16px; }
+    .ex-bal-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .ex-bal-row:last-child { border-bottom:none; }
+    .ex-bal-token { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; }
+    .ex-bal-amount { font-family:'Share Tech Mono',monospace; font-size:13px; color:rgba(255,255,255,0.7); }
+    .ex-bal-eq { font-size:9px; color:rgba(255,255,255,0.2); margin-top:1px; text-align:right; }
+    .tok-arkis  { color:#FFE08A; }
+    .tok-plasm  { color:#FF9020; }
+    .tok-wire   { color:#50A0FF; }
+    .tok-lichen { color:#46DC82; }
+    .tok-spore  { color:#BE5AFF; }
+
+    /* Trade panel */
+    .ex-trade-panel { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:20px; }
+    .ex-trade-cols { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:start; }
+    .ex-trade-side { display:flex; flex-direction:column; gap:6px; }
+    .ex-trade-side-label { font-size:10px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:.08em; }
+    .ex-trade-select { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:rgba(255,255,255,0.8); font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; padding:8px 10px; cursor:pointer; }
+    .ex-trade-select:focus { outline:none; border-color:rgba(255,224,138,0.5); }
+    .ex-trade-amount { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:rgba(255,255,255,0.85); font-family:'Share Tech Mono',monospace; font-size:14px; padding:8px 10px; box-sizing:border-box; }
+    .ex-trade-amount:focus { outline:none; border-color:rgba(255,224,138,0.35); }
+    .ex-trade-amount::placeholder { color:rgba(255,255,255,0.2); }
+    .ex-trade-arrow { align-self:center; margin-top:22px; font-size:18px; color:rgba(255,255,255,0.25); user-select:none; }
+    .ex-trade-rate { font-size:10px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.25); margin:10px 0 6px; min-height:14px; }
+    .ex-trade-btn { width:100%; padding:11px 0; border-radius:8px; border:1px solid rgba(255,224,138,0.3); background:rgba(255,224,138,0.07); color:rgba(255,224,138,0.9); font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em; cursor:pointer; transition:all 0.15s; }
+    .ex-trade-btn:hover { background:rgba(255,224,138,0.14); border-color:rgba(255,224,138,0.55); }
+    .ex-trade-btn:disabled { opacity:0.3; cursor:not-allowed; }
+    .ex-login-prompt { text-align:center; padding:24px 0; font-size:12px; color:rgba(255,255,255,0.3); font-family:'Share Tech Mono',monospace; }
+    .ex-login-prompt a { color:#FFE08A; text-decoration:none; }
+
+    /* Success */
+    .ex-success { display:none; padding:20px; border-radius:12px; background:rgba(96,255,171,0.06); border:1px solid rgba(96,255,171,0.2); text-align:center; }
+    .ex-success-icon { font-size:28px; margin-bottom:8px; }
+    .ex-success-msg { font-size:14px; font-weight:700; color:#60ffab; margin-bottom:4px; font-family:'Orbitron',sans-serif; }
+    .ex-success-detail { font-size:11px; color:rgba(255,255,255,0.4); font-family:'Share Tech Mono',monospace; margin-bottom:14px; line-height:1.6; }
+    .ex-success-reset { font-size:11px; padding:7px 18px; border-radius:6px; border:1px solid rgba(96,255,171,0.3); background:rgba(96,255,171,0.08); color:#60ffab; cursor:pointer; font-weight:600; }
+
+    /* Token cards */
+    .ex-token-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:14px; }
+    .ex-tok-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:18px; position:relative; overflow:hidden; }
+    .ex-tok-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+    .ex-tok-card.tok-arkis-card::before  { background:linear-gradient(90deg,transparent,#FFE08A,transparent); }
+    .ex-tok-card.tok-plasm-card::before  { background:linear-gradient(90deg,transparent,#FF9020,transparent); }
+    .ex-tok-card.tok-wire-card::before   { background:linear-gradient(90deg,transparent,#50A0FF,transparent); }
+    .ex-tok-card.tok-lichen-card::before { background:linear-gradient(90deg,transparent,#46DC82,transparent); }
+    .ex-tok-card.tok-spore-card::before  { background:linear-gradient(90deg,transparent,#BE5AFF,transparent); }
+    .ex-tok-sym  { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:900; margin-bottom:2px; }
+    .ex-tok-role { font-size:9px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; }
+    .ex-tok-rate-row { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+    .ex-tok-rate { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:700; }
+    .ex-tok-rate-unit { font-size:10px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.3); }
+    .ex-tok-spark { margin:8px 0 0; height:40px; }
+    .ex-tok-lore { font-size:11px; color:rgba(255,255,255,0.3); line-height:1.5; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
+    .ex-tok-yield-sources { font-size:9px; font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.18); margin-top:6px; }
+
+    /* Recent trades table */
+    .ex-trades-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .ex-trades-table th { text-align:left; font-family:'Share Tech Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.25); padding:0 0 10px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .ex-trades-table td { padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.6); font-family:'Share Tech Mono',monospace; }
+    .ex-trades-table tr:last-child td { border-bottom:none; }
+    .ex-trade-pair { display:flex; align-items:center; gap:6px; font-weight:700; }
+
+    /* How it works */
+    .ex-info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+    .ex-info-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:16px; }
+    .ex-info-icon { font-size:20px; margin-bottom:8px; }
+    .ex-info-title { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; color:rgba(255,255,255,0.65); margin-bottom:6px; }
+    .ex-info-text { font-size:11px; color:rgba(255,255,255,0.3); line-height:1.6; }
+    .ex-info-text strong { color:rgba(255,255,255,0.55); }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+  <script src="load-nav.js?v=20260315b"></script>
+
+  <div class="ex-wrap">
+
+    <!-- HERO -->
+    <div class="ex-hero">
+      <div class="ex-hero-eyebrow">Luminaea · Token Market</div>
+      <div class="ex-hero-title">The <em>Exchange</em></div>
+      <div class="ex-hero-sub">ARKIS · PLASM · WIRE · LICHEN · SPORE · 2% fee · 5 trades/day</div>
+      <div class="ex-hero-pills">
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val tok-plasm" id="pillPlasmRate">—</div>
+          <div class="ex-hero-pill-label">PLASM / ARKIS</div>
+        </div>
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val tok-wire" id="pillWireRate">—</div>
+          <div class="ex-hero-pill-label">WIRE / ARKIS</div>
+        </div>
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val tok-lichen" id="pillLichenRate">—</div>
+          <div class="ex-hero-pill-label">LICHEN / ARKIS</div>
+        </div>
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val tok-spore" id="pillSporeRate">—</div>
+          <div class="ex-hero-pill-label">SPORE / ARKIS</div>
+        </div>
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val" id="pillTotalTrades">—</div>
+          <div class="ex-hero-pill-label">All-time trades</div>
+        </div>
+        <div class="ex-hero-pill">
+          <div class="ex-hero-pill-val" id="pillFeesBurned">—</div>
+          <div class="ex-hero-pill-label">Tokens burned</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BALANCES + TRADE -->
+    <div class="ex-section">
+      <div class="ex-sh">
+        <span class="ex-sh-icon">⚖️</span>
+        <span class="ex-sh-title">Trade</span>
+        <div class="ex-sh-line"></div>
+        <span class="ex-sh-sub" id="exDailyLimit"></span>
+      </div>
+      <div class="ex-two-col">
+
+        <!-- Balances -->
+        <div class="ex-balance-panel">
+          <div class="ex-panel-title">Your Balances</div>
+          <div id="balanceContent">
+            <div class="ex-login-prompt"><a href="login.html">Log in</a> to see your balances</div>
+          </div>
+        </div>
+
+        <!-- Trade widget -->
+        <div class="ex-trade-panel">
+          <div class="ex-panel-title">Execute Trade</div>
+          <div id="tradeWidget">
+            <div id="tradeLoginPrompt" class="ex-login-prompt" style="display:none;">
+              <a href="login.html">Log in</a> to trade tokens
+            </div>
+            <div id="tradeForm">
+              <div class="ex-trade-cols">
+                <div class="ex-trade-side">
+                  <div class="ex-trade-side-label">You send</div>
+                  <select class="ex-trade-select" id="tradeFromToken" onchange="updateTradeWidget('from')">
+                    <option value="ARKIS">$ARKIS</option>
+                    <option value="PLASM">$PLASM</option>
+                    <option value="WIRE">$WIRE</option>
+                    <option value="LICHEN">$LICHEN</option>
+                    <option value="SPORE">$SPORE</option>
+                  </select>
+                  <input type="number" class="ex-trade-amount" id="tradeFromAmount" placeholder="0" min="0" oninput="updateTradeWidget('from')">
+                </div>
+                <div class="ex-trade-arrow">⇄</div>
+                <div class="ex-trade-side">
+                  <div class="ex-trade-side-label">You receive</div>
+                  <select class="ex-trade-select" id="tradeToToken" onchange="updateTradeWidget('from')">
+                    <option value="PLASM">$PLASM</option>
+                    <option value="WIRE">$WIRE</option>
+                    <option value="LICHEN">$LICHEN</option>
+                    <option value="ARKIS">$ARKIS</option>
+                    <option value="SPORE">$SPORE</option>
+                  </select>
+                  <input type="number" class="ex-trade-amount" id="tradeToAmount" placeholder="0" min="0" oninput="updateTradeWidget('to')">
+                </div>
+              </div>
+              <div class="ex-trade-rate" id="tradeRate">Enter an amount on either side</div>
+              <button class="ex-trade-btn" id="tradeExecuteBtn" disabled onclick="executeExchange()">⚡ Execute Trade</button>
+              <div id="tradeStatus" style="font-size:11px;min-height:16px;margin-top:6px;text-align:center;font-family:'Share Tech Mono',monospace;"></div>
+              <div id="tradeDailyLimit" style="font-size:10px;color:rgba(255,255,255,0.25);text-align:center;margin-top:2px;font-family:'Share Tech Mono',monospace;"></div>
+            </div>
+          </div>
+          <!-- Success panel -->
+          <div class="ex-success" id="tradeSuccess">
+            <div class="ex-success-icon">✅</div>
+            <div class="ex-success-msg" id="tradeSuccessMsg"></div>
+            <div class="ex-success-detail" id="tradeSuccessDetail"></div>
+            <button class="ex-success-reset" onclick="resetTradeWidget()">Make another trade</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TOKEN CARDS -->
+    <div class="ex-section">
+      <div class="ex-sh">
+        <span class="ex-sh-icon">⚗️</span>
+        <span class="ex-sh-title">Luminaea Elements</span>
+        <div class="ex-sh-line"></div>
+        <span class="ex-sh-sub">Value shown in ARKIS per token</span>
+      </div>
+      <div class="ex-token-grid" id="tokenGrid"></div>
+    </div>
+
+    <!-- RECENT TRADES -->
+    <div class="ex-section">
+      <div class="ex-sh">
+        <span class="ex-sh-icon">📋</span>
+        <span class="ex-sh-title">Recent Trades</span>
+        <div class="ex-sh-line"></div>
+        <span class="ex-sh-sub">Network-wide activity</span>
+      </div>
+      <div id="recentTradesWrap">
+        <div style="color:rgba(255,255,255,0.25);font-size:12px;font-family:'Share Tech Mono',monospace;padding:20px 0;">Loading…</div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="ex-section">
+      <div class="ex-sh">
+        <span class="ex-sh-icon">📖</span>
+        <span class="ex-sh-title">How It Works</span>
+        <div class="ex-sh-line"></div>
+      </div>
+      <div class="ex-info-grid">
+        <div class="ex-info-card">
+          <div class="ex-info-icon">⚖️</div>
+          <div class="ex-info-title">Exchange Rates</div>
+          <div class="ex-info-text">All tokens are priced relative to <strong>$ARKIS</strong> (rate = 1). Rates reflect each token's yield value and scarcity. SPORE is rarest and most valuable per unit — PLASM is most abundant.</div>
+        </div>
+        <div class="ex-info-card">
+          <div class="ex-info-icon">🔥</div>
+          <div class="ex-info-title">2% Fee — Burned</div>
+          <div class="ex-info-text">Every trade incurs a <strong>2% fee</strong> on the output token. This fee is permanently burned — removed from total supply forever. Burning creates mild deflation and increasing scarcity over time.</div>
+        </div>
+        <div class="ex-info-card">
+          <div class="ex-info-icon">📅</div>
+          <div class="ex-info-title">Daily Limit</div>
+          <div class="ex-info-text">Each player can make up to <strong>5 trades per day</strong>. This prevents arbitrage farming and keeps rates stable. Resets at <strong>midnight UTC</strong> each day.</div>
+        </div>
+        <div class="ex-info-card">
+          <div class="ex-info-icon">🌀</div>
+          <div class="ex-info-title">Dual-Direction</div>
+          <div class="ex-info-text">Enter an amount on <strong>either side</strong>. Type how much you want to receive and the widget back-calculates exactly how much to send, including the fee.</div>
+        </div>
+        <div class="ex-info-card">
+          <div class="ex-info-icon">🏗</div>
+          <div class="ex-info-title">Why Exchange?</div>
+          <div class="ex-info-text">Special buildings require specific tokens. A WIRE building can't be paid in PLASM. Exchange lets you convert whatever you've earned into what you need to unlock the build you want.</div>
+        </div>
+        <div class="ex-info-card">
+          <div class="ex-info-icon">🔒</div>
+          <div class="ex-info-title">Secure</div>
+          <div class="ex-info-text">All exchanges run as a single <strong>atomic DB transaction</strong>. Rates are fetched server-side — client values are never trusted. Balance is checked before any debit. No partial fills possible.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ex-wrap -->
+
+  <div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+  <audio id="bgAudio" preload="auto" style="display:none"><source src="audio/minalia.mp3" type="audio/mpeg"></audio>
+  <script src="lum-time.js?v=20260315b"></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>{ if(typeof startLumClock==='function') startLumClock(); });</script>
+  <script src="nav-audio.js"></script>
+
+  <script>
+  // ── Helpers ──
+  function getSessionUserId() {
+    try { return JSON.parse(localStorage.getItem('minalia_session')||'{}').user?.id||null; } catch(e){ return null; }
+  }
+  async function waitForSB() {
+    for (let i=0;i<50;i++) {
+      const c = window.supabaseClient || window.supabase;
+      if (c && typeof c.from==='function') return c;
+      await new Promise(r=>setTimeout(r,100));
+    }
+    return null;
+  }
+
+  // ── Token definitions ──
+  const TOKENS = {
+    ARKIS:  { sym:'$ARKIS',  name:'Arkis',  role:'Treasury · Tax · Foundation',   col:'#FFE08A', cls:'tok-arkis-card',
+              lore:'The foundation currency of Luminaea. Used for building, trading units, and paying holding tax. Every transaction in the world runs through ARKIS.',
+              yieldFrom:'Trading Outpost, Galactic Banquet Hall, Skybridge Trading Post' },
+    PLASM:  { sym:'$PLASM',  name:'Plasm',  role:'Energy · Fuel · Power',         col:'#FF9020', cls:'tok-plasm-card',
+              lore:'Raw energy harvested from Luminaea\'s bioluminescent organisms. Powers advanced structures and is essential for spiritual and healing developments.',
+              yieldFrom:'Lightwell Cottage, Harmonic Sound Node, Meditation Sanctuary' },
+    WIRE:   { sym:'$WIRE',   name:'Wire',   role:'Data · Upgrades · Signal',      col:'#50A0FF', cls:'tok-wire-card',
+              lore:'Signal-carrying fibre woven from the silk of Luminaea\'s canopy spiders. The lifeblood of technological infrastructure and scientific research.',
+              yieldFrom:'Luminary Workshop, Canopy Observatory, Innovation Hub' },
+    LICHEN: { sym:'$LICHEN', name:'Lichen', role:'Structure · Steel · Build',     col:'#46DC82', cls:'tok-lichen-card',
+              lore:'Crystallised organic matter from ancient Luminaea forests. Used as structural material and natural currency for ecological and cultural developments.',
+              yieldFrom:'Floral Amphitheater, Echo-Leaf Sanctuary, Primal Seed Vault' },
+    SPORE:  { sym:'$SPORE',  name:'Spore',  role:'Luxury · Yield · Multipliers',  col:'#BE5AFF', cls:'tok-spore-card',
+              lore:'Rare bioluminescent spores found only in the deepest forest hollows. Used in luxury developments and yield-amplifying structures. Extremely scarce.',
+              yieldFrom:'Mycelium Cultivation Chamber, Spore-Silk Loom (Fashion)' },
+  };
+
+  // ── Rates (fallback, overwritten from DB) ──
+  let TRADE_RATES = {
+    ARKIS:  { PLASM:1.111, WIRE:0.455, LICHEN:0.370, SPORE:0.286 },
+    PLASM:  { ARKIS:0.900, WIRE:0.409, LICHEN:0.333, SPORE:0.257 },
+    WIRE:   { ARKIS:2.200, PLASM:2.444, LICHEN:0.815, SPORE:0.629 },
+    LICHEN: { ARKIS:2.700, PLASM:3.000, WIRE:1.227,  SPORE:0.771 },
+    SPORE:  { ARKIS:3.500, PLASM:3.889, WIRE:1.591,  LICHEN:1.296 },
+  };
+  let RATE_TO_ARKIS = { ARKIS:1, PLASM:0.9, WIRE:2.2, LICHEN:2.7, SPORE:3.5 };
+
+  // ── Sparklines ──
+  const sparkCharts = {};
+  function seededRand(seed) {
+    let s=seed>>>0;
+    return ()=>{ s+=0x6D2B79F5; let t=Math.imul(s^s>>>15,1|s); t^=t+Math.imul(t^t>>>7,61|t); return ((t^t>>>14)>>>0)/4294967296; };
+  }
+  function drawSparkline(key, col) {
+    const canvas = document.getElementById('spark_'+key);
+    if (!canvas) return;
+    const seeds = { ARKIS:10, PLASM:1, WIRE:3, LICHEN:2, SPORE:4 };
+    const rand = seededRand(seeds[key]||1);
+    let v=1.0;
+    const data = Array.from({length:40},()=>{ v+=(rand()-0.47)*0.06; v=Math.max(0.2,v); return parseFloat(v.toFixed(3)); });
+    const ctx = canvas.getContext('2d');
+    const g = ctx.createLinearGradient(0,0,0,40);
+    const rgb=col.replace('#','');
+    const r=parseInt(rgb.slice(0,2),16),gn=parseInt(rgb.slice(2,4),16),b=parseInt(rgb.slice(4,6),16);
+    g.addColorStop(0,`rgba(${r},${gn},${b},0.25)`); g.addColorStop(1,`rgba(${r},${gn},${b},0)`);
+    if (sparkCharts[key]) sparkCharts[key].destroy();
+    sparkCharts[key] = new Chart(ctx, {
+      type:'line',
+      data:{ labels:data.map((_,i)=>i), datasets:[{ data, borderColor:col, borderWidth:1.5, fill:true, backgroundColor:g, tension:0.4, pointRadius:0 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}}, animation:{duration:200} }
+    });
+  }
+
+  // ── Load live data from DB ──
+  async function loadExchangeData() {
+    const sb = await waitForSB();
+    if (!sb) return;
+    try {
+      // Rates
+      const { data:ratesData } = await sb.from('token_exchange_rates').select('token,current_rate');
+      if (ratesData && ratesData.length) {
+        ratesData.forEach(r=>{ RATE_TO_ARKIS[r.token]=Number(r.current_rate); });
+        const toks=['ARKIS','PLASM','WIRE','LICHEN','SPORE'];
+        const nr={};
+        toks.forEach(from=>{ nr[from]={}; toks.forEach(to=>{ if(from!==to) nr[from][to]=parseFloat((RATE_TO_ARKIS[from]/RATE_TO_ARKIS[to]).toFixed(6)); }); });
+        TRADE_RATES=nr;
+      }
+      // Hero pills
+      document.getElementById('pillPlasmRate').textContent  = RATE_TO_ARKIS.PLASM.toFixed(2);
+      document.getElementById('pillWireRate').textContent   = RATE_TO_ARKIS.WIRE.toFixed(2);
+      document.getElementById('pillLichenRate').textContent = RATE_TO_ARKIS.LICHEN.toFixed(2);
+      document.getElementById('pillSporeRate').textContent  = RATE_TO_ARKIS.SPORE.toFixed(2);
+      // Stats
+      const { count:tradeCount } = await sb.from('exchange_log').select('id',{count:'exact',head:true});
+      document.getElementById('pillTotalTrades').textContent = (tradeCount||0).toLocaleString();
+      const { data:feeData } = await sb.from('exchange_log').select('fee_amount,to_token');
+      if (feeData) {
+        const totalFees = feeData.reduce((s,r)=>s+Number(r.fee_amount||0),0);
+        document.getElementById('pillFeesBurned').textContent = Math.round(totalFees).toLocaleString();
+      }
+    } catch(e) { console.warn('loadExchangeData:',e); }
+  }
+
+  // ── Token cards ──
+  function renderTokenCards() {
+    const grid = document.getElementById('tokenGrid');
+    grid.innerHTML = Object.entries(TOKENS).map(([key,tok])=>{
+      const rate = key==='ARKIS' ? '1.00' : (RATE_TO_ARKIS[key]||'—').toString();
+      return `<div class="ex-tok-card ${tok.cls}">
+        <div class="ex-tok-sym" style="color:${tok.col}">${tok.sym}</div>
+        <div class="ex-tok-role">${tok.role}</div>
+        <div class="ex-tok-rate-row">
+          <div class="ex-tok-rate" style="color:${tok.col}" id="tokRate_${key}">${rate}</div>
+          <div class="ex-tok-rate-unit">ARKIS / token</div>
+        </div>
+        <div class="ex-tok-spark"><canvas id="spark_${key}" height="40" style="width:100%;height:40px;display:block;"></canvas></div>
+        <div class="ex-tok-lore">${tok.lore}</div>
+        <div class="ex-tok-yield-sources">Earned from: ${tok.yieldFrom}</div>
+      </div>`;
+    }).join('');
+    setTimeout(()=>{ Object.entries(TOKENS).forEach(([key,tok])=>drawSparkline(key,tok.col)); },50);
+  }
+
+  // ── Balances ──
+  async function loadBalances() {
+    const userId = getSessionUserId();
+    const panel  = document.getElementById('balanceContent');
+    if (!userId) {
+      panel.innerHTML = `<div class="ex-login-prompt"><a href="login.html">Log in</a> to see your balances</div>`;
+      document.getElementById('tradeForm').style.display='none';
+      document.getElementById('tradeLoginPrompt').style.display='';
+      return;
+    }
+    const sb = await waitForSB();
+    if (!sb) return;
+    try {
+      const { data:tok } = await sb.from('user_tokens')
+        .select('token_balance,plasm_balance,wire_balance,lichen_balance,spore_balance')
+        .eq('user_id',userId).single();
+      if (!tok) { panel.innerHTML='<div style="color:rgba(255,255,255,0.25);font-size:12px;">No token wallet found.</div>'; return; }
+      // Keep nav header in sync
+      const newArkis = Number(tok.token_balance || 0);
+      if (window.playerTokens) window.playerTokens.arkis = newArkis;
+      else window.playerTokens = { arkis: newArkis };
+      if (typeof window.refreshNavArkis === 'function') window.refreshNavArkis(newArkis);
+      const isDebt = newArkis < 0;
+      const fmt = n=>Number(n||0).toLocaleString();
+      panel.innerHTML = `
+        <div class="ex-bal-row"><span class="ex-bal-token tok-arkis">$ARKIS</span><div><div class="ex-bal-amount" id="bal-arkis">${fmt(tok.token_balance)}</div></div></div>
+        <div class="ex-bal-row"><span class="ex-bal-token tok-plasm">$PLASM</span><div style="text-align:right;"><div class="ex-bal-amount" id="bal-plasm">${fmt(tok.plasm_balance)}</div><div class="ex-bal-eq">≈ ${fmt(Math.round(Number(tok.plasm_balance||0)*RATE_TO_ARKIS.PLASM))} ARKIS</div></div></div>
+        <div class="ex-bal-row"><span class="ex-bal-token tok-wire">$WIRE</span><div style="text-align:right;"><div class="ex-bal-amount" id="bal-wire">${fmt(tok.wire_balance)}</div><div class="ex-bal-eq">≈ ${fmt(Math.round(Number(tok.wire_balance||0)*RATE_TO_ARKIS.WIRE))} ARKIS</div></div></div>
+        <div class="ex-bal-row"><span class="ex-bal-token tok-lichen">$LICHEN</span><div style="text-align:right;"><div class="ex-bal-amount" id="bal-lichen">${fmt(tok.lichen_balance)}</div><div class="ex-bal-eq">≈ ${fmt(Math.round(Number(tok.lichen_balance||0)*RATE_TO_ARKIS.LICHEN))} ARKIS</div></div></div>
+        <div class="ex-bal-row"><span class="ex-bal-token tok-spore">$SPORE</span><div style="text-align:right;"><div class="ex-bal-amount" id="bal-spore">${fmt(tok.spore_balance)}</div><div class="ex-bal-eq">≈ ${fmt(Math.round(Number(tok.spore_balance||0)*RATE_TO_ARKIS.SPORE))} ARKIS</div></div></div>`;
+      // Apply debt styling if negative
+      const balArkisEl = document.getElementById('bal-arkis');
+      if (balArkisEl) {
+        balArkisEl.style.color = isDebt ? '#ff4444' : '';
+        balArkisEl.style.textShadow = isDebt ? '0 0 8px rgba(255,68,68,0.8)' : '';
+      }
+    } catch(e) { console.warn('loadBalances:',e); }
+  }
+
+  // ── Daily limit check ──
+  async function checkDailyLimit() {
+    const userId = getSessionUserId();
+    if (!userId) return;
+    const sb = await waitForSB();
+    if (!sb) return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { count } = await sb.from('exchange_log').select('id',{count:'exact',head:true}).eq('user_id',userId).gte('executed_at',today+'T00:00:00Z');
+      const remaining = 5-(count||0);
+      const limitEl=document.getElementById('tradeDailyLimit');
+      const btn=document.getElementById('tradeExecuteBtn');
+      const exSub=document.getElementById('exDailyLimit');
+      if (remaining<=0) {
+        if(btn) btn.disabled=true;
+        if(limitEl){limitEl.style.color='rgba(255,100,100,0.7)';limitEl.textContent='⛔ Daily limit reached — resets at midnight UTC';}
+        if(exSub){exSub.style.color='rgba(255,100,100,0.6)';exSub.textContent='⛔ Daily limit reached';}
+        const rateEl=document.getElementById('tradeRate');
+        if(rateEl) rateEl.textContent='No trades remaining today';
+      } else {
+        if(limitEl){limitEl.style.color='rgba(255,255,255,0.25)';limitEl.textContent=remaining+' trade'+(remaining!==1?'s':'')+' remaining today';}
+        if(exSub){exSub.style.color='rgba(255,255,255,0.2)';exSub.textContent=remaining+' trades remaining today';}
+      }
+    } catch(e) {}
+  }
+
+  // ── Recent trades ──
+  async function loadRecentTrades() {
+    const sb = await waitForSB();
+    const wrap = document.getElementById('recentTradesWrap');
+    if (!sb) { wrap.innerHTML=''; return; }
+    try {
+      const { data } = await sb.from('exchange_log')
+        .select('from_token,to_token,from_amount,to_amount,fee_amount,executed_at')
+        .order('executed_at',{ascending:false}).limit(20);
+      if (!data||!data.length) {
+        wrap.innerHTML='<div style="color:rgba(255,255,255,0.2);font-size:12px;font-family:\'Share Tech Mono\',monospace;padding:16px 0;">No trades yet — be the first.</div>';
+        return;
+      }
+      const TC={ARKIS:'#FFE08A',PLASM:'#FF9020',WIRE:'#50A0FF',LICHEN:'#46DC82',SPORE:'#BE5AFF'};
+      const fmt=n=>Number(n||0).toLocaleString();
+      const fmtDate=s=>{ const d=new Date(s); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); };
+      wrap.innerHTML=`<table class="ex-trades-table">
+        <thead><tr><th>Pair</th><th>Sent</th><th>Received</th><th>Fee burned</th><th>Date</th></tr></thead>
+        <tbody>${data.map(r=>`<tr>
+          <td><div class="ex-trade-pair"><span style="color:${TC[r.from_token]||'#fff'};font-weight:700;">$${r.from_token}</span><span style="color:rgba(255,255,255,0.2);font-size:10px;">→</span><span style="color:${TC[r.to_token]||'#fff'};font-weight:700;">$${r.to_token}</span></div></td>
+          <td>${fmt(r.from_amount)} <span style="color:${TC[r.from_token]||'#fff'};opacity:0.5;font-size:10px;">$${r.from_token}</span></td>
+          <td style="color:rgba(96,255,171,0.8);">${fmt(r.to_amount)} <span style="color:${TC[r.to_token]||'#fff'};opacity:0.5;font-size:10px;">$${r.to_token}</span></td>
+          <td style="color:rgba(255,100,100,0.6);">${fmt(r.fee_amount)} <span style="font-size:10px;opacity:0.5;">$${r.to_token}</span></td>
+          <td style="color:rgba(255,255,255,0.3);font-size:10px;">${fmtDate(r.executed_at)}</td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch(e) {
+      wrap.innerHTML='<div style="color:rgba(255,80,80,0.5);font-size:12px;">Could not load trade history.</div>';
+    }
+  }
+
+  // ── Trade widget ──
+  let _tradeActive='from';
+
+  function getBalMap() {
+    const g=id=>parseFloat((document.getElementById(id)?.textContent||'0').replace(/,/g,''));
+    return { ARKIS:g('bal-arkis'), PLASM:g('bal-plasm'), WIRE:g('bal-wire'), LICHEN:g('bal-lichen'), SPORE:g('bal-spore') };
+  }
+
+  function updateTradeWidget(side) {
+    if(side) _tradeActive=side;
+    const fromSel=document.getElementById('tradeFromToken');
+    const toSel=document.getElementById('tradeToToken');
+    const fromInput=document.getElementById('tradeFromAmount');
+    const toInput=document.getElementById('tradeToAmount');
+    const rateEl=document.getElementById('tradeRate');
+    const btn=document.getElementById('tradeExecuteBtn');
+    const status=document.getElementById('tradeStatus');
+    if(!fromSel||!toSel) return;
+    const from=fromSel.value;
+    const allTokens=['ARKIS','PLASM','WIRE','LICHEN','SPORE'];
+    const curTo=toSel.value===from?allTokens.find(t=>t!==from):toSel.value;
+    toSel.innerHTML=allTokens.filter(t=>t!==from).map(t=>'<option value="'+t+'"'+(t===curTo?' selected':'')+'>$'+t+'</option>').join('');
+    const to=toSel.value;
+    const rate=(TRADE_RATES[from]&&TRADE_RATES[from][to])?TRADE_RATES[from][to]:1;
+    let fromAmt,toAmt;
+    if(_tradeActive==='to'){
+      toAmt=parseFloat(toInput.value)||0;
+      fromAmt=toAmt>0?Math.ceil((toAmt/0.98)/rate):0;
+      fromInput.value=fromAmt>0?fromAmt:'';
+    } else {
+      fromAmt=parseFloat(fromInput.value)||0;
+      const grossOut=Math.floor(fromAmt*rate);
+      const fee=Math.ceil(grossOut*0.02);
+      toAmt=grossOut-fee;
+      toInput.value=toAmt>0?toAmt:'';
+    }
+    const balMap=getBalMap();
+    const balance=balMap[from]||0;
+    const insufficient=fromAmt>0&&fromAmt>balance;
+    if(status) status.textContent='';
+    if(fromAmt>0&&toAmt>0&&!insufficient){
+      const fee=Math.ceil(Math.floor(fromAmt*rate)*0.02);
+      rateEl.textContent='1 $'+from+' = '+rate.toFixed(4)+' $'+to+'  ·  fee: '+fee.toLocaleString()+' $'+to;
+      btn.disabled=false;
+    } else if(insufficient){
+      rateEl.textContent='1 $'+from+' = '+rate.toFixed(4)+' $'+to+'  ·  2% fee applies';
+      if(status){status.style.color='rgba(255,100,100,0.8)';status.textContent='Insufficient balance';}
+      btn.disabled=true;
+    } else {
+      rateEl.textContent='1 $'+from+' = '+rate.toFixed(4)+' $'+to+'  ·  2% fee applies';
+      btn.disabled=true;
+    }
+  }
+
+  async function executeExchange() {
+    const fromSel=document.getElementById('tradeFromToken');
+    const toSel=document.getElementById('tradeToToken');
+    const fromInput=document.getElementById('tradeFromAmount');
+    const btn=document.getElementById('tradeExecuteBtn');
+    const status=document.getElementById('tradeStatus');
+    const from=fromSel.value, to=toSel.value;
+    const fromAmt=parseFloat(fromInput.value);
+    if(!fromAmt||fromAmt<=0) return;
+    const rate=(TRADE_RATES[from]&&TRADE_RATES[from][to])?TRADE_RATES[from][to]:1;
+    const estOut=Math.floor(Math.floor(fromAmt*rate)*0.98);
+    if(!confirm(`Exchange ${fromAmt.toLocaleString()} $${from} → ~${estOut.toLocaleString()} $${to} (after 2% fee)\n\nThis cannot be undone. Proceed?`)) return;
+    const userId=getSessionUserId();
+    if(!userId){alert('Please log in first.');return;}
+    const sb=await waitForSB();
+    if(!sb) return;
+    btn.disabled=true; btn.textContent='⏳ Processing…';
+    if(status){status.style.color='rgba(255,255,255,0.4)';status.textContent='Executing…';}
+    try {
+      const {data:result,error}=await sb.rpc('execute_token_exchange',{p_user_id:userId,p_from_token:from,p_to_token:to,p_from_amount:fromAmt});
+      if(error) throw error;
+      document.getElementById('tradeWidget').style.display='none';
+      document.getElementById('tradeSuccess').style.display='';
+      document.getElementById('tradeSuccessMsg').textContent=`${Number(result.from_amount).toLocaleString()} $${result.from_token} → ${Number(result.to_amount).toLocaleString()} $${result.to_token}`;
+      document.getElementById('tradeSuccessDetail').textContent=`Rate: 1 $${result.from_token} = ${Number(result.rate).toFixed(4)} $${result.to_token}  ·  Fee: ${Number(result.fee).toLocaleString()} $${result.to_token} burned`;
+      const remaining=result.daily_remaining;
+      const limitEl=document.getElementById('tradeDailyLimit');
+      const exSub=document.getElementById('exDailyLimit');
+      if(remaining<=0){
+        document.getElementById('tradeSuccessDetail').textContent+='  ·  No trades remaining today';
+        const resetBtn=document.querySelector('.ex-success-reset');
+        if(resetBtn){resetBtn.textContent='Trading resets at midnight UTC';resetBtn.disabled=true;resetBtn.style.opacity='0.4';resetBtn.style.cursor='default';}
+        if(limitEl){limitEl.style.color='rgba(255,100,100,0.7)';limitEl.textContent='⛔ Daily limit reached — resets at midnight UTC';}
+        if(exSub){exSub.style.color='rgba(255,100,100,0.6)';exSub.textContent='⛔ Daily limit reached';}
+      } else {
+        if(limitEl){limitEl.style.color='rgba(255,255,255,0.25)';limitEl.textContent=remaining+' trade'+(remaining!==1?'s':'')+' remaining today';}
+        if(exSub){exSub.style.color='rgba(255,255,255,0.2)';exSub.textContent=remaining+' trades remaining today';}
+      }
+      await loadBalances();
+      await loadRecentTrades();
+    } catch(err) {
+      const msg=err.message||'';
+      let friendly='Exchange failed — please try again.';
+      if(msg.includes('insufficient_balance')) friendly='Insufficient balance.';
+      if(msg.includes('daily_limit'))          friendly='Daily limit reached (5 per day).';
+      if(msg.includes('amount_too_small'))     friendly='Minimum exchange is 10 tokens.';
+      if(msg.includes('rate_unavailable'))     friendly='Exchange rate unavailable.';
+      if(status){status.style.color='rgba(255,100,100,0.8)';status.textContent=friendly;}
+      btn.disabled=false; btn.textContent='⚡ Execute Trade';
+    }
+  }
+
+  function resetTradeWidget() {
+    const limitEl=document.getElementById('tradeDailyLimit');
+    if(limitEl&&limitEl.textContent.includes('Daily limit reached')) return;
+    document.getElementById('tradeWidget').style.display='';
+    document.getElementById('tradeSuccess').style.display='none';
+    document.getElementById('tradeFromAmount').value='';
+    document.getElementById('tradeToAmount').value='';
+    document.getElementById('tradeRate').textContent='Enter an amount on either side';
+    document.getElementById('tradeExecuteBtn').disabled=true;
+    document.getElementById('tradeExecuteBtn').textContent='⚡ Execute Trade';
+    document.getElementById('tradeStatus').textContent='';
+    _tradeActive='from';
+  }
+
+  // ── Init ──
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    renderTokenCards();
+    await loadExchangeData();
+    // Update token card rates after live rates load
+    Object.keys(TOKENS).forEach(key=>{
+      const el=document.getElementById('tokRate_'+key);
+      if(el) el.textContent=key==='ARKIS'?'1.00':Number(RATE_TO_ARKIS[key]||0).toFixed(2);
+    });
+    await loadBalances();
+    await checkDailyLimit();
+    await loadRecentTrades();
+  });
+  </script>
+
+</body>
+</html>

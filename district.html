@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>District — MINALIA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+  <link rel="stylesheet" href="style.css?v=20260303a">
+  <style>
+    body { overflow-x:hidden; padding-top:92px; background:#0a0a0f; }
+    body::after { display:none; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+    .stars, .twinkling { display:none !important; }
+
+    /* ── HERO LAYOUT ── */
+    .hero { display:grid; grid-template-columns:280px 1fr; gap:28px; margin-bottom:28px; align-items:start; }
+    @media(max-width:800px) { .hero { grid-template-columns:1fr; } }
+    .visual-col { display:flex; flex-direction:column; gap:12px; }
+    .hex-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; display:flex; align-items:center; justify-content:center; min-height:180px; }
+    .hex-card svg { width:240px; height:auto; max-height:220px; display:block; }
+    .view-on-map-btn { width:100%; text-align:center; }
+    .district-nav { display:flex; align-items:center; gap:10px; margin-top:2px; }
+    .district-nav-btn { color:rgba(255,224,138,0.7); text-decoration:none; font-weight:700; font-size:12px; transition:color .2s; white-space:nowrap; }
+    .district-nav-btn:hover { color:#FFE08A; }
+    .district-nav-btn.disabled { color:rgba(255,255,255,0.2); cursor:default; pointer-events:none; }
+    .district-nav-center { flex:1; text-align:center; font-size:11px; color:rgba(255,255,255,0.3); font-weight:600; letter-spacing:.04em; }
+    .unit-info { display:flex; flex-direction:column; gap:8px; }
+    .unit-code-label { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,0.35); }
+    .unit-title { font-size:36px; font-weight:900; letter-spacing:-.01em; line-height:1; }
+    .unit-description { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.7; }
+    .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    @media(max-width:600px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
+
+    /* ── District unit cards ── */
+    @media(max-width:1100px) { .units-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(max-width:760px)  { .units-grid { grid-template-columns: repeat(2,1fr); } }
+    .specials-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    @media(max-width:1100px) { .specials-grid { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:760px)  { .specials-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:480px)  { .specials-grid { grid-template-columns:1fr; } }
+
+    .dc-card {
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+    .dc-card:hover { border-color: rgba(255,224,138,0.2); background: rgba(0,0,0,0.55); transform: translateY(-2px); }
+    .dc-card.owned { border-color: rgba(255,224,138,0.15); }
+    .dc-card.in-auction { border-color: rgba(255,180,80,0.25); }
+    .dc-card.for-sale { border-color: rgba(96,255,171,0.2); }
+
+    /* Gap between info panels and unit cards below */
+    .bottom-grid { margin-bottom: 28px; }
+    .minister-owners-row { display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:16px; }
+    @media(max-width:900px) { .minister-owners-row { grid-template-columns:1fr; } }
+    .info-panels-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+    @media(max-width:900px) { .info-panels-row { grid-template-columns:1fr; } }
+    @media(max-width:1200px) { .info-panels-row { grid-template-columns:repeat(2,1fr); } }
+
+    .dc-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 14px 16px 10px;
+      background: rgba(0,0,0,0.15);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .dc-code { font-size: 14px; font-weight: 800; color: rgba(255,255,255,0.95); letter-spacing: 0.04em; margin-bottom: 3px; }
+    .dc-letter { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.03em; }
+    .dc-battery { display:inline-flex; align-items:center; gap:4px; font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:0.04em; }
+    .dc-battery.bat-green  { background:rgba(74,222,128,0.12);  color:#4ade80;  border:1px solid rgba(74,222,128,0.25);  }
+    .dc-battery.bat-yellow { background:rgba(255,224,138,0.12); color:#FFE08A;  border:1px solid rgba(255,224,138,0.25); }
+    .dc-battery.bat-orange { background:rgba(251,146,60,0.12);  color:#fb923c;  border:1px solid rgba(251,146,60,0.25);  }
+    .dc-battery.bat-red    { background:rgba(248,113,113,0.12); color:#f87171;  border:1px solid rgba(248,113,113,0.25); }
+    .dc-battery.bat-none   { background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.08); }
+    .dc-pop-pill { display:inline-flex; align-items:center; gap:4px; font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:0.04em; background:rgba(96,255,171,0.08); color:#60ffab; border:1px solid rgba(96,255,171,0.2); margin-top:4px; }
+
+    .district-badge-col svg { width: 220px; height: 180px; border-radius: 14px; display: block; }
+    /* .hex-card svg defined in hero layout block above */
+    .unit-status-badge { padding: 3px 7px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; }
+    .unit-status-badge.owned    { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+    .unit-status-badge.available { background: rgba(96,255,171,0.08); color: rgba(96,255,171,0.7); }
+    .unit-status-badge.for-sale { background: rgba(96,255,171,0.12); color: rgba(96,255,171,0.9); }
+    .unit-status-badge.auction  { background: rgba(255,180,80,0.12); color: rgba(255,180,80,0.9); }
+
+    .dc-card-body { padding: 12px 16px; flex: 1; }
+    .dc-price { font-size: 13px; font-weight: 700; color: rgba(96,255,171,0.9); margin-bottom: 8px; }
+    .dc-price.auction { color: rgba(255,180,80,0.9); }
+
+    .dc-owner { display: flex; align-items: center; gap: 7px; }
+    .dc-owner.unowned { font-size: 11px; color: rgba(255,255,255,0.25); font-style: italic; }
+    .dc-owner-avatar { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+    .dc-owner-name { font-size: 12px; color: rgba(255,224,138,0.8); text-decoration: none; font-weight: 600; }
+    .dc-owner-name:hover { color: #FFE08A; }
+
+    .dc-dev-strip { display:flex; flex-wrap:wrap; gap:4px; padding:8px 16px 6px; border-top:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.08); }
+    .dc-dev-icon { font-size:15px; cursor:default; line-height:1; }
+    .dc-dev-icon.building { opacity:0.35; }
+
+    /* ── Special Building Panel (district page) ── */
+    .special-bldg-panel {
+      grid-column: 1 / -1;
+      background: rgba(255,200,80,0.04);
+      border: 2px solid rgba(255,200,80,0.4);
+      border-radius: 14px;
+      padding: 22px 24px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .special-bldg-panel.built {
+      border-color: rgba(96,255,171,0.4);
+      background: rgba(96,255,171,0.03);
+    }
+    .special-bldg-crown {
+      position: absolute;
+      top: -11px; left: 18px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #FFE08A;
+      background: rgba(12,8,20,0.98);
+      padding: 2px 10px; border-radius: 4px;
+      border: 1px solid rgba(255,200,80,0.35);
+    }
+    .special-bldg-panel.built .special-bldg-crown { color: #60ffab; border-color: rgba(96,255,171,0.35); }
+    .special-bldg-inner { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: start; }
+    @media(max-width:640px) { .special-bldg-inner { grid-template-columns: auto 1fr; } }
+    .special-bldg-icon { font-size: 44px; line-height: 1; margin-top: 4px; }
+    .special-bldg-info { display: flex; flex-direction: column; gap: 6px; }
+    .special-bldg-name { font-size: 18px; font-weight: 800; color: #FFE08A; }
+    .special-bldg-panel.built .special-bldg-name { color: rgba(255,255,255,0.95); }
+    .special-bldg-built-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #60ffab; background: rgba(96,255,171,0.1);
+      border: 1px solid rgba(96,255,171,0.3); border-radius: 4px;
+      padding: 2px 8px; width: fit-content;
+    }
+    .special-bldg-benefit { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; }
+    .special-bldg-cta { font-size: 11px; color: rgba(255,200,80,0.55); font-style: italic; }
+    .special-bldg-shares {
+      display: flex; flex-direction: column; gap: 8px; min-width: 180px;
+    }
+    @media(max-width:640px) { .special-bldg-shares { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; } }
+    .share-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,200,80,0.07); border: 1px solid rgba(255,200,80,0.18);
+      border-radius: 8px; padding: 8px 12px;
+    }
+    .share-chip-avatar { width: 26px; height: 26px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
+    .share-chip-name { font-size: 12px; font-weight: 700; color: rgba(255,224,138,0.9); }
+    .share-chip-unit { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .share-chip-pct { margin-left: auto; font-size: 14px; font-weight: 800; color: #FFE08A; }
+    .interested-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .interested-chip {
+      font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px;
+      background: rgba(255,200,80,0.08); border: 1px solid rgba(255,200,80,0.2);
+      color: rgba(255,200,80,0.8);
+    }
+
+    .dc-card-footer { padding: 10px 16px; background: rgba(0,0,0,0.1); border-top: 1px solid rgba(255,255,255,0.04); }
+    .dc-btn {
+      display: block; width: 100%; padding: 7px 0; border-radius: 5px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      text-align: center; text-decoration: none; transition: background 0.15s;
+    }
+    .dc-btn-secondary { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+    .dc-btn-secondary:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+    .dc-btn-sale { background: rgba(96,255,171,0.1); border: 1px solid rgba(96,255,171,0.25); color: rgba(96,255,171,0.9); }
+    .dc-btn-sale:hover { background: rgba(96,255,171,0.18); }
+    .dc-btn-auction { background: rgba(255,180,80,0.1); border: 1px solid rgba(255,180,80,0.25); color: rgba(255,180,80,0.9); }
+    .dc-btn-auction:hover { background: rgba(255,180,80,0.18); }
+
+
+/* ── District unit cards (profile-style) ── */
+    .units-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    @media(max-width:1100px) { .units-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(max-width:760px)  { .units-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .dc-card {
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+    .dc-card:hover { border-color: rgba(255,224,138,0.2); background: rgba(0,0,0,0.55); transform: translateY(-2px); }
+    .dc-card.owned { border-color: rgba(255,224,138,0.15); }
+    .dc-card.in-auction { border-color: rgba(255,180,80,0.25); }
+    .dc-card.for-sale { border-color: rgba(96,255,171,0.2); }
+
+    /* Gap between info panels and unit cards below */
+    .bottom-grid { margin-bottom: 28px; }
+    @media(max-width:900px) { .info-panels-row { grid-template-columns:1fr; } }
+    @media(max-width:1200px) { .info-panels-row { grid-template-columns:repeat(2,1fr); } }
+
+    .dc-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 14px 16px 10px;
+      background: rgba(0,0,0,0.15);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .dc-code { font-size: 14px; font-weight: 800; color: rgba(255,255,255,0.95); letter-spacing: 0.04em; margin-bottom: 3px; }
+    .dc-letter { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.03em; }
+    .dc-battery { display:inline-flex; align-items:center; gap:4px; font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:0.04em; }
+    .dc-battery.bat-green  { background:rgba(74,222,128,0.12);  color:#4ade80;  border:1px solid rgba(74,222,128,0.25);  }
+    .dc-battery.bat-yellow { background:rgba(255,224,138,0.12); color:#FFE08A;  border:1px solid rgba(255,224,138,0.25); }
+    .dc-battery.bat-orange { background:rgba(251,146,60,0.12);  color:#fb923c;  border:1px solid rgba(251,146,60,0.25);  }
+    .dc-battery.bat-red    { background:rgba(248,113,113,0.12); color:#f87171;  border:1px solid rgba(248,113,113,0.25); }
+    .dc-battery.bat-none   { background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.08); }
+    .dc-pop-pill { display:inline-flex; align-items:center; gap:4px; font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:0.04em; background:rgba(96,255,171,0.08); color:#60ffab; border:1px solid rgba(96,255,171,0.2); margin-top:4px; }
+
+    .unit-status-badge { padding: 3px 7px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; }
+    .unit-status-badge.owned    { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+    .unit-status-badge.available { background: rgba(96,255,171,0.08); color: rgba(96,255,171,0.7); }
+    .unit-status-badge.for-sale { background: rgba(96,255,171,0.12); color: rgba(96,255,171,0.9); }
+    .unit-status-badge.auction  { background: rgba(255,180,80,0.12); color: rgba(255,180,80,0.9); }
+
+    .dc-card-body { padding: 12px 16px; flex: 1; }
+    .dc-price { font-size: 13px; font-weight: 700; color: rgba(96,255,171,0.9); margin-bottom: 8px; }
+    .dc-price.auction { color: rgba(255,180,80,0.9); }
+
+    .dc-owner { display: flex; align-items: center; gap: 7px; }
+    .dc-owner.unowned { font-size: 11px; color: rgba(255,255,255,0.25); font-style: italic; }
+    .dc-owner-avatar { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+    .dc-owner-name { font-size: 12px; color: rgba(255,224,138,0.8); text-decoration: none; font-weight: 600; }
+    .dc-owner-name:hover { color: #FFE08A; }
+
+    .dc-dev-strip { display:flex; flex-wrap:wrap; gap:4px; padding:8px 16px 6px; border-top:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.08); }
+    .dc-dev-icon { font-size:15px; cursor:default; line-height:1; }
+    .dc-dev-icon.building { opacity:0.35; }
+
+    /* ── Special Building Panel (district page) ── */
+    .special-bldg-panel {
+      grid-column: 1 / -1;
+      background: rgba(255,200,80,0.04);
+      border: 2px solid rgba(255,200,80,0.4);
+      border-radius: 14px;
+      padding: 22px 24px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .special-bldg-panel.built {
+      border-color: rgba(96,255,171,0.4);
+      background: rgba(96,255,171,0.03);
+    }
+    .special-bldg-crown {
+      position: absolute;
+      top: -11px; left: 18px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #FFE08A;
+      background: rgba(12,8,20,0.98);
+      padding: 2px 10px; border-radius: 4px;
+      border: 1px solid rgba(255,200,80,0.35);
+    }
+    .special-bldg-panel.built .special-bldg-crown { color: #60ffab; border-color: rgba(96,255,171,0.35); }
+    .special-bldg-inner { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: start; }
+    @media(max-width:640px) { .special-bldg-inner { grid-template-columns: auto 1fr; } }
+    .special-bldg-icon { font-size: 44px; line-height: 1; margin-top: 4px; }
+    .special-bldg-info { display: flex; flex-direction: column; gap: 6px; }
+    .special-bldg-name { font-size: 18px; font-weight: 800; color: #FFE08A; }
+    .special-bldg-panel.built .special-bldg-name { color: rgba(255,255,255,0.95); }
+    .special-bldg-built-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #60ffab; background: rgba(96,255,171,0.1);
+      border: 1px solid rgba(96,255,171,0.3); border-radius: 4px;
+      padding: 2px 8px; width: fit-content;
+    }
+    .special-bldg-benefit { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; }
+    .special-bldg-cta { font-size: 11px; color: rgba(255,200,80,0.55); font-style: italic; }
+    .special-bldg-shares {
+      display: flex; flex-direction: column; gap: 8px; min-width: 180px;
+    }
+    @media(max-width:640px) { .special-bldg-shares { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; } }
+    .share-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,200,80,0.07); border: 1px solid rgba(255,200,80,0.18);
+      border-radius: 8px; padding: 8px 12px;
+    }
+    .share-chip-avatar { width: 26px; height: 26px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
+    .share-chip-name { font-size: 12px; font-weight: 700; color: rgba(255,224,138,0.9); }
+    .share-chip-unit { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .share-chip-pct { margin-left: auto; font-size: 14px; font-weight: 800; color: #FFE08A; }
+    .interested-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .interested-chip {
+      font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px;
+      background: rgba(255,200,80,0.08); border: 1px solid rgba(255,200,80,0.2);
+      color: rgba(255,200,80,0.8);
+    }
+
+    .dc-card-footer { padding: 10px 16px; background: rgba(0,0,0,0.1); border-top: 1px solid rgba(255,255,255,0.04); }
+    .dc-btn {
+      display: block; width: 100%; padding: 7px 0; border-radius: 5px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      text-align: center; text-decoration: none; transition: background 0.15s;
+    }
+    .dc-btn-secondary { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+    .dc-btn-secondary:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+    .dc-btn-sale { background: rgba(96,255,171,0.1); border: 1px solid rgba(96,255,171,0.25); color: rgba(96,255,171,0.9); }
+    .dc-btn-sale:hover { background: rgba(96,255,171,0.18); }
+    .dc-btn-auction { background: rgba(255,180,80,0.1); border: 1px solid rgba(255,180,80,0.25); color: rgba(255,180,80,0.9); }
+    .dc-btn-auction:hover { background: rgba(255,180,80,0.18); }
+
+    /* ── PAGE ── */
+    .page-wrap { max-width:1200px; margin:0 auto; padding:24px 24px 80px; position:relative; z-index:2; }
+    .loading-state { text-align:center; padding:80px 20px; color:rgba(255,255,255,0.3); font-size:14px; }
+    .not-found { text-align:center; padding:80px 20px; }
+    .not-found h1 { font-size:24px; color:rgba(255,255,255,0.7); margin-bottom:12px; }
+    .gold { color:#FFE08A; }
+    .earth-footer { position:fixed; bottom:0; left:0; right:0; height:45vh; pointer-events:none; z-index:1; }
+    .earth-footer img { width:100%; height:100%; object-fit:cover; object-position:center 60%; opacity:0.2; display:block; mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.5) 25%,black 60%); -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.5) 25%,black 60%); }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb { font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:20px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .breadcrumb a { color:rgba(255,255,255,0.5); text-decoration:none; transition:color .2s; }
+    .breadcrumb a:hover { color:#FFE08A; }
+    .breadcrumb .sep { color:rgba(255,255,255,0.2); }
+
+    /* ── DISTRICT HERO ── */
+    .district-hero { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:28px; margin-bottom:24px; }
+    .hero-top { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:20px; }
+    .district-meta { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+    .district-label { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+    .district-name { font-size:36px; font-weight:900; letter-spacing:-.01em; line-height:1; margin-top:2px; }
+    .district-code { font-size:13px; font-weight:600; color:rgba(255,255,255,0.35); margin-top:2px; }
+    /* .district-meta defined in primary style block above */
+    .district-desc { font-size:13px; color:rgba(255,255,255,0.45); line-height:1.7; margin-top:12px; }
+    .district-badge-col { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+    .hero-stats { display:flex; gap:12px; flex-wrap:wrap; }
+    .hero-stat { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:10px 14px; min-width:80px; }
+    .hero-stat-label { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,0.35); margin-bottom:4px; font-weight:700; }
+    .hero-stat-value { font-size:20px; font-weight:800; color:rgba(255,255,255,0.9); }
+
+    /* ── MINISTER STRIP ── */
+    .minister-strip { display:flex; flex-direction:column; gap:16px; background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; }
+    .minister-strip-top { display:flex; align-items:center; gap:10px; }
+    .minister-nft { width:54px; height:auto; object-fit:contain; flex-shrink:0; cursor:pointer; display:block; }
+    .minister-strip-info { flex:1; min-width:0; }
+    .minister-strip-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.3); margin-bottom:3px; }
+    .minister-strip-name { font-size:15px; font-weight:800; color:#FFE08A; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .minister-strip-role { font-size:11px; color:rgba(255,255,255,0.4); line-height:1.4; }
+    .minister-strip-btn { display:block; width:100%; text-align:center; padding:7px 0; border-radius:7px; background:rgba(255,224,138,0.08); border:1px solid rgba(255,224,138,0.25); color:rgba(255,224,138,0.8); font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; text-decoration:none; transition:all .15s; }
+    .minister-strip-btn:hover { background:rgba(255,224,138,0.15); border-color:rgba(255,224,138,0.4); color:#FFE08A; }
+    .no-minister { font-size:13px; color:rgba(255,255,255,0.3); font-style:italic; }
+
+    /* ── PANELS ── */
+    .panel { background:rgba(0,0,0,0.42); border:1px solid rgba(255,224,138,0.2); border-radius:16px; overflow:hidden; margin-bottom:20px; }
+    .panel-header { padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .panel-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,224,138,0.65); }
+    .panel-body { padding:20px; }
+
+    /* ── OWNERS GRID ── */
+    .owners-grid { display:flex; flex-wrap:wrap; gap:10px; }
+    .owner-avatar-link { display:flex; align-items:center; gap:8px; text-decoration:none; padding:6px 10px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); transition:all .15s; }
+    .owner-avatar-link:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,224,138,0.2); }
+
+    /* ── BORDERS ── */
+    .border-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .border-item:last-child { border-bottom:none; }
+    .border-swatch { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .border-tname { font-size:13px; font-weight:600; color:rgba(255,255,255,0.8); flex:1; }
+    .border-tcode { font-size:11px; color:rgba(255,255,255,0.3); font-weight:600; }
+
+    /* ── DETAIL ROWS ── */
+    .detail-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+    .detail-row:last-child { border-bottom:none; }
+    .detail-key { color:rgba(255,255,255,0.4); }
+    .detail-value { color:rgba(255,255,255,0.8); font-weight:600; }
+    .detail-value.gold { color:#FFE08A; }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+  <script src="load-nav.js"></script>
+
+  <div class="page-wrap" id="pageContent">
+    <div class="loading-state">Loading district…</div>
+  </div>
+
+  <script src="unit_data.js?v=20260312b"></script>
+  <script>
+  const TERRITORY_COLORS={
+    'LUM-01':'#d4a96a','LUM-02':'#c084c4','LUM-03':'#6ab4d4','LUM-04':'#d4c46a',
+    'LUM-05':'#6ad490','LUM-06':'#8a6ad4','LUM-07':'#d4846a','LUM-08':'#6a9ad4',
+    'LUM-09':'#84d46a','LUM-10':'#d46a84','LUM-11':'#6ad4c4','LUM-12':'#d4a46a',
+    'LUM-13':'#a46ad4','LUM-14':'#6ab4a4','LUM-15':'#d46a6a','LUM-16':'#6ad464',
+    'LUM-17':'#c4846a','LUM-18':'#6a84d4','LUM-19':'#d4d46a','LUM-20':'#846ad4'
+  };
+  const TERRITORY_NAMES={
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+  const MINISTERS_MAP={
+    'LUM-01':{name:'Nova',img:'/nfts/13_NOVA.png',page:'minalien.html?id=nova'},
+    'LUM-02':{name:'Faze',img:'/nfts/2_FAZE.png',page:'minalien.html?id=faze'},
+    'LUM-03':{name:'Luma',img:'/nfts/8_LUMA.png',page:'minalien.html?id=luma'},
+    'LUM-04':{name:'Talha',img:'/nfts/1_TALHA.png',page:'minalien.html?id=talha'},
+    'LUM-05':{name:'Wisp',img:'/nfts/38_WISP.png',page:'minalien.html?id=wisp'},
+    'LUM-06':{name:'Halo',img:'/nfts/47_HALO.png',page:'minalien.html?id=halo'},
+    'LUM-07':{name:'Gaze',img:'/nfts/84_GAZE.png',page:'minalien.html?id=gaze'},
+    'LUM-08':{name:'Blip',img:'/nfts/16_BLIP.png',page:'minalien.html?id=blip'},
+    'LUM-09':{name:'Drip',img:'/nfts/3_DRIP.png',page:'minalien.html?id=drip'},
+    'LUM-10':{name:'Opal',img:'/nfts/42_OPAL.png',page:'minalien.html?id=opal'},
+    'LUM-11':{name:'Frog',img:'/nfts/25_FROG.png',page:'minalien.html?id=frog'},
+    'LUM-12':{name:'Quip',img:'/nfts/18_QUIP.png',page:'minalien.html?id=quip'},
+    'LUM-13':{name:'Vale',img:'/nfts/69_VALE.png',page:'minalien.html?id=vale'},
+    'LUM-14':{name:'Angel',img:'/nfts/60_ANGEL.png',page:'minalien.html?id=angel'},
+    'LUM-15':{name:'Wise',img:'/nfts/59_WISE.png',page:'minalien.html?id=wise'},
+    'LUM-16':{name:'Yasin',img:'/nfts/82_YASIN.png',page:'minalien.html?id=yasin'},
+    'LUM-17':{name:'Ali',img:'/nfts/61_ALI.png',page:'minalien.html?id=ali'},
+    'LUM-18':{name:'Mino',img:'/nfts/19_MINO.png',page:'minalien.html?id=mino'},
+    'LUM-19':{name:'Zoro',img:'/nfts/17_ZORO.png',page:'minalien.html?id=zoro'},
+    'LUM-20':{name:'Sike',img:'/nfts/37_SIKE.png',page:'minalien.html?id=sike'},
+  };
+
+  const TIER_LABELS={common:'Common',uncommon:'Uncommon',rare:'Rare',legendary:'Legendary'};
+  const UNIT_LETTERS=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+
+  // Territory special buildings (mirrors profile.html TERRITORY_SPECIAL)
+  const TERRITORY_SPECIAL = {
+    'LUM-01': { slug:'canopy_observatory',     icon:'🔭', name:'Canopy Observatory',        benefit:'Boosts navigation clarity, +8 Innovator for builder. Native to Aurellia.' },
+    'LUM-02': { slug:'biolum_market',           icon:'🛒', name:'Biolum Market (Gourmet)',   benefit:'Generates 50 $ARKIS/month, +5 Merchant. Highest yield in Celestara.' },
+    'LUM-03': { slug:'energy_garden',           icon:'🌱', name:'Energy Garden',             benefit:'+10% $LICHEN yield for all gardens in Willow Head. Native buff via Luma.' },
+    'LUM-04': { slug:'skybridge_trading_post',  icon:'🌉', name:'Skybridge Trading Post',    benefit:'150 $ARKIS/month, +10 Merchant. Requires adjacent player unit in Emberveil.' },
+    'LUM-05': { slug:'luminaea_art_gallery',    icon:'🖼️', name:'Luminaea Art Gallery',      benefit:'+8 Luminary for builder. Showcase space for Wisp in Fenwild.' },
+    'LUM-06': { slug:'starlight_amphitheater',  icon:'🎭', name:'Starlight Amphitheater',    benefit:'10 $LICHEN/month, +8 Luminary. Core cultural hub of Firesky.' },
+    'LUM-07': { slug:'prismatic_wellspring',    icon:'🌊', name:'Prismatic Wellspring',      benefit:'5 $PLASM + 10 $LICHEN/month. Reveals hidden resources in Pieve.' },
+    'LUM-08': { slug:'harmonic_sound_node',     icon:'🔊', name:'Harmonic Sound Node',       benefit:'+5 Innovator. Creates rhythmic guiding pulses across Oakland.' },
+    'LUM-09': { slug:'spore_silk_loom',         icon:'🧵', name:'Spore-Silk Loom (Fashion)', benefit:'10 $LICHEN/month, +5 Merchant. Fashion hub native to Jadehollow.' },
+    'LUM-10': { slug:'meditation_sanctuary',    icon:'🧘', name:'Meditation Sanctuary',      benefit:'20 $PLASM/month, +15 Spiritualist. Reflective sanctuary in Astral Peaks.' },
+    'LUM-11': { slug:'parkour_athletics_hub',   icon:'🏃', name:'Parkour Athletics Hub',     benefit:'-20% travel cost across Lumenvast. Amplified by Frog\'s buff.' },
+    'LUM-12': { slug:'comedy_social_club',      icon:'😂', name:'Comedy Social Club',        benefit:'+8 Luminary, boosts community engagement in all Mirewood units.' },
+    'LUM-13': { slug:'adaptive_living_units',   icon:'🔧', name:'Adaptive Living Units',     benefit:'-15% build time for ALL structures. Amplified by Vale\'s buff in Northfen.' },
+    'LUM-14': { slug:'nectar_infusion_clinic',  icon:'💉', name:'Nectar-Infusion Clinic',    benefit:'Lowers population death rate, +15 Spiritualist. Native to Oldmarch.' },
+    'LUM-15': { slug:'archivists_spire',        icon:'📚', name:'Archivist\'s Spire',         benefit:'+5 Innovator +5 Spiritualist. Preserves ancient knowledge in Mugugno.' },
+    'LUM-16': { slug:'energy_efficiency_hub',   icon:'⚡', name:'Energy-Efficiency Hub',     benefit:'+10% $WIRE yield for all workshops. Amplified by Yasin\'s buff in Bauscia.' },
+    'LUM-17': { slug:'galactic_banquet_hall',   icon:'🍽️', name:'Galactic Banquet Hall',     benefit:'80 $ARKIS/month, +8 Merchant +5 Luminary. Prestige hub of Ravenholm.' },
+    'LUM-18': { slug:'mineral_extraction_lab',  icon:'⛏️', name:'Mineral Extraction Lab',    benefit:'20 $WIRE/month, +5 Innovator +5 Conservator. Rare minerals in Stormgate.' },
+    'LUM-19': { slug:'holographic_theater',     icon:'🎬', name:'Holographic Theater',       benefit:'+10 Luminary. Ancient dimensional storytelling across The Spine.' },
+    'LUM-20': { slug:'acoustic_power_plant',    icon:'🔋', name:'Acoustic Power Plant',      benefit:'50 $WIRE + 30 $ARKIS/month. Massive sound-to-energy conversion in Umbralia.' },
+  };
+
+  function toDbAreaCode(sc){const m=String(sc).match(/^([A-Za-z]+)-0*([0-9]+)$/);return m?`${m[1].toUpperCase()}${parseInt(m[2],10)}`:sc;}
+
+  // District descriptions by territory
+  const DISTRICT_DESCS={
+    'LUM-01':`A golden frontier territory of rolling ancient forests and amber light. Aurellia is known for its warm climate and prosperous landowners.`,
+    'LUM-02':`A mystical purple-hued territory of celestial energy. Celestara pulses with arcane potential and attracts the most creative minds in Luminaea.`,
+    'LUM-03':`A coastal wetland territory of ethereal blue waters. Willow Head sits at the edge of the known world, isolated yet strategically vital.`,
+    'LUM-04':`A fiery territory of ember and shadow. Emberveil's dramatic landscape makes it one of the most visually striking districts in Luminaea.`,
+    'LUM-05':`A verdant territory of wild growth and natural power. Fenwild's forests are ancient and untamed, home to rare flora found nowhere else.`,
+    'LUM-06':`A blazing territory of crimson skies and radiant energy. Firesky burns brightest at dawn and draws bold, ambitious settlers.`,
+    'LUM-07':`A warm sunset territory of artisan culture and craft. Pieve is known across Luminaea for its skilled makers and vibrant creative community.`,
+    'LUM-08':`A deep blue coastal territory of maritime heritage. Oakland's ports and trade routes make it one of the most economically active districts.`,
+    'LUM-09':`A lush jade territory of hidden hollows and ancient groves. Jadehollow rewards those patient enough to explore its layered depths.`,
+    'LUM-10':`A rose-tinged highland territory of crystalline peaks. Astral Peaks rises above the cloud line and offers the most elevated views in Luminaea.`,
+    'LUM-11':`A teal coastal territory of vast open skies. Lumenvast stretches across the widest terrain in Luminaea, offering unmatched space and freedom.`,
+    'LUM-12':`A warm amber territory of dense ancient woodland. Mirewood's towering canopy and rich soil make it one of the most fertile districts.`,
+    'LUM-13':`A violet marshland territory of deep mystery. Northfen's foggy borders and rare biome attract scholars and adventurers alike.`,
+    'LUM-14':`A seafoam coastal territory of quiet shorelines. Oldmarch carries centuries of history in its stones — the oldest settled district in Luminaea.`,
+    'LUM-15':`A coral highland territory of soaring winds and long views. Mugugno's elevation makes it perfect for those who value independence.`,
+    'LUM-16':`A sharp emerald territory of fractured rock and deep forest. Bauscia hides its riches in complex terrain that rewards careful navigation.`,
+    'LUM-17':`A rust-copper territory of rugged frontier. Ravenholm is the wildest of all districts — raw, untamed, and full of opportunity.`,
+    'LUM-18':`A stormy indigo territory of fierce weather and resilient settlers. Stormgate's energy is electric — literally and culturally.`,
+    'LUM-19':`A golden ridge territory that forms the spine of Luminaea. The Spine is the only corridor territory — touching more districts than any other.`,
+    'LUM-20':`A deep violet territory of shadow and mystery. Umbralia sits at the darkest edge of the world map, shrouded in night most of the day.`,
+  };
+
+  // ── DISTRICT HERO SVG ──
+  function buildDistrictSVG(units, tc, code, borderTerrs) {
+    const W = 220, H = 180;
+    const uid = code.replace('-','');
+
+    // Parse territory colour
+    const tcHex = tc.replace('#','');
+    const tr = parseInt(tcHex.slice(0,2),16)||120;
+    const tg = parseInt(tcHex.slice(2,4),16)||120;
+    const tb = parseInt(tcHex.slice(4,6),16)||120;
+
+    // Find bounding box of all unit q,r coords
+    const qs = units.map(u=>u.q), rs = units.map(u=>u.r);
+    const minQ=Math.min(...qs), maxQ=Math.max(...qs);
+    const minR=Math.min(...rs), maxR=Math.max(...rs);
+    const midQ=(minQ+maxQ)/2, midR=(minR+maxR)/2;
+
+    // Scale to fit: pick hex size so cluster fits in ~160x130 area
+    const spanQ = maxQ-minQ+1, spanR = maxR-minR+1;
+    const HEX = Math.min(
+      (W-30) / (Math.sqrt(3)*(spanQ+spanR*0.5+0.5)),
+      (H-30) / (1.5*spanR+1)
+    ) * 0.88;
+    const cx = W/2, cy = H/2;
+
+    function hexPts(hx,hy,hr){
+      return Array.from({length:6},(_,i)=>{
+        const a = Math.PI/3*i - Math.PI/6;
+        return `${(hx+hr*Math.cos(a)).toFixed(1)},${(hy+hr*Math.sin(a)).toFixed(1)}`;
+      }).join(' ');
+    }
+
+    function axialToPixel(q,r){
+      return [
+        cx + HEX*(Math.sqrt(3)*(q-midQ) + Math.sqrt(3)/2*(r-midR)),
+        cy + HEX*(3/2*(r-midR))
+      ];
+    }
+
+    const tierFill = {
+      common:   `rgba(${tr*.4|0},${tg*.45|0},${tb*.4|0},0.70)`,
+      uncommon: `rgba(${tr*.45|0},${tg*.55|0},${tb*.45|0},0.80)`,
+      rare:     `rgba(${Math.min(255,tr*.3+40)|0},${tg*.3|0},${Math.min(255,tb*.5+60)|0},0.85)`,
+      legendary:`rgba(${Math.min(255,tr*.5+60)|0},${Math.min(255,tg*.4+40)|0},${tb*.2|0},0.90)`,
+    };
+    const tierStroke = {
+      common:   `rgba(${tr},${tg},${tb},0.35)`,
+      uncommon: `rgba(${Math.min(255,tr+20)},${Math.min(255,tg+35)},${Math.min(255,tb+20)},0.55)`,
+      rare:     `rgba(160,130,255,0.65)`,
+      legendary:`rgba(255,220,80,0.80)`,
+    };
+
+    const bgD = `rgb(${tr*.06|0},${tg*.08|0},${tb*.07|0})`;
+    const bgM = `rgb(${tr*.12|0},${tg*.15|0},${tb*.13|0})`;
+
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="65%">
+    <stop offset="0%" stop-color="${bgM}"/>
+    <stop offset="100%" stop-color="${bgD}"/>
+  </radialGradient>
+  <radialGradient id="gl${uid}" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="${tc}" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="${tc}" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="blur${uid}"><feGaussianBlur stdDeviation="4"/></filter>
+  <clipPath id="cp${uid}"><rect width="${W}" height="${H}" rx="14"/></clipPath>
+</defs>
+<g clip-path="url(#cp${uid})">
+<rect width="${W}" height="${H}" fill="url(#bg${uid})"/>
+<circle cx="${cx}" cy="${cy}" r="70" fill="url(#gl${uid})" filter="url(#blur${uid})"/>`;
+
+    // Draw each unit hex
+    units.forEach(u => {
+      const [px,py] = axialToPixel(u.q, u.r);
+      const fill = tierFill[u.value_tier] || tierFill.common;
+      const stroke = tierStroke[u.value_tier] || tierStroke.common;
+      const sw = u.value_tier==='legendary'?2.2 : u.value_tier==='rare'?1.8 : 1.2;
+
+      // Glow for legendary/rare
+      if(u.value_tier==='legendary'||u.value_tier==='rare'){
+        s += `\n<polygon points="${hexPts(px,py,HEX+3)}" fill="${tc}" opacity="0.10" filter="url(#blur${uid})"/>`;
+      }
+      s += `\n<polygon points="${hexPts(px,py,HEX-0.8)}" fill="${fill}"/>`;
+      s += `\n<polygon points="${hexPts(px,py,HEX-0.8)}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>`;
+
+      // Isolated: tiny dashed ring
+      if(u.isolated){
+        s += `\n<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${(HEX+3.5).toFixed(1)}" fill="none" stroke="rgba(255,224,138,0.22)" stroke-width="0.8" stroke-dasharray="3,3"/>`;
+      }
+    });
+
+    // Border territory colour dots — small pips around the outside edge
+    borderTerrs.slice(0,6).forEach((b,i) => {
+      const bc = TERRITORY_COLORS[b] || '#888';
+      const angle = (Math.PI*2/Math.max(borderTerrs.length,1))*i - Math.PI/2;
+      const dotR = Math.min(W,H)*0.44;
+      const dx = (cx + dotR*Math.cos(angle)).toFixed(1);
+      const dy = (cy + dotR*Math.sin(angle)).toFixed(1);
+      s += `\n<circle cx="${dx}" cy="${dy}" r="4" fill="${bc}" opacity="0.85"/>`;
+      s += `\n<circle cx="${dx}" cy="${dy}" r="4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>`;
+    });
+
+    // Coastal wave hint
+    const hasCoastal = units.some(u=>u.coastal);
+    if(hasCoastal){
+      s += `\n<line x1="${cx-55}" y1="${H-14}" x2="${cx+55}" y2="${H-14}" stroke="rgba(0,229,255,0.14)" stroke-width="1" stroke-dasharray="4,6"/>`;
+      s += `\n<line x1="${cx-35}" y1="${H-7}" x2="${cx+35}" y2="${H-7}" stroke="rgba(0,229,255,0.08)" stroke-width="1" stroke-dasharray="3,8"/>`;
+    }
+
+    s += `\n</g></svg>`;
+    return s;
+  }
+
+  async function render(){
+    const params=new URLSearchParams(window.location.search);
+    const code=(params.get('code')||'').toUpperCase().trim();
+    const page=document.getElementById('pageContent');
+
+    if(!code||!TERRITORY_NAMES[code]){
+      page.innerHTML=`
+<style>
+  .lore-page { max-width:860px; margin:0 auto; padding:8px 0 80px; }
+  .lore-hero { text-align:center; padding:52px 24px 44px; }
+  .lore-hero-eyebrow { font-size:9px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,224,138,0.45); margin-bottom:14px; }
+  .lore-hero-title { font-size:48px; font-weight:900; letter-spacing:-.02em; line-height:1; color:#fff; margin-bottom:10px; }
+  .lore-hero-title span { background:linear-gradient(135deg,#FFE08A,#FFC832); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .lore-hero-sub { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.7; max-width:500px; margin:0 auto; }
+  .lore-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media(max-width:700px){ .lore-grid { grid-template-columns:1fr; } }
+  .lore-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .lore-card-header { padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+  .lore-card-icon { font-size:18px; line-height:1; }
+  .lore-card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,224,138,0.7); }
+  .lore-card-link { margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(96,200,255,0.55); text-decoration:none; border:1px solid rgba(96,200,255,0.2); border-radius:8px; padding:3px 9px; transition:all .2s; }
+  .lore-card-link:hover { color:#60c8ff; border-color:rgba(96,200,255,0.5); background:rgba(96,200,255,0.06); }
+  .lore-card-body { padding:16px 18px 18px; flex:1; }
+  .lore-card-desc { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.75; margin-bottom:14px; }
+  .lore-card-desc:last-child { margin-bottom:0; }
+  .lore-card-desc strong { color:rgba(255,255,255,0.8); font-weight:700; }
+  .pos-grid { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .pos-pill { display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+  .pos-pill-icon { font-size:13px; }
+  .pos-pill-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.55); letter-spacing:.04em; }
+  .lore-stat-strip { display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid rgba(255,255,255,0.06); }
+  .lore-stat-item { padding:12px 16px; text-align:center; border-right:1px solid rgba(255,255,255,0.05); }
+  .lore-stat-item:last-child { border-right:none; }
+  .lore-stat-val { font-size:22px; font-weight:900; color:#FFE08A; line-height:1; margin-bottom:2px; }
+  .lore-stat-lbl { font-size:8px; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,0.25); font-weight:700; }
+  .lore-card-full { background:rgba(0,0,0,0.42); border:1px solid rgba(96,200,255,0.12); border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .lore-card-full::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(96,200,255,0.25),rgba(96,200,255,0.5),rgba(96,200,255,0.25),transparent); }
+  .lore-card-full-body { padding:16px 18px 18px; display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+  @media(max-width:600px){ .lore-card-full-body { grid-template-columns:1fr; } }
+  .lore-cta { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding-top:8px; }
+  .lore-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 22px; border-radius:10px; font-size:12px; font-weight:700; letter-spacing:.04em; text-decoration:none; transition:all .2s; }
+  .lore-btn-primary { background:linear-gradient(135deg,rgba(255,224,138,0.15),rgba(255,224,138,0.08)); border:1px solid rgba(255,224,138,0.35); color:#FFE08A; }
+  .lore-btn-primary:hover { background:linear-gradient(135deg,rgba(255,224,138,0.22),rgba(255,224,138,0.14)); border-color:rgba(255,224,138,0.6); transform:translateY(-1px); }
+  .lore-btn-secondary { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.55); }
+  .lore-btn-secondary:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.8); transform:translateY(-1px); }
+</style>
+
+<div class="lore-page">
+
+  <div class="lore-hero">
+    <div class="lore-hero-eyebrow">Luminaea · Territory Guide</div>
+    <h1 class="lore-hero-title">The <span>Districts</span> of Luminaea</h1>
+    <p class="lore-hero-sub">Districts, Units, and Nexus Points — the three layers of territory that make up this region of Minalia.</p>
+  </div>
+
+  <div class="lore-grid">
+
+    <div class="lore-card">
+      <div class="lore-card-header">
+        <span class="lore-card-icon">🗺️</span>
+        <span class="lore-card-title">What are Districts?</span>
+        <a href="https://play.minaliens.xyz/district.html?code=LUM-01" class="lore-card-link">Browse Districts →</a>
+      </div>
+      <div class="lore-card-body">
+        <p class="lore-card-desc">Districts are <strong>larger areas of land</strong> within Luminaea — the primary region of Minalia. Each District has its own identity, colour, and economy.</p>
+        <p class="lore-card-desc">There are <strong>20 Districts</strong> in Luminaea, each governed by a <strong>Minalien</strong> — a unique NFT character that represents the spirit of that territory. The Governor earns a share of all yield generated within their District.</p>
+      </div>
+      <div class="lore-stat-strip">
+        <div class="lore-stat-item"><div class="lore-stat-val">20</div><div class="lore-stat-lbl">Districts</div></div>
+        <div class="lore-stat-item"><div class="lore-stat-val">20</div><div class="lore-stat-lbl">Minalien Governors</div></div>
+      </div>
+    </div>
+
+    <div class="lore-card">
+      <div class="lore-card-header">
+        <span class="lore-card-icon">⬡</span>
+        <span class="lore-card-title">What are Units?</span>
+        <a href="unit.html?code=LUM-01-A" class="lore-card-link">Browse Units →</a>
+      </div>
+      <div class="lore-card-body">
+        <p class="lore-card-desc">Units are individual <strong>areas of land</strong> — think of them like a neighbourhood within a District. Each District contains exactly <strong>16 Units</strong>, owned and developed by individual players.</p>
+        <div class="pos-grid">
+          <div class="pos-pill"><span class="pos-pill-icon">🌊</span><span class="pos-pill-name">Coastal</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏔️</span><span class="pos-pill-name">Highland</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌲</span><span class="pos-pill-name">Forest</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌾</span><span class="pos-pill-name">Plains</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏙️</span><span class="pos-pill-name">Urban Core</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🗺️</span><span class="pos-pill-name">Isolated</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌿</span><span class="pos-pill-name">Wetlands</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏜️</span><span class="pos-pill-name">Frontier</span></div>
+        </div>
+      </div>
+      <div class="lore-stat-strip">
+        <div class="lore-stat-item"><div class="lore-stat-val">16</div><div class="lore-stat-lbl">Per District</div></div>
+        <div class="lore-stat-item"><div class="lore-stat-val">320</div><div class="lore-stat-lbl">Total in Luminaea</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="lore-card-full" style="margin-bottom:28px;">
+    <div class="lore-card-header">
+      <span class="lore-card-icon">⚡</span>
+      <span class="lore-card-title">What are Nexus Points?</span>
+      <a href="nexus.html" class="lore-card-link">View Nexus Points →</a>
+    </div>
+    <div class="lore-card-full-body">
+      <div>
+        <p class="lore-card-desc">Nexus Points are <strong>unclaimed strategic positions</strong> on the map — they are not governed by any Minalien and do not belong to any District.</p>
+        <p class="lore-card-desc">These are powerful locations where <strong>critical infrastructure</strong> can be constructed — power grids, transit hubs, relay stations — that benefit multiple Districts at once.</p>
+      </div>
+      <div>
+        <p class="lore-card-desc">Nexus Point projects <strong>cannot be built alone</strong>. They require collaboration between players from <strong>adjacent Districts</strong> — making them the most challenging and most rewarding projects in Luminaea.</p>
+        <p class="lore-card-desc" style="color:rgba(96,200,255,0.6);">No Governor. No single owner. Only alliances.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lore-cta">
+    <a href="map.html" class="lore-btn lore-btn-primary">⬡ Explore the Map</a>
+    <a href="users.html" class="lore-btn lore-btn-secondary">👤 View Players</a>
+  </div>
+
+</div>`;
+      return;
+    }
+
+    const tc=TERRITORY_COLORS[code];
+    const tname=TERRITORY_NAMES[code];
+    const minister=MINISTERS_MAP[code];
+    const desc=DISTRICT_DESCS[code]||'A district of Luminaea awaiting discovery.';
+
+    // Set CSS variable for territory colour
+    document.documentElement.style.setProperty('--tc',tc);
+    document.title=`${tname} District — MINALIA`;
+
+    // Get all units for this territory from UNIT_DATA
+    const unitKeys=Object.keys(UNIT_DATA).filter(k=>UNIT_DATA[k].territory===code).sort();
+    const units=unitKeys.map(k=>({code:k,...UNIT_DATA[k]}));
+    // claimed count will be updated after DB fetch below (placeholder 0 for now)
+    let claimed=0;
+    const totalArea=units.length*16;
+    const avgScore=units.length?Math.round(units.reduce((a,u)=>a+u.value_score,0)/units.length):0;
+    const borderTerrs=[...new Set(units.flatMap(u=>u.borders||[]))].filter(b=>b!==code);
+
+    // Owner chips populated from dbOwners after Supabase fetch below
+
+    // Minister HTML
+    const minHtml=minister?`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <img src="${minister.img}" alt="${minister.name}" onclick="window.location.href='${minister.page}'"
+             style="width:60px;height:auto;display:block;cursor:pointer;flex-shrink:0;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#FFE08A;margin-bottom:3px;">${minister.name}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Appointed guardian of ${tname}</div>
+        </div>
+      </div>
+      <a href="${minister.page}" class="minister-strip-btn">View Profile →</a>`
+      :'<div class="no-minister">No minister has been appointed for this territory yet.</div>';
+
+    // Fetch live unit data from Supabase
+    let dbUnits = {};
+    let dbOwners = {};
+    try {
+      const sb = window.supabaseClient || window.supabase;
+      if (sb && sb.from) {
+        // Query by area_code prefix — more reliable than matching individual unit_codes
+        const { data: unitRows, error: unitErr } = await sb
+          .from('units')
+          .select('unit_code, owner_id, for_sale, sale_price, auction_active, auction_min_bid, auction_end_time, pulse_state, last_tuned_at, tune_score, population, population_base')
+          .like('unit_code', `${code}-%`);
+
+        console.log('District DB query for:', code, '| unitRows:', unitRows, '| error:', unitErr);
+
+        if (unitRows && unitRows.length) {
+          // Collect unique owner IDs
+          const ownerIds = [...new Set(unitRows.filter(r => r.owner_id).map(r => r.owner_id))];
+          console.log('ownerIds found:', ownerIds);
+          if (ownerIds.length) {
+            const { data: ownerRows, error: ownerErr } = await sb
+              .from('users')
+              .select('id, username, avatar, x_username')
+              .in('id', ownerIds);
+            console.log('ownerRows:', ownerRows, '| ownerErr:', ownerErr);
+            if (ownerErr) console.warn('District owners query error:', ownerErr);
+            if (ownerRows) ownerRows.forEach(o => dbOwners[o.id] = o);
+          }
+          unitRows.forEach(r => dbUnits[r.unit_code] = r);
+          // Update claimed count from real DB data
+          claimed = unitRows.filter(r => r.owner_id).length;
+          // Fetch developments for icon strip + total count
+          try {
+            const unitCodes = unitRows.map(r => r.unit_code);
+            const { data: devRows } = await sb
+              .from('developments')
+              .select('unit_code, status, development_catalog(icon, category, name)')
+              .in('unit_code', unitCodes)
+              .in('status', ['building','completed']);
+            if (devRows) devRows.forEach(d => {
+              if (!dbUnits[d.unit_code]) return;
+              dbUnits[d.unit_code]._devCount = (dbUnits[d.unit_code]._devCount || 0) + 1;
+              if (!dbUnits[d.unit_code]._devIcons) dbUnits[d.unit_code]._devIcons = [];
+              if (d.development_catalog) dbUnits[d.unit_code]._devIcons.push({ icon: d.development_catalog.icon, name: d.development_catalog.name, cat: d.development_catalog.category, done: d.status === 'completed' });
+            });
+          } catch(e) { console.warn('Dev fetch failed:', e); }
+          // Fetch ALL special building collaborations (all 20 buildings are available in every territory)
+          try {
+            const [collabRes, statusRes, nexusRes] = await Promise.all([
+              sb.from('special_building_collaborations')
+                .select('territory_code, building_slug, player_id, unit_code, status, share_pct, cost_paid, joined_at'),
+              sb.from('special_building_status').select('*'),
+              sb.from('nexus_points').select('id, name, lore, q, r, touches, status')
+            ]);
+            window._districtCollabs = collabRes.data || [];
+            window._districtCollabStatus = {};
+            (statusRes.data || []).forEach(r => { window._districtCollabStatus[r.territory_code] = r; });
+            // Only nexus points that touch this territory
+            window._nexusPoints = (nexusRes.data || []).filter(n => (n.touches||[]).includes(code));
+          } catch(e) { console.warn('Collab fetch failed:', e); window._districtCollabs = []; window._districtCollabStatus = {}; window._nexusPoints = []; }
+        }
+      }
+    } catch(e) { console.warn('District DB fetch failed:', e); }
+    window._districtCollabs = window._districtCollabs || [];
+    window._districtCollabStatus = window._districtCollabStatus || {};
+    window._nexusPoints = window._nexusPoints || [];
+
+
+// ── Avatar URL resolver ──
+  // Priority: OG local image → DB avatar URL → Supabase filename → unavatar.io → null
+  const OG_AVATARS = {
+    'minaliens':       'images/profile_icons/og_minaliens.jpg',
+    'MutenRoshi7777':  'images/profile_icons/og_mutenroshi7777.jpg',
+    'crypto8519':      'images/profile_icons/og_crypto8519.jpg',
+    'Backwoodbr':      'images/profile_icons/og_backwoodbr88471.jpg',
+    'MinaPunksNFT':    'images/profile_icons/og_minapunksnft.jpg',
+    'NeilFurn':        'images/profile_icons/og_neilfurn.jpg',
+    'FlushtheFashion': 'images/profile_icons/og_flushthefashion.jpg',
+    'kalkillas':       'images/profile_icons/og_kalkillas.jpg',
+  };
+  function resolveAvatar(av, xUsername, username) {
+    if (av && (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/'))) return av;
+    if (av && av.length > 8 && !/\p{Emoji}/u.test(av)) return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+    if (username && OG_AVATARS[username]) return OG_AVATARS[username];
+    if (xUsername) return 'https://unavatar.io/twitter/' + xUsername.replace(/^@/, '');
+    return null;
+  }
+
+    // Sum live populations now that dbUnits is populated
+    const totalPop  = Object.values(dbUnits).reduce((sum, r) => sum + (r.population || 0), 0);
+    const totalDevs = Object.values(dbUnits).reduce((sum, r) => sum + (r._devCount  || 0), 0);
+
+    // ── SPECIAL BUILDINGS PANEL — all 20 available in every territory ──
+    // The one native to this territory gets 100% yield; others get 75%
+    const allCollabRows   = window._districtCollabs   || [];
+    const allCollabStatus = window._districtCollabStatus || {};
+
+    // Group collab rows by building_slug for fast lookup
+    const collabsBySlug = {};
+    allCollabRows.forEach(r => {
+      if (!collabsBySlug[r.building_slug]) collabsBySlug[r.building_slug] = [];
+      collabsBySlug[r.building_slug].push(r);
+    });
+
+
+    // ── NEXUS POINTS PANEL ──
+    const nexusPanelHtml = (() => {
+      const nexuses = window._nexusPoints || [];
+      if (!nexuses.length) return '';
+
+      const statusLabel = { open: 'Open', in_progress: 'In Progress', completed: 'Completed' };
+      const statusColor = { open: '#60ffab', in_progress: '#FFE08A', completed: '#50b0ff' };
+
+      const cards = nexuses.map(n => {
+        const otherTerrs = (n.touches || []).filter(t => t !== code);
+        const terrPips = otherTerrs.map(t =>
+          `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);">
+            <span style="width:8px;height:8px;border-radius:50%;background:${TERRITORY_COLORS[t]||'#888'};display:inline-block;flex-shrink:0;"></span>
+            ${TERRITORY_NAMES[t]||t}
+          </span>`
+        ).join('<span style="color:rgba(255,255,255,0.15);margin:0 4px">·</span>');
+
+        const sc = statusColor[n.status] || '#FFE08A';
+        const sl = statusLabel[n.status] || n.status;
+        const touchCount = (n.touches||[]).length;
+
+        return `
+          <a href="nexus.html?id=${n.id}" style="display:block;text-decoration:none;">
+            <div style="
+              background:rgba(255,200,60,0.03);
+              border:1px solid rgba(255,200,60,0.15);
+              border-radius:12px;
+              padding:16px 18px;
+              transition:all 0.2s;
+              cursor:pointer;
+            " onmouseenter="this.style.background='rgba(255,200,60,0.07)';this.style.borderColor='rgba(255,200,60,0.35)';this.querySelector('.nexus-link-hint').style.opacity='1'"
+               onmouseleave="this.style.background='rgba(255,200,60,0.03)';this.style.borderColor='rgba(255,200,60,0.15)';this.querySelector('.nexus-link-hint').style.opacity='0.35'">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
+                <div>
+                  <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,200,60,0.55);margin-bottom:3px;">${n.id} · ${touchCount}-Way Junction</div>
+                  <div style="font-size:15px;font-weight:800;color:#FFE08A;display:flex;align-items:center;gap:6px;">
+                    ${n.name}
+                    <span class="nexus-link-hint" style="font-size:11px;opacity:0.35;transition:opacity 0.15s;">↗</span>
+                  </div>
+                </div>
+                <div style="
+                  font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+                  padding:3px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;
+                  color:${sc};background:${sc}18;border:1px solid ${sc}40;
+                ">● ${sl}</div>
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:10px;line-height:1.4;">"${n.lore||''}"</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                <span style="font-size:9px;color:rgba(255,255,255,0.3);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-right:2px;">Also touches:</span>
+                ${terrPips || '<span style="font-size:10px;color:rgba(255,255,255,0.2)">—</span>'}
+              </div>
+            </div>
+          </a>`;
+      }).join('');
+
+      return `
+        <div style="margin-bottom:28px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,200,60,0.55);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">✦ Nexus Points · Shared inter-territory collaboration spaces</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+            ${cards}
+          </div>
+        </div>`;
+    })();
+
+    // Session user — needed for confirm button
+    const sessionUserId = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}').user?.id || null; } catch(e) { return null; } })();
+
+    const specialCards = Object.entries(TERRITORY_SPECIAL).map(([nativeTerr, b]) => {
+      const isNative   = nativeTerr === code;
+      const rows       = collabsBySlug[b.slug] || [];
+      const bStatus    = allCollabStatus[nativeTerr];
+      const builtState = bStatus?.status || 'open';
+      const builtRows  = rows.filter(r => r.status === 'completed');
+      const interested = rows.filter(r => r.status === 'interested');
+      const confirmed  = rows.filter(r => r.status === 'confirmed');
+      const allActive  = [...interested, ...confirmed];
+
+      // Is the logged-in player a collaborator and can they confirm?
+      const myRow        = sessionUserId ? rows.find(r => r.player_id === sessionUserId) : null;
+      const myStatus     = myRow?.status || null;
+      const canConfirm   = myStatus === 'interested' && allActive.length >= 2 && builtState !== 'building' && builtState !== 'completed';
+      const alreadyConfirmed = myStatus === 'confirmed';
+
+      // Top-right status indicator
+      let statusPill = '';
+      if (builtState === 'completed')
+        statusPill = `<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(96,255,171,0.08);border:1px solid rgba(96,255,171,0.25);color:rgba(96,255,171,0.8);white-space:nowrap;">✓ Built</span>`;
+      else if (builtState === 'building')
+        statusPill = `<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(255,200,80,0.08);border:1px solid rgba(255,200,80,0.25);color:rgba(255,200,80,0.8);white-space:nowrap;">🔨 Building</span>`;
+      else if (canConfirm)
+        statusPill = `<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(96,255,171,0.12);border:1px solid rgba(96,255,171,0.4);color:rgba(96,255,171,0.9);white-space:nowrap;animation:pulse 1.5s infinite;">✦ Ready!</span>`;
+      else if (allActive.length)
+        statusPill = `<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.25);color:rgba(100,180,255,0.8);white-space:nowrap;">${allActive.length} 🤝</span>`;
+
+      // Native glow border
+      const borderStyle = canConfirm
+        ? 'border-color:rgba(96,255,171,0.4);background:rgba(96,255,171,0.03);'
+        : isNative
+          ? 'border-color:rgba(96,255,171,0.25);background:rgba(96,255,171,0.02);'
+          : '';
+
+      // Participant chips — show confirmed status differently
+      const allParticipants = [...builtRows, ...confirmed, ...interested].slice(0, 3);
+      const participantHtml = allParticipants.length
+        ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">${allParticipants.map(r => {
+            const o = dbOwners[r.player_id];
+            const uname = o?.username || r.unit_code;
+            const col = r.status === 'completed' || r.status === 'confirmed'
+              ? 'rgba(96,255,171,0.7)' : 'rgba(255,200,80,0.7)';
+            const badge = r.status === 'confirmed' ? ' ✓' : '';
+            return `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:${col};">${uname}${badge}</span>`;
+          }).join('')}</div>`
+        : '';
+
+      // Yield line
+      const yieldLine = isNative
+        ? `<div style="font-size:9px;color:rgba(96,255,171,0.7);font-weight:700;margin-top:4px;">⭐ Native · 100% yield</div>`
+        : `<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px;">75% yield · 100% in ${TERRITORY_NAMES[nativeTerr]||nativeTerr}</div>`;
+
+      // Token costs per territory (per player)
+      const SPECIAL_COSTS = {
+        'LUM-01':'36,000 WIRE','LUM-02':'88,000 PLASM','LUM-03':'30,000 LICHEN',
+        'LUM-04':'36,000 WIRE','LUM-05':'30,000 LICHEN','LUM-06':'88,000 PLASM',
+        'LUM-07':'30,000 LICHEN','LUM-08':'36,000 WIRE','LUM-09':'23,000 SPORE',
+        'LUM-10':'88,000 PLASM','LUM-11':'30,000 LICHEN','LUM-12':'88,000 PLASM',
+        'LUM-13':'36,000 WIRE','LUM-14':'88,000 PLASM','LUM-15':'36,000 WIRE',
+        'LUM-16':'36,000 WIRE','LUM-17':'23,000 SPORE','LUM-18':'36,000 WIRE',
+        'LUM-19':'88,000 PLASM','LUM-20':'23,000 SPORE',
+      };
+
+      // Confirm button — only shown to eligible players
+      let confirmBtn = '';
+      if (canConfirm) {
+        confirmBtn = `
+          <button onclick="event.preventDefault();event.stopPropagation();confirmSpecialCollab('${nativeTerr}','${b.slug}','${SPECIAL_COSTS[nativeTerr]||'tokens'}',this)"
+            style="margin-top:10px;width:100%;padding:8px;border-radius:7px;border:1px solid rgba(96,255,171,0.4);background:rgba(96,255,171,0.08);color:rgba(96,255,171,0.9);font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;"
+            onmouseover="this.style.background='rgba(96,255,171,0.16)'"
+            onmouseout="this.style.background='rgba(96,255,171,0.08)'">
+            ✦ Confirm Build — Pay ${SPECIAL_COSTS[nativeTerr]||'tokens'}
+          </button>`;
+      } else if (alreadyConfirmed) {
+        confirmBtn = `<div style="margin-top:10px;padding:8px;border-radius:7px;border:1px solid rgba(96,255,171,0.2);background:rgba(96,255,171,0.04);color:rgba(96,255,171,0.6);font-size:10px;text-align:center;font-family:'Share Tech Mono',monospace;">✓ You confirmed — waiting for partner</div>`;
+      }
+
+      return `
+        <div style="display:flex;flex-direction:column;">
+        <a href="dev.html?slug=${b.slug}" style="text-decoration:none;display:flex;flex-direction:column;flex:1;" title="View ${b.name}">
+        <div style="
+          background:rgba(255,200,80,0.03);
+          border:1px solid rgba(255,200,80,0.14);
+          border-radius:${confirmBtn ? '10px 10px 0 0' : '10px'};
+          padding:12px 14px;
+          ${borderStyle}
+          display:flex;flex-direction:column;
+          flex:1;
+          transition:all 0.15s;cursor:pointer;
+        " onmouseenter="this.style.background='rgba(255,200,80,0.07)';this.style.borderColor='rgba(255,200,80,0.3)'"
+           onmouseleave="this.style.background='rgba(255,200,80,0.03)';this.style.borderColor='${canConfirm?'rgba(96,255,171,0.4)':isNative?'rgba(96,255,171,0.25)':'rgba(255,200,80,0.14)'}'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:22px;line-height:1;flex-shrink:0;">${b.icon}</span>
+              <div>
+                <div style="font-size:12px;font-weight:800;color:rgba(255,224,138,0.9);line-height:1.3;">${b.name} <span style="font-size:9px;opacity:0.4;">↗</span></div>
+                <div style="font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.25);margin-top:1px;">⬡ ${SPECIAL_COSTS[nativeTerr]||'—'} per player</div>
+              </div>
+            </div>
+            ${statusPill}
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.5;flex:1;">${b.benefit}</div>
+          ${yieldLine}
+          ${participantHtml}
+        </div>
+        </a>
+        ${confirmBtn}
+        </div>`;
+    }).join('');
+
+    const specialPanelHtml = `
+      <div style="margin-bottom:28px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,200,80,0.55);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">⭐ Special Collaboration Buildings · Available in every territory · Signal interest via Profile</div>
+        <div class="specials-grid">
+          ${specialCards}
+        </div>
+      </div>`;
+
+    // Units grid — profile-style cards
+    // sessionUserId already declared above
+
+    const unitsHtml = units.map(u => {
+      const db    = dbUnits[u.code] || {};
+      const owner = db.owner_id ? dbOwners[db.owner_id] : null;
+      const isOwned   = !!owner;
+      const isMyUnit  = sessionUserId && db.owner_id === sessionUserId;
+      const forSale   = db.for_sale && db.sale_price;
+      const inAuction = db.auction_active;
+
+      // Status badge
+      let badgeHtml = '';
+      if (inAuction)      badgeHtml = `<span class="unit-status-badge auction">⚡ Auction</span>`;
+      else if (forSale)   badgeHtml = `<span class="unit-status-badge for-sale">For Sale</span>`;
+      else if (isMyUnit)  badgeHtml = `<span class="unit-status-badge owned">Owned</span>`;
+      else if (isOwned)   badgeHtml = `<span class="unit-status-badge owned">Claimed</span>`;
+      else                badgeHtml = `<span class="unit-status-badge available">Available</span>`;
+
+      // Price / auction row
+      let priceHtml = '';
+      if (forSale)   priceHtml = `<div class="dc-price">${Number(db.sale_price).toLocaleString()} ARKIS</div>`;
+      if (inAuction) priceHtml = `<div class="dc-price auction">Min bid: ${Number(db.auction_min_bid || 0).toLocaleString()} ARKIS</div>`;
+
+      // Owner row
+      const ownerHtml = owner
+        ? `<div class="dc-owner">
+            <img class="dc-owner-avatar" src="${(resolveAvatar(owner.avatar, owner.x_username, owner.username) || 'images/no-image.png') + '?t=' + Date.now()}" alt="" onerror="this.style.opacity='0'">
+            <a href="profile.html?user=${encodeURIComponent(owner.username)}" class="dc-owner-name" onclick="event.stopPropagation()">${owner.username}</a>
+           </div>`
+        : `<div class="dc-owner unowned">Unclaimed</div>`;
+
+      // Action buttons — never show buy/bid on units you already own
+      let actionHtml = '';
+      if (isMyUnit) {
+        actionHtml = `<a href="unit.html?code=${u.code}" class="dc-btn dc-btn-secondary">View Unit</a>`;
+      } else if (inAuction) {
+        actionHtml = `<a href="unit.html?code=${u.code}" class="dc-btn dc-btn-auction">Place Bid</a>`;
+      } else if (forSale) {
+        actionHtml = `<a href="unit.html?code=${u.code}" class="dc-btn dc-btn-sale">Buy Now</a>`;
+      } else {
+        actionHtml = `<a href="unit.html?code=${u.code}" class="dc-btn dc-btn-secondary">View Unit</a>`;
+      }
+
+      // Battery pill
+      const ts = db.tune_score;
+      let batteryHtml = '';
+      if (ts != null) {
+        const batClass = ts >= 80 ? 'bat-green' : ts >= 50 ? 'bat-yellow' : ts >= 25 ? 'bat-orange' : 'bat-red';
+        const batIcon  = ts >= 80 ? '🟢' : ts >= 50 ? '🟡' : ts >= 25 ? '🟠' : '🔴';
+        batteryHtml = `<span class="dc-battery ${batClass}">${batIcon} ${ts}%</span>`;
+      } else if (isOwned) {
+        batteryHtml = `<span class="dc-battery bat-none">— —</span>`;
+      }
+
+      // Population pill — reads live from db row
+      const unitPop = db.population;
+      const popHtml = unitPop != null
+        ? `<span class="dc-pop-pill">👥 ${unitPop.toLocaleString()}</span>`
+        : '';
+
+      const devIcons = db._devIcons || [];
+      const devIconsHtml = devIcons.length ? `<div class="dc-dev-strip">${devIcons.map(d=>`<span class="dc-dev-icon${d.done?'':' building'}" title="${d.name}${d.done?'':' (building)'}">${d.icon}</span>`).join('')}</div>` : '';
+
+      return `<div class="dc-card${isOwned ? ' owned' : ''}${inAuction ? ' in-auction' : ''}${forSale ? ' for-sale' : ''}">
+        <div class="dc-card-header">
+          <div>
+            <div class="dc-code">${u.code}</div>
+            <div class="dc-letter" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Unit ${u.code.split('-')[2]} &nbsp;·&nbsp; ◆ ${TIER_LABELS[u.value_tier]||'Common'} ${batteryHtml}</div>
+          </div>
+          ${badgeHtml}
+        </div>
+        <div class="dc-card-body">
+          ${priceHtml}
+          ${ownerHtml}
+        </div>
+        ${devIconsHtml}
+        <div class="dc-card-footer">
+          ${actionHtml}
+          ${popHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Adjacent territories
+    const adjHtml=borderTerrs.map(b=>{
+      const bc=TERRITORY_COLORS[b]||'#888',bn=TERRITORY_NAMES[b]||b;
+      return `<a class="border-item" href="district.html?code=${b}"><div class="border-swatch" style="background:${bc}"></div><span class="border-tname">${bn}</span><span class="border-tcode">${b}</span></a>`;
+    }).join('');
+
+    // Owners HTML — built from live DB data
+    const realOwners = Object.values(dbOwners);
+    const ownersHtml = realOwners.length
+      ? realOwners.map(o => `
+        <a href="profile.html?user=${encodeURIComponent(o.username)}" class="owner-avatar-link" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;">
+          <div style="width:52px;height:52px;border-radius:8px;overflow:hidden;border:2px solid rgba(255,255,255,0.12);background:#1a1520;flex-shrink:0;">
+            <img src="${(resolveAvatar(o.avatar, o.x_username, o.username) || 'images/no-image.png') + '?t=' + Date.now()}" alt="${o.username}" onerror="this.style.opacity='0'" style="width:52px;height:52px;object-fit:cover;display:block;border-radius:0;">
+          </div>
+          <span style="font-size:10px;color:rgba(255,255,255,0.55);font-weight:600;max-width:64px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.username}</span>
+        </a>`).join('')
+      : '<p style="font-size:13px;color:rgba(255,255,255,0.3);font-style:italic;">No owners yet — units are available.</p>';
+
+    page.innerHTML=`
+      <div class="breadcrumb">
+        <a href="map.html">Map</a><span class="sep">›</span>
+        <span style="color:${tc}">${tname}</span>
+      </div>
+
+      <div class="hero">
+        <!-- LEFT COL: SVG map + Return to Map -->
+        <div class="visual-col">
+          <div class="hex-card">${buildDistrictSVG(units, tc, code, borderTerrs)}</div>
+          <a href="map.html" class="btn btn-primary view-on-map-btn">← Return to Map</a>
+          ${(() => {
+            const num = parseInt(code.replace('LUM-',''), 10);
+            const prev = num > 1  ? `LUM-${String(num-1).padStart(2,'0')}` : null;
+            const next = num < 20 ? `LUM-${String(num+1).padStart(2,'0')}` : null;
+            const prevName = prev ? (TERRITORY_NAMES[prev] || prev) : null;
+            const nextName = next ? (TERRITORY_NAMES[next] || next) : null;
+            return `<div class="district-nav">
+              ${prev
+                ? `<a href="district.html?code=${prev}" class="district-nav-btn" title="${prevName}">← ${prev}</a>`
+                : `<span class="district-nav-btn disabled">← First</span>`}
+              <span class="district-nav-center">${num} / 20</span>
+              ${next
+                ? `<a href="district.html?code=${next}" class="district-nav-btn" title="${nextName}">${next} →</a>`
+                : `<span class="district-nav-btn disabled">Last →</span>`}
+            </div>`;
+          })()}
+        </div>
+
+        <!-- RIGHT COL: label, title, code, desc, stats -->
+        <div class="unit-info">
+          <div class="unit-code-label">Luminaea District · ${code}</div>
+          <h1 class="unit-title" style="color:${tc}">${tname}</h1>
+          <div class="district-code">${units.length} units · ~${totalArea} km² total</div>
+          <p class="unit-description">${desc}</p>
+          <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+            <div class="stat-item"><div class="stat-label">Total Units</div><div class="stat-value" style="color:${tc}">${units.length}</div></div>
+            <div class="stat-item"><div class="stat-label">Claimed</div><div class="stat-value" style="color:#4ade80">${claimed}</div></div>
+            <div class="stat-item"><div class="stat-label">Available</div><div class="stat-value" style="color:rgba(255,255,255,0.5)">${units.length-claimed}</div></div>
+            <div class="stat-item"><div class="stat-label">Population</div><div class="stat-value" style="color:#60ffab">${totalPop > 0 ? totalPop.toLocaleString() : '—'}</div></div>
+            <div class="stat-item"><div class="stat-label">Developments</div><div class="stat-value" style="color:#c8a0ff">${totalDevs > 0 ? totalDevs : '—'}</div></div>
+            <div class="stat-item"><div class="stat-label">Avg Score</div><div class="stat-value" style="color:#FFE08A">${avgScore}/10</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minister + Owners row -->
+      <div class="minister-owners-row">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Territory Minister</span></div>
+          <div class="panel-body" style="padding:16px 20px;">${minHtml}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Current Owners</span></div>
+          <div class="panel-body"><div class="owners-grid">${ownersHtml}</div></div>
+        </div>
+      </div>
+
+      <!-- 3-column info row -->
+      <div class="info-panels-row">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Adjacent Districts</span></div>
+          <div class="panel-body">${adjHtml||'<p style="font-size:13px;color:rgba(255,255,255,0.3)">No adjacent territories.</p>'}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">District Details</span></div>
+          <div class="panel-body">
+            <div class="detail-row"><span class="detail-key">Territory Code</span><span class="detail-value gold">${code}</span></div>
+            <div class="detail-row"><span class="detail-key">District Name</span><span class="detail-value" style="color:${tc}">${tname}</span></div>
+            <div class="detail-row"><span class="detail-key">Total Area</span><span class="detail-value">~${totalArea} km²</span></div>
+            <div class="detail-row"><span class="detail-key">Unit Count</span><span class="detail-value">${units.length}</span></div>
+            <div class="detail-row"><span class="detail-key">World</span><span class="detail-value">Luminaea</span></div>
+            <div class="detail-row"><span class="detail-key">Biome</span><span class="detail-value">Ancient Forest</span></div>
+            <div class="detail-row"><span class="detail-key">Minister</span><span class="detail-value gold">${minister?minister.name:'Vacant'}</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Tier Breakdown</span></div>
+          <div class="panel-body" id="tierPanel">Loading…</div>
+        </div>
+      </div>
+
+      <div class="units-grid">${unitsHtml}</div>
+
+
+      ${nexusPanelHtml}
+      ${specialPanelHtml}`;
+
+    // Tier breakdown
+    const tierCount={common:0,uncommon:0,rare:0,legendary:0};
+    units.forEach(u=>tierCount[u.value_tier]=(tierCount[u.value_tier]||0)+1);
+    const tierColors={common:'#8aabaa',uncommon:'#7ab87a',rare:'#a07adc',legendary:'#FFE08A'};
+    document.getElementById('tierPanel').innerHTML=Object.entries(tierCount).map(([t,c])=>`
+      <div class="detail-row">
+        <span class="detail-key" style="color:${tierColors[t]}">${TIER_LABELS[t]}</span>
+        <span class="detail-value">${c} unit${c!==1?'s':''}</span>
+      </div>`).join('');
+  }
+  render().catch(err => {
+    console.error('District render error:', err);
+    const page = document.getElementById('pageContent');
+    if (page) page.innerHTML = `<div class="not-found"><h1>Error Loading District</h1><p style="color:rgba(255,255,255,0.4);font-size:13px;">${err.message}</p><a href="map.html" style="color:#FFE08A">← Back to Map</a></div>`;
+  });
+
+  // Ticker + clock
+  
+  const tickerItems=[{icon:'ℹ️',color:'info',text:'320 units across 20 territories · Join MINALIA today'},{icon:'🔨',color:'auction',text:'Auction closing in 2h for LUM-05-C · Current bid: 1,200 ARKIS'},{icon:'💰',color:'sale',text:'Unit LUM-12-F now available for sale · Price: 850 ARKIS'}];
+  (function(){const s=document.getElementById('ticker-scroll');if(!s)return;const h=tickerItems.map(i=>`<div class="ticker-item"><span class="ticker-icon ${i.color}">${i.icon}</span><span>${i.text}</span></div>`).join('<span style="color:rgba(255,224,138,0.3);margin:0 8px">•</span>');s.innerHTML=h+'<span style="color:rgba(255,224,138,0.3);margin:0 8px">•</span>'+h;})();
+  </script>
+
+<style>
+@keyframes pulse {
+  0%,100% { opacity:1; } 50% { opacity:0.55; }
+}
+</style>
+
+<script>
+async function confirmSpecialCollab(territoryCode, buildingSlug, costLabel, btn) {
+  const sb = window.supabaseClient || window.supabase;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  if (!userId || !sb) { alert('Please log in to confirm.'); return; }
+
+  if (!confirm(`Confirm build for ${buildingSlug.replace(/_/g,' ')} in ${territoryCode}?\n\nThis will deduct ${costLabel} from your balance. This cannot be undone.`)) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Confirming…';
+
+  try {
+    const { data, error } = await sb.rpc('confirm_special_collab', {
+      p_player_id:      userId,
+      p_territory_code: territoryCode,
+      p_building_slug:  buildingSlug
+    });
+
+    if (error) throw error;
+
+    const result = data;
+    if (!result.ok) {
+      btn.disabled = false;
+      btn.textContent = '✦ Confirm Build — Pay ' + costLabel;
+      alert('Could not confirm: ' + result.error);
+      return;
+    }
+
+    if (result.started) {
+      btn.style.background = 'rgba(96,255,171,0.15)';
+      btn.style.borderColor = 'rgba(96,255,171,0.6)';
+      btn.textContent = '🏗️ Build Started! Check your alerts.';
+    } else {
+      btn.style.background = 'rgba(255,200,80,0.08)';
+      btn.style.borderColor = 'rgba(255,200,80,0.3)';
+      btn.style.color = 'rgba(255,200,80,0.8)';
+      btn.textContent = '✓ Confirmed — waiting for partner';
+    }
+
+    // Refresh the page data after a short delay
+    setTimeout(() => window.location.reload(), 2000);
+
+  } catch(e) {
+    console.error('confirmSpecialCollab error:', e);
+    btn.disabled = false;
+    btn.textContent = '✦ Confirm Build — Pay ' + costLabel;
+    alert('Error: ' + (e.message || 'Please try again.'));
+  }
+}
+</script>
+<script src="lum-time.js?v=20260303a"></script>
+<script>    startLumClock();
+</script>
+<script src="nav-audio.js"></script>
+  <div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+</body>
+</html>

@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pulse Tuning — MINALIA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260320a"></script>
+  <script src="auth_auro.js?v=20260320a"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260308t">
+  <style>
+    body {
+      background: #060410 url('images/unitbg.jpg') center top / cover no-repeat fixed !important;
+    }
+    /* Suppress the shared minalia.png planet footer and body::after on this page */
+    body::after { display: none !important; }
+    .earth-footer { display: none !important; }
+
+    /* Slight dark veil so the game panels stay legible over the space photo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-color: rgba(4, 2, 14, 0.55);
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .tune-wrap { position: relative; z-index: 1; }
+    :root {
+      --green:  #4ade80;
+      --yellow: #FFE08A;
+      --orange: #fb923c;
+      --red:    #f87171;
+      --blue:   #60a5fa;
+      --dim:    rgba(255,255,255,0.25);
+    }
+
+    .tune-wrap {
+      max-width: 900px; margin: 0 auto;
+      padding: 170px 20px 120px;
+    }
+
+    /* ── HEADER ── */
+    .tune-header {
+      text-align: center; margin-bottom: 40px;
+    }
+    .tune-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,224,138,0.45); margin-bottom: 10px;
+    }
+    .tune-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(24px,4vw,40px); font-weight: 900;
+      color: #fff; margin-bottom: 8px;
+    }
+    .tune-title em { color: #FFE08A; font-style: normal; }
+    .tune-subtitle {
+      font-size: 13px; color: rgba(255,255,255,0.3);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── STATUS PANEL ── */
+    .tune-status-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .tune-stat { text-align: center; }
+    .tune-stat-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px; font-weight: 700; color: #FFE08A;
+    }
+    .tune-stat-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.3); margin-top: 2px;
+    }
+
+    /* ── CIRCUIT CANVAS PANEL ── */
+    .tune-circuit-panel {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 32px 28px 28px;
+      margin-bottom: 24px;
+      position: relative; overflow: hidden;
+    }
+    .tune-circuit-panel::before {
+      content: ''; position: absolute; top:0; left:0; right:0; height:2px;
+      background: linear-gradient(90deg, transparent, rgba(255,224,138,0.2), transparent);
+    }
+
+    /* Game area wrapper — countdown overlays this entire block */
+    .tune-game-area {
+      position: relative;
+    }
+
+    /* Countdown overlay — covers the entire game area */
+    .tune-countdown-overlay {
+      position: absolute; inset: -28px -28px -28px -28px; /* bleed into panel padding */
+      background: rgba(10,8,20,0.93);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      border-radius: 12px; z-index: 10;
+      transition: opacity 0.4s;
+    }
+    .tune-countdown-overlay.hidden { opacity: 0; pointer-events: none; }
+    .tune-countdown-instruction {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; text-align: center;
+      color: rgba(255,224,138,0.75);
+      padding: 0 24px;
+    }
+    .tune-countdown-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 96px; font-weight: 900;
+      color: #FFE08A;
+      text-shadow: 0 0 40px rgba(255,224,138,0.5);
+      animation: countPulse 0.9s ease-out;
+    }
+    @keyframes countPulse {
+      0%   { transform: scale(1.4); opacity: 0.5; }
+      40%  { transform: scale(1.0); opacity: 1; }
+      100% { transform: scale(0.85); opacity: 0.7; }
+    }
+    .tune-countdown-go {
+      font-family: 'Orbitron', monospace;
+      font-size: 64px; font-weight: 900; color: var(--green);
+      text-shadow: 0 0 40px rgba(74,222,128,0.6);
+      animation: countPulse 0.5s ease-out;
+    }
+
+    /* Canvas */
+    #circuitCanvas {
+      display: block;
+      width: 100%; height: 260px;
+      cursor: crosshair;
+    }
+
+    /* Hit button */
+    .tune-hit-btn {
+      display: block; width: 100%; margin-top: 20px;
+      padding: 16px;
+      font-family: 'Orbitron', monospace;
+      font-size: 14px; font-weight: 900; letter-spacing: 0.12em;
+      text-transform: uppercase; cursor: pointer;
+      border-radius: 10px; border: 1px solid rgba(255,224,138,0.4);
+      background: rgba(255,224,138,0.08); color: #FFE08A;
+      transition: all 0.12s;
+    }
+    .tune-hit-btn:hover:not(:disabled) {
+      background: rgba(255,224,138,0.18); border-color: #FFE08A;
+      transform: scale(1.01);
+    }
+    .tune-hit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .tune-hit-btn.shake { animation: btnShake 0.35s ease; }
+    @keyframes btnShake {
+      0%,100%{ transform:translateX(0); }
+      20%    { transform:translateX(-6px); }
+      60%    { transform:translateX(6px); }
+    }
+    .tune-hit-btn.pulse-green {
+      border-color: var(--green); color: var(--green);
+      background: rgba(74,222,128,0.1);
+      box-shadow: 0 0 20px rgba(74,222,128,0.2);
+    }
+
+    /* Hit feedback flash */
+    .tune-hit-feedback {
+      text-align: center; height: 28px; margin-top: 10px;
+      font-family: 'Orbitron', monospace;
+      font-size: 18px; font-weight: 800; letter-spacing: 0.08em;
+      transition: opacity 0.3s;
+    }
+    .tune-hit-feedback.score-100 { color: var(--green); }
+    .tune-hit-feedback.score-75  { color: #a3e635; }
+    .tune-hit-feedback.score-50  { color: var(--yellow); }
+    .tune-hit-feedback.score-0   { color: var(--red); }
+
+    /* Progress: which node we're on */
+    .tune-progress-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 14px; flex-wrap: wrap;
+    }
+    .tune-node-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .tune-node-dot.done-100 { background: var(--green);  border-color: var(--green); }
+    .tune-node-dot.done-75  { background: #a3e635;       border-color: #a3e635; }
+    .tune-node-dot.done-50  { background: var(--yellow); border-color: var(--yellow); }
+    .tune-node-dot.done-0   { background: var(--red);    border-color: var(--red); }
+    .tune-node-dot.current  {
+      background: rgba(255,224,138,0.4);
+      border-color: #FFE08A;
+      box-shadow: 0 0 8px rgba(255,224,138,0.6);
+      animation: dotPulse 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes dotPulse { from { transform: scale(1); } to { transform: scale(1.4); } }
+
+    /* ── RESULTS PANEL ── */
+    .tune-results {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 32px 28px;
+      display: none; text-align: center;
+    }
+    .tune-results.visible { display: block; }
+    .tune-results-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 72px; font-weight: 900; line-height: 1;
+      margin-bottom: 4px;
+    }
+    .tune-results-label {
+      font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); margin-bottom: 28px;
+    }
+    .tune-results-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px; margin-bottom: 28px;
+    }
+    .tune-result-unit {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 8px; text-align: center;
+    }
+    .tune-result-unit-code {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 6px;
+    }
+    .tune-result-unit-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 18px; font-weight: 700;
+    }
+    .score-col-100 { color: var(--green); }
+    .score-col-75  { color: #a3e635; }
+    .score-col-50  { color: var(--yellow); }
+    .score-col-0   { color: var(--red); }
+
+    .tune-results-actions {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    }
+    .tune-btn {
+      padding: 12px 28px; border-radius: 8px; cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      transition: all 0.15s; border: 1px solid;
+    }
+    .tune-btn-primary {
+      background: rgba(255,224,138,0.1); color: #FFE08A;
+      border-color: rgba(255,224,138,0.3);
+    }
+    .tune-btn-primary:hover { background: rgba(255,224,138,0.2); }
+    .tune-btn-secondary {
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .tune-btn-secondary:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* Saving indicator */
+    .tune-saving {
+      font-size: 12px; color: rgba(255,255,255,0.3);
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 0.06em; margin-top: 16px;
+    }
+
+    /* Not-owner message */
+    .tune-not-owner {
+      text-align: center; padding: 80px 20px;
+      color: rgba(255,255,255,0.3); font-size: 14px;
+    }
+    .tune-not-owner h2 {
+      font-family: 'Orbitron', monospace; font-size: 20px; color: rgba(255,255,255,0.6);
+      margin-bottom: 12px;
+    }
+
+    /* ── LEADERBOARD (post-session) ── */
+    .tune-lb-section { margin-top: 32px; }
+    .tune-lb-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+    .tune-lb-title { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,224,138,0.55); }
+    .tune-lb-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.25); }
+    .tune-lb-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+    .tune-lb-row:last-child { border-bottom: none; }
+    .tune-lb-bar { position: absolute; top:0; left:0; bottom:0; pointer-events:none; background: linear-gradient(90deg, rgba(255,224,138,0.07) 0%, transparent 100%); }
+    .row-gold   .tune-lb-bar { background: linear-gradient(90deg, rgba(255,215,0,0.10) 0%, transparent 100%); }
+    .row-silver .tune-lb-bar { background: linear-gradient(90deg, rgba(200,200,220,0.07) 0%, transparent 100%); }
+    .row-bronze .tune-lb-bar { background: linear-gradient(90deg, rgba(200,120,40,0.07) 0%, transparent 100%); }
+    .tune-lb-rank { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 900; width: 22px; text-align: center; flex-shrink: 0; color: rgba(255,255,255,0.2); }
+    .row-gold   .tune-lb-rank { color: #FFD700; }
+    .row-silver .tune-lb-rank { color: #C8C8DC; }
+    .row-bronze .tune-lb-rank { color: #C87828; }
+    .tune-lb-av { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,0.3); }
+    .tune-lb-av img { width: 100%; height: 100%; object-fit: cover; }
+    .tune-lb-info { flex: 1; min-width: 0; }
+    .tune-lb-name { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tune-lb-meta { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 2px; font-family: 'Share Tech Mono', monospace; }
+    .tune-lb-score { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900; color: #FFE08A; text-align: right; flex-shrink: 0; min-width: 48px; }
+    .tune-lb-score-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); text-align: right; margin-top: 2px; }
+    .tune-lb-you { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(96,255,171,0.9); background: rgba(96,255,171,0.08); border: 1px solid rgba(96,255,171,0.25); border-radius: 20px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="twinkling"></div>
+  <script src="/load-nav.js?v=20260308t"></script>
+
+  <div class="tune-wrap">
+
+    <div class="tune-header">
+      <div class="tune-eyebrow">Luminaea · Circuit Tuning</div>
+      <div class="tune-title">Pulse <em>Calibration</em></div>
+      <div class="tune-subtitle" id="tuneSubtitle">Loading your units…</div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="tune-status-panel" id="statusPanel" style="display:none">
+      <div class="tune-stat">
+        <div class="tune-stat-val" id="statUnits">0</div>
+        <div class="tune-stat-label">Units to Tune</div>
+      </div>
+      <div class="tune-stat">
+        <div class="tune-stat-val" id="statLastAvg">—</div>
+        <div class="tune-stat-label">Last Avg Score</div>
+      </div>
+      <div class="tune-stat">
+        <div class="tune-stat-val" id="statLastTuned">—</div>
+        <div class="tune-stat-label">Last Tuned</div>
+      </div>
+      <div class="tune-stat">
+        <div class="tune-stat-val" id="statAttempts">— / 3</div>
+        <div class="tune-stat-label">Today's Attempts</div>
+      </div>
+      <button class="tune-btn tune-btn-primary" id="startBtn" onclick="startSession()">
+        ⚡ Start Tuning
+      </button>
+    </div>
+
+    <!-- Circuit panel -->
+    <div class="tune-circuit-panel" id="circuitPanel" style="display:none">
+
+      <!-- Game area wrapper — countdown overlays this entire block -->
+      <div class="tune-game-area" id="tuneGameArea">
+
+        <!-- Countdown overlay — covers canvas + dots + button -->
+        <div class="tune-countdown-overlay" id="countdownOverlay">
+          <div class="tune-countdown-instruction">Click the nodes to charge your units</div>
+          <div class="tune-countdown-num" id="countdownNum">3</div>
+        </div>
+
+        <canvas id="circuitCanvas" height="260"></canvas>
+
+        <div class="tune-progress-row" id="progressRow"></div>
+
+        <div class="tune-hit-feedback" id="hitFeedback"></div>
+
+        <button class="tune-hit-btn" id="hitBtn" onclick="onHit()" disabled>
+          ⚡ TUNE
+        </button>
+
+      </div><!-- /tune-game-area -->
+    </div>
+
+    <!-- Results panel -->
+    <div class="tune-results" id="resultsPanel">
+      <div class="tune-results-score" id="avgScoreDisplay">—</div>
+      <div class="tune-results-label">Average Tune Score</div>
+      <div id="attemptInfoLine" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:20px;letter-spacing:0.04em;"></div>
+      <div class="tune-results-breakdown" id="breakdownGrid"></div>
+      <div class="tune-saving" id="savingStatus">Saving results…</div>
+      <div class="tune-results-actions">
+        <button class="tune-btn tune-btn-primary" id="tryAgainBtn" onclick="startSession()" style="display:none">⚡ Try Again</button>
+        <button class="tune-btn tune-btn-secondary" onclick="goBackToStatus()">Back</button>
+        <button class="tune-btn tune-btn-secondary" onclick="window.location.href='profile.html'">Profile</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard — appears after each session -->
+    <div class="tune-lb-section" id="lbSection" style="display:none">
+      <div class="tune-lb-head">
+        <div class="tune-lb-title"><a href="users.html" style="color:inherit;text-decoration:none;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">⚡ Weekly Tune Rankings ↗</a></div>
+        <div class="tune-lb-sub" id="lbWeekLabel"></div>
+      </div>
+      <div id="lbRows"><div style="text-align:center;padding:20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.2)">Loading…</div></div>
+    </div>
+
+    <!-- Not owner / no units -->
+    <div class="tune-not-owner" id="noUnitsPanel" style="display:none">
+      <h2>No Units to Tune</h2>
+      <p>You need to own at least one unit to tune the circuit.</p>
+      <br>
+      <a href="real_estate.html" class="tune-btn tune-btn-primary" style="display:inline-block;text-decoration:none;margin-top:8px;">Browse Units →</a>
+    </div>
+
+  </div>
+
+  <div class="earth-footer"><img src="images/minalia.png" alt=""/></div>
+  <script src="lum-time.js?v=20260308t"></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>{ if(typeof startLumClock==='function') startLumClock(); });</script>
+  <script src="nav-audio.js?v=20260308t"></script>
+
+  <script>
+  /* ═══════════════════════════════════════════════════════════
+     MINALIA — tune.html  (Circuit Tuning)
+     Circuit zigzag: N nodes (one per owned unit), pulse travels
+     the trace, click to charge each node. 3-2-1 countdown.
+     Scores: 100 / 75 / 50 / 0. Miss = pulse reverses to retry.
+     Average score written to every unit's tune_score + tune_history.
+  ═══════════════════════════════════════════════════════════ */
+
+  // ── Session helper ──
+  function getSessionUser() {
+    try {
+      const s = JSON.parse(localStorage.getItem('minalia_session') || '{}');
+      if (s.mode === 'spectator') return null;
+      if (s.user && s.wallet_address && !s.wallet_address.startsWith('DEMO_')) return s.user;
+    } catch(e) {}
+    return null;
+  }
+  function getSupabase() {
+    return window.supabaseClient?.from ? window.supabaseClient
+         : window.supabase?.from       ? window.supabase
+         : null;
+  }
+
+  // ── State ──
+  let _myUnits      = [];   // [{unit_code, tune_score}]
+  let _nodeScores   = [];   // score per node after hit
+  let _missPenalty  = [];   // cumulative −25 per total miss on each node
+  let _currentNode  = 0;    // index into _myUnits
+  let _rafId        = null;
+  let _t            = 0;    // frame counter
+  let _speed        = 0.022;// start slightly faster
+  let _retryCount   = 0;    // retries on current node
+  let _sessionActive= false;
+  let _hitWindowOpen= false;// true when pulse is near a node
+  const SPEED_BASE  = 0.022; // slightly faster start
+  const SPEED_MAX   = 0.038;
+  const SPEED_RETRY = 0.006;
+  const RUNUP_FRAC  = 0.0;
+
+  // 3-attempt system
+  const MAX_ATTEMPTS = 3;
+  let _attemptNumber    = 0;    // how many completed today (loaded from DB)
+  let _bestAvgToday     = null; // best avg score seen today
+  let _bestScoresToday  = null; // per-node scores of best attempt
+
+  // Canvas / layout
+  let _canvas, _ctx, _W, _H;
+  let _nodes   = [];  // {x,y} pixel positions
+  let _pathPts = [];  // full path points for drawing
+  let _pulsePos= 0;   // 0..1 along full path
+  let _pulseDir= 1;   // +1 forward, -1 reversing
+
+  // Segment lengths for travel calculations
+  let _segLengths   = [];
+  let _totalLength  = 0;
+  let _nodePathPos  = []; // 0..1 position of each node along path
+
+  // Ripples [{x,y,prog,col}]
+  let _ripples = [];
+
+  // ── Score colours ──
+  function scoreColor(s) {
+    if (s >= 100) return '#4ade80';
+    if (s >= 75)  return '#a3e635';
+    if (s >= 50)  return '#FFE08A';
+    return '#f87171';
+  }
+  function scoreClass(s) {
+    if (s >= 100) return 'score-100';
+    if (s >= 75)  return 'score-75';
+    if (s >= 50)  return 'score-50';
+    return 'score-0';
+  }
+  function scoreDotClass(s) {
+    if (s >= 100) return 'done-100';
+    if (s >= 75)  return 'done-75';
+    if (s >= 50)  return 'done-50';
+    return 'done-0';
+  }
+
+  // ── Build zigzag path for N nodes ──
+  function buildCircuit(n, W, H) {
+    const my = 40;
+    // First node sits at ~30% across so pulse has a long visible run-up
+    const mx = Math.round(W * 0.30);
+    const cols = Math.ceil(Math.sqrt(n * 1.6));
+    const rows = Math.ceil(n / cols);
+    const cw = (W - mx - 40) / Math.max(cols - 1, 1);
+    const ch = (H - my*2) / Math.max(rows - 1, 1);
+
+    // Place nodes in zigzag (snake) order
+    const nodePositions = [];
+    let idx = 0;
+    for (let r = 0; r < rows && idx < n; r++) {
+      const colsInRow = Math.min(cols, n - idx);
+      for (let c = 0; c < colsInRow; c++) {
+        const col = (r % 2 === 0) ? c : (colsInRow - 1 - c);
+        const x = mx + col * cw + (Math.random() * 14 - 7);
+        const y = my + r * ch   + (Math.random() * 10 - 5);
+        nodePositions.push({ x: Math.round(x), y: Math.round(y) });
+        idx++;
+      }
+    }
+
+    // Entry point off the left edge — pulse travels across blank trace before node A
+    const firstNode = nodePositions[0];
+    const entryPt = { x: -40, y: firstNode.y };
+    const allPoints = [entryPt, ...nodePositions];
+
+    // Build smooth path through all points (Catmull-Rom sampled)
+    const pathPts = [];
+    const STEPS = 80; // segments between each pair of nodes
+    for (let i = 0; i < allPoints.length; i++) {
+      const p0 = allPoints[Math.max(0, i-1)];
+      const p1 = allPoints[i];
+      const p2 = allPoints[Math.min(allPoints.length-1, i+1)];
+      const p3 = allPoints[Math.min(allPoints.length-1, i+2)];
+      const steps = (i === allPoints.length - 1) ? 1 : STEPS;
+      for (let s = 0; s < steps; s++) {
+        const t = s / STEPS;
+        const x = catmull(p0.x, p1.x, p2.x, p3.x, t);
+        const y = catmull(p0.y, p1.y, p2.y, p3.y, t);
+        pathPts.push({ x, y });
+      }
+    }
+    // Compute segment lengths
+    const segs = [];
+    let total = 0;
+    for (let i = 1; i < pathPts.length; i++) {
+      const dx = pathPts[i].x - pathPts[i-1].x;
+      const dy = pathPts[i].y - pathPts[i-1].y;
+      const l = Math.sqrt(dx*dx + dy*dy);
+      segs.push(l); total += l;
+    }
+
+    // Find path position (0..1) of each node
+    const nodePPos = nodePositions.map((np, ni) => {
+      // Find the path point closest to this node
+      let best = 0, bestDist = Infinity;
+      for (let pi = 0; pi < pathPts.length; pi++) {
+        const d = Math.hypot(pathPts[pi].x - np.x, pathPts[pi].y - np.y);
+        if (d < bestDist) { bestDist = d; best = pi; }
+      }
+      // Convert path index to 0..1
+      let acc = 0;
+      for (let k = 0; k < best; k++) acc += segs[k] || 0;
+      return acc / total;
+    });
+
+    return { nodePositions, pathPts, segs, total, nodePPos };
+  }
+
+  function catmull(p0, p1, p2, p3, t) {
+    return 0.5 * (
+      (2*p1) +
+      (-p0 + p2) * t +
+      (2*p0 - 5*p1 + 4*p2 - p3) * t*t +
+      (-p0 + 3*p1 - 3*p2 + p3) * t*t*t
+    );
+  }
+
+  // Convert 0..1 path position to pixel coords
+  function pathPosToXY(pos) {
+    const target = pos * _totalLength;
+    let acc = 0;
+    for (let i = 0; i < _segLengths.length; i++) {
+      const next = acc + _segLengths[i];
+      if (target <= next || i === _segLengths.length - 1) {
+        const t = _segLengths[i] > 0 ? (target - acc) / _segLengths[i] : 0;
+        const a = _pathPts[i], b = _pathPts[i+1] || a;
+        return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+      }
+      acc = next;
+    }
+    return _pathPts[_pathPts.length - 1];
+  }
+
+  // ── Draw frame ──
+  function drawFrame() {
+    const W = _W, H = _H;
+    _ctx.clearRect(0, 0, W, H);
+
+    if (!_pathPts.length) return;
+
+    // Draw trace — segments before current node in dim, rest very dim
+    const nodePos = _nodePathPos[_currentNode] || 1;
+
+    // Full trace
+    _ctx.beginPath();
+    _pathPts.forEach((p,i) => i===0 ? _ctx.moveTo(p.x,p.y) : _ctx.lineTo(p.x,p.y));
+    _ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    _ctx.lineWidth = 2; _ctx.stroke();
+
+    // Completed portion (up to current pulse)
+    const completedNodes = _currentNode;
+    if (completedNodes > 0) {
+      const endPos = _nodePathPos[completedNodes - 1] || 0;
+      drawPathSegment(0, endPos, 'rgba(74,222,128,0.25)', 2.5);
+    }
+    // Active portion (from last completed to pulse)
+    if (completedNodes < _nodes.length) {
+      const startPos = completedNodes > 0 ? (_nodePathPos[completedNodes - 1] || 0) : 0;
+      drawPathSegment(startPos, _pulsePos, 'rgba(255,224,138,0.35)', 2);
+    }
+
+    // Draw node circles
+    _nodes.forEach((node, i) => {
+      const score = _nodeScores[i];
+      const isCurrent = i === _currentNode;
+      const isDone = i < _currentNode || score !== undefined;
+
+      let col, radius;
+      if (isDone && score !== undefined) {
+        col = scoreColor(score); radius = 8;
+      } else if (isCurrent) {
+        col = '#FFE08A'; radius = 10;
+      } else {
+        col = 'rgba(255,255,255,0.2)'; radius = 6;
+      }
+
+      // Outer glow
+      if (isCurrent) {
+        const g = _ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, 28);
+        g.addColorStop(0, 'rgba(255,224,138,0.25)');
+        g.addColorStop(1, 'rgba(255,224,138,0)');
+        _ctx.beginPath(); _ctx.arc(node.x, node.y, 28, 0, Math.PI*2);
+        _ctx.fillStyle = g; _ctx.fill();
+      }
+
+      // Node circle
+      _ctx.beginPath(); _ctx.arc(node.x, node.y, radius, 0, Math.PI*2);
+      _ctx.fillStyle = col; _ctx.fill();
+      _ctx.strokeStyle = 'rgba(0,0,0,0.5)'; _ctx.lineWidth = 1.5; _ctx.stroke();
+
+      // Unit code label
+      const code = _myUnits[i]?.unit_code || '';
+      const letter = code.split('-')[2] || '';
+      _ctx.font = 'bold 9px "Share Tech Mono", monospace';
+      _ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      _ctx.textAlign = 'center'; _ctx.textBaseline = 'middle';
+      _ctx.fillText(letter, node.x, node.y);
+
+      // Score label above done nodes
+      if (isDone && score !== undefined) {
+        _ctx.font = 'bold 10px "Orbitron", monospace';
+        _ctx.fillStyle = col;
+        _ctx.fillText(score, node.x, node.y - 18);
+      }
+    });
+
+    // Draw ripples
+    _ripples = _ripples.filter(r => r.prog < 1);
+    _ripples.forEach(r => {
+      r.prog += 0.04;
+      const radius = r.baseR + r.prog * 30;
+      const alpha = (1 - r.prog) * 0.7;
+      _ctx.beginPath(); _ctx.arc(r.x, r.y, radius, 0, Math.PI*2);
+      _ctx.strokeStyle = `rgba(${r.col},${alpha})`;
+      _ctx.lineWidth = 2; _ctx.stroke();
+    });
+
+    // Draw pulse
+    const pulse = pathPosToXY(_pulsePos);
+    const pg = _ctx.createRadialGradient(pulse.x, pulse.y, 0, pulse.x, pulse.y, 18);
+    pg.addColorStop(0, 'rgba(255,224,138,0.9)');
+    pg.addColorStop(0.3, 'rgba(255,224,138,0.4)');
+    pg.addColorStop(1, 'rgba(255,224,138,0)');
+    _ctx.beginPath(); _ctx.arc(pulse.x, pulse.y, 18, 0, Math.PI*2);
+    _ctx.fillStyle = pg; _ctx.fill();
+    _ctx.beginPath(); _ctx.arc(pulse.x, pulse.y, 5, 0, Math.PI*2);
+    _ctx.fillStyle = '#FFE08A'; _ctx.fill();
+
+    // Check proximity to current node for hit window
+    if (_currentNode < _nodes.length) {
+      const node = _nodes[_currentNode];
+      const dist = Math.hypot(pulse.x - node.x, pulse.y - node.y);
+      _hitWindowOpen = dist < 55;
+      // Visual: button pulses when in window
+      const btn = document.getElementById('hitBtn');
+      if (btn) {
+        btn.classList.toggle('pulse-green', _hitWindowOpen);
+      }
+    }
+  }
+
+  function drawPathSegment(from, to, color, width) {
+    if (from >= to) return;
+    const startIdx = Math.floor(from * (_pathPts.length - 1));
+    const endIdx   = Math.ceil(to   * (_pathPts.length - 1));
+    if (startIdx >= endIdx) return;
+    _ctx.beginPath();
+    _ctx.moveTo(_pathPts[startIdx].x, _pathPts[startIdx].y);
+    for (let i = startIdx+1; i <= endIdx && i < _pathPts.length; i++) {
+      _ctx.lineTo(_pathPts[i].x, _pathPts[i].y);
+    }
+    _ctx.strokeStyle = color;
+    _ctx.lineWidth = width; _ctx.stroke();
+  }
+
+  // ── Animation loop ──
+  function animLoop() {
+    if (!_sessionActive) return;
+
+    // Advance pulse
+    const step = (_speed / _totalLength) * 120; // normalise to path 0..1
+    _pulsePos += _pulseDir * step;
+
+    // Clamp to path
+    if (_pulsePos >= 1) _pulsePos = 1;
+    if (_pulsePos <= 0) _pulsePos = 0;
+
+    // If reversing and we've gone back past the node target, stop reverse and wait
+    if (_pulseDir === -1) {
+      const targetPos = _nodePathPos[_currentNode] - 0.08;
+      if (_pulsePos <= targetPos || _pulsePos <= 0.001) {
+        _pulseDir = 1; // resume forward
+      }
+    }
+
+    // Auto-enable hit button when pulse is within engagement range of current node
+    const btn = document.getElementById('hitBtn');
+    if (btn && btn.disabled && _currentNode < _nodes.length) {
+      const node = _nodes[_currentNode];
+      const pulse = pathPosToXY(_pulsePos);
+      const dist = Math.hypot(pulse.x - node.x, pulse.y - node.y);
+      if (dist < 200) { // enable with enough time to react
+        btn.disabled = false;
+        btn.textContent = '⚡ TUNE';
+      }
+    }
+
+    drawFrame();
+    _t++;
+    _rafId = requestAnimationFrame(animLoop);
+  }
+
+  // ── HIT ──
+  function onHit() {
+    if (!_sessionActive || _currentNode >= _myUnits.length) return;
+
+    const node = _nodes[_currentNode];
+    const pulse = pathPosToXY(_pulsePos);
+    const pixDist = Math.hypot(pulse.x - node.x, pulse.y - node.y);
+
+    let score;
+    if (pixDist <= 22)      score = 100;
+    else if (pixDist <= 42) score = 75;
+    else if (pixDist <= 65) score = 50;
+    else                    score = 0;
+
+    // Ripple
+    const col = score===100 ? '74,222,128' : score===75 ? '163,230,53' : score>=50 ? '255,224,138' : '248,113,113';
+    _ripples.push({ x: node.x, y: node.y, prog: 0, baseR: 10, col });
+
+    // Sound
+    playHitSound(score);
+
+    // Show feedback
+    const fb = document.getElementById('hitFeedback');
+    if (fb) {
+      const labels = { 100:'✦ Perfect! +100', 75:'◈ Near! +75', 50:'◇ Close +50', 0:'✗ Miss — Reversing' };
+      fb.textContent = labels[score];
+      fb.className = `tune-hit-feedback ${scoreClass(score)}`;
+    }
+
+    if (score === 0) {
+      // Total miss: accumulate −25 penalty for this node
+      _missPenalty[_currentNode] = (_missPenalty[_currentNode] || 0) + 25;
+      _pulseDir = -1;
+      _retryCount++;
+      _speed = Math.min(SPEED_MAX, _speed + SPEED_RETRY);
+      const btn = document.getElementById('hitBtn');
+      if (btn) { btn.classList.add('shake'); setTimeout(()=>btn.classList.remove('shake'),400); }
+      return;
+    }
+
+    // Hit scored — apply accumulated miss penalty then advance
+    score = Math.max(0, score - (_missPenalty[_currentNode] || 0));
+    _nodeScores[_currentNode] = score;
+    _missPenalty[_currentNode] = 0;
+    _retryCount = 0;
+
+    // Update dot
+    const dots = document.querySelectorAll('.tune-node-dot');
+    if (dots[_currentNode]) {
+      dots[_currentNode].className = `tune-node-dot ${scoreDotClass(score)}`;
+    }
+    if (dots[_currentNode + 1]) {
+      dots[_currentNode + 1].classList.add('current');
+    }
+
+    _currentNode++;
+    _speed = Math.min(SPEED_MAX, SPEED_BASE + (_currentNode * 0.0012));
+
+    // Disable button again — animLoop will re-enable when pulse nears next node
+    if (_currentNode < _myUnits.length) {
+      const btn = document.getElementById('hitBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '· Incoming ·'; btn.classList.remove('pulse-green'); }
+    }
+
+    if (_currentNode >= _myUnits.length) {
+      // All nodes done — finish
+      finishSession();
+    }
+  }
+
+  // Also allow spacebar / Enter
+  document.addEventListener('keydown', e => {
+    if ((e.code === 'Space' || e.code === 'Enter') && _sessionActive) {
+      e.preventDefault(); onHit();
+    }
+  });
+
+  // ── COUNTDOWN ──
+  function runCountdown(cb) {
+    const overlay = document.getElementById('countdownOverlay');
+    const num = document.getElementById('countdownNum');
+    overlay.classList.remove('hidden');
+    let count = 3;
+    num.textContent = count;
+    num.className = 'tune-countdown-num';
+
+    const tick = () => {
+      count--;
+      if (count > 0) {
+        num.textContent = count;
+        num.className = 'tune-countdown-num';
+        // Re-trigger animation
+        void num.offsetWidth;
+        num.className = 'tune-countdown-num';
+        setTimeout(tick, 1000);
+      } else {
+        num.textContent = 'GO';
+        num.className = 'tune-countdown-go';
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          cb();
+        }, 700);
+      }
+    };
+    setTimeout(tick, 1000);
+  }
+
+  // ── START SESSION ──
+  function startSession() {
+    if (_attemptNumber >= MAX_ATTEMPTS) { updateAttemptUI(); return; }
+    document.getElementById('statusPanel').style.display = 'none';
+    document.getElementById('circuitPanel').style.display = 'block';
+    document.getElementById('resultsPanel').classList.remove('visible');
+
+    _currentNode  = 0;
+    _nodeScores   = [];
+    _missPenalty  = [];
+    _pulsePos     = 0;
+    _pulseDir     = 1;
+    _speed        = SPEED_BASE;
+    _retryCount   = 0;
+    _sessionActive= false;
+    _ripples      = [];
+    _t            = 0;
+    document.getElementById('lbSection').style.display = 'none';
+    document.getElementById('resultsPanel').classList.remove('visible');
+
+    // Size canvas
+    _canvas = document.getElementById('circuitCanvas');
+    _ctx    = _canvas.getContext('2d');
+    _W = _canvas.offsetWidth;
+    _H = _canvas.offsetHeight;
+    _canvas.width  = _W;
+    _canvas.height = _H;
+
+    // Build circuit
+    const n = _myUnits.length;
+    const { nodePositions, pathPts, segs, total, nodePPos } = buildCircuit(n, _W, _H);
+    _nodes        = nodePositions;
+    _pathPts      = pathPts;
+    _segLengths   = segs;
+    _totalLength  = total;
+    _nodePathPos  = nodePPos;
+
+    // Pulse starts at the very beginning of the path (left edge entry point)
+    // so the player sees it travelling the full trace before the first node
+    _pulsePos = 0;
+
+    // Build progress dots
+    const row = document.getElementById('progressRow');
+    row.innerHTML = _myUnits.map((u,i) =>
+      `<div class="tune-node-dot${i===0?' current':''}" id="dot-${i}" title="${u.unit_code}"></div>`
+    ).join('');
+
+    // Draw static circuit before countdown
+    drawFrame();
+
+    // Hit button — disabled until pulse is approaching first node
+    const btn = document.getElementById('hitBtn');
+    btn.disabled = true; btn.textContent = '· Incoming ·';
+    btn.className = 'tune-hit-btn';
+    document.getElementById('hitFeedback').textContent = '';
+
+    runCountdown(() => {
+      _sessionActive = true;
+      animLoop();
+    });
+  }
+
+  function goBackToStatus() {
+    cancelAnimationFrame(_rafId);
+    _sessionActive = false;
+    document.getElementById('resultsPanel').classList.remove('visible');
+    document.getElementById('lbSection').style.display = 'none';
+    document.getElementById('statusPanel').style.display = 'flex';
+  }
+
+  // ── FINISH SESSION ──
+  async function finishSession() {
+    _sessionActive = false;
+    cancelAnimationFrame(_rafId);
+
+    const btn = document.getElementById('hitBtn');
+    btn.disabled = true; btn.textContent = '✓ Complete';
+
+    const avg = Math.round(_nodeScores.reduce((a,b)=>a+b,0) / _nodeScores.length);
+
+    // Track attempt
+    _attemptNumber++;
+    const isBest = (_bestAvgToday === null || avg > _bestAvgToday);
+    if (isBest) {
+      _bestAvgToday    = avg;
+      _bestScoresToday = [..._nodeScores];
+    }
+
+    setTimeout(() => {
+      document.getElementById('circuitPanel').style.display = 'none';
+      showResults(avg, isBest);
+      saveResults(avg, isBest);
+      loadLeaderboard();
+    }, 800);
+  }
+
+  function showResults(avg, isBest) {
+    const panel = document.getElementById('resultsPanel');
+    panel.classList.add('visible');
+    document.getElementById('lbSection').style.display = 'block';
+
+    const scoreEl = document.getElementById('avgScoreDisplay');
+    scoreEl.textContent = avg;
+    scoreEl.style.color = scoreColor(avg);
+
+    // Attempt info line
+    const attLeft = MAX_ATTEMPTS - _attemptNumber;
+    const bestBit = isBest ? ' · <span style="color:#4ade80">★ New best!</span>' : ` · Best today: <strong style="color:#FFE08A">${_bestAvgToday}</strong>`;
+    document.getElementById('attemptInfoLine').innerHTML =
+      `Attempt ${_attemptNumber} of ${MAX_ATTEMPTS}${bestBit}`;
+
+    // Try Again button
+    const tryBtn = document.getElementById('tryAgainBtn');
+    if (attLeft > 0) {
+      tryBtn.style.display = '';
+      tryBtn.textContent = `⚡ Try Again (${attLeft} left)`;
+    } else {
+      tryBtn.style.display = 'none';
+    }
+    updateAttemptUI();
+
+    // Breakdown grid — current attempt, with best score shown if not first attempt
+    document.getElementById('breakdownGrid').innerHTML = _myUnits.map((u,i) => {
+      const s = _nodeScores[i] ?? 0;
+      const best = _bestScoresToday ? (_bestScoresToday[i] ?? 0) : s;
+      const sub = (_attemptNumber > 1)
+        ? `<div style="font-size:9px;color:rgba(255,255,255,0.22);margin-top:2px">best: ${best}</div>` : '';
+      return `<div class="tune-result-unit">
+        <div class="tune-result-unit-code">${u.unit_code}</div>
+        <div class="tune-result-unit-score ${scoreClass(s)}">${s}</div>
+        ${sub}
+      </div>`;
+    }).join('');
+
+    document.getElementById('savingStatus').textContent = 'Saving results…';
+  }
+
+  // ── SAVE TO DB ──
+  async function saveResults(avgScore, isBest = true) {
+    const user = getSessionUser();
+    const sb   = getSupabase();
+    if (!user?.id || !sb) {
+      document.getElementById('savingStatus').textContent = 'Not saved — no session.';
+      return;
+    }
+
+    const now = new Date().toISOString();
+    // Bonus: avg >= 80 → +24h, avg >= 50 → +8h, else +2h
+    const bonusMs = avgScore >= 80 ? 24*3600*1000 : avgScore >= 50 ? 8*3600*1000 : 2*3600*1000;
+    const tunedAt = new Date(Date.now() + bonusMs).toISOString();
+
+    // Determine pulse_state per unit
+    const pulseState = avgScore >= 50 ? 'active' : 'flicker';
+
+    // Only update units table when this is the best attempt
+    const updates = isBest ? _myUnits.map((u, i) => {
+      const unitScore = _nodeScores[i] ?? 0;
+      return sb.from('units').update({
+        tune_score:    unitScore,
+        last_tuned_at: tunedAt,
+        pulse_state:   unitScore >= 50 ? 'active' : 'flicker',
+      }).eq('unit_code', u.unit_code).eq('owner_id', user.id);
+    }) : [];
+
+    // Week start (Monday)
+    const d = new Date();
+    const day = d.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(d); mon.setUTCDate(d.getUTCDate() + diff);
+    const weekStart = mon.toISOString().slice(0, 10);
+
+    // tune_history: one row per unit with attempt metadata
+    const today = now.slice(0, 10);
+    const historyRows = _myUnits.map((u, i) => ({
+      player_id:      user.id,
+      unit_code:      u.unit_code,
+      score:          _nodeScores[i] ?? 0,
+      tuned_at:       now,
+      week_start:     weekStart,
+      attempt_number: _attemptNumber,
+      attempt_date:   today,
+      is_best:        isBest,
+    }));
+
+    try {
+      // If new best, clear old is_best flags for today first
+      if (isBest && _attemptNumber > 1) {
+        await sb.from('tune_history')
+          .update({ is_best: false })
+          .eq('player_id', user.id)
+          .eq('attempt_date', now.slice(0, 10))
+          .neq('attempt_number', _attemptNumber);
+      }
+      if (updates.length) await Promise.all(updates);
+      await sb.from('tune_history').insert(historyRows);
+
+      document.getElementById('statLastTuned').textContent = 'Just now';
+      document.getElementById('statLastAvg').textContent = isBest ? avgScore : _bestAvgToday;
+      document.getElementById('savingStatus').textContent = isBest
+        ? `★ New best · ${_myUnits.length} units updated`
+        : `Attempt ${_attemptNumber} saved · Best today: ${_bestAvgToday}`;
+
+      // Notify unit.html if open in same tab (unlikely but clean)
+      if (typeof window.onTuneCommit === 'function') {
+        _myUnits.forEach((u,i) => window.onTuneCommit(u.unit_code, _nodeScores[i] ?? 0));
+      }
+
+    } catch(err) {
+      console.error('Save error:', err);
+      document.getElementById('savingStatus').textContent = '⚠ Save failed: ' + err.message;
+    }
+  }
+
+  // ── AUDIO ──
+  let _audioCtx = null;
+  function getAudioCtx() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+  }
+  function playHitSound(score) {
+    try {
+      const ctx = getAudioCtx(); const now = ctx.currentTime;
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      if (score === 100) {
+        osc.type = 'sine'; osc.frequency.setValueAtTime(660, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now+0.1);
+        gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.6);
+        osc.start(now); osc.stop(now+0.6);
+        const o2=ctx.createOscillator(),g2=ctx.createGain();
+        o2.connect(g2);g2.connect(ctx.destination);
+        o2.type='sine';o2.frequency.setValueAtTime(1320,now+0.05);
+        g2.gain.setValueAtTime(0.12,now+0.05);g2.gain.exponentialRampToValueAtTime(0.001,now+0.7);
+        o2.start(now+0.05);o2.stop(now+0.7);
+      } else if (score >= 75) {
+        osc.type='sine';osc.frequency.setValueAtTime(520,now);
+        osc.frequency.exponentialRampToValueAtTime(660,now+0.08);
+        gain.gain.setValueAtTime(0.22,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.4);
+        osc.start(now);osc.stop(now+0.4);
+      } else if (score >= 50) {
+        osc.type='sine';osc.frequency.setValueAtTime(440,now);
+        osc.frequency.exponentialRampToValueAtTime(500,now+0.07);
+        gain.gain.setValueAtTime(0.18,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+        osc.start(now);osc.stop(now+0.3);
+      } else {
+        osc.type='triangle';osc.frequency.setValueAtTime(140,now);
+        osc.frequency.exponentialRampToValueAtTime(70,now+0.15);
+        gain.gain.setValueAtTime(0.2,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.25);
+        osc.start(now);osc.stop(now+0.25);
+      }
+    } catch(e) {}
+  }
+
+  // ── LOAD PLAYER UNITS ──
+  async function loadMyUnits() {
+    const user = getSessionUser();
+    const sb   = getSupabase();
+
+    if (!user?.id || !sb) {
+      document.getElementById('tuneSubtitle').textContent = 'Connect your wallet to tune.';
+      document.getElementById('noUnitsPanel').style.display = 'block';
+      return;
+    }
+
+    try {
+      const { data, error } = await sb
+        .from('units')
+        .select('unit_code, tune_score, last_tuned_at, pulse_state')
+        .eq('owner_id', user.id)
+        .order('unit_code', { ascending: true });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        document.getElementById('noUnitsPanel').style.display = 'block';
+        document.getElementById('tuneSubtitle').textContent = 'You don\'t own any units yet.';
+        return;
+      }
+
+      _myUnits = data;
+
+      // Update status panel
+      document.getElementById('statUnits').textContent = data.length;
+
+      // Last avg from existing tune_scores
+      const scored = data.filter(u => u.tune_score != null);
+      if (scored.length) {
+        const lastAvg = Math.round(scored.reduce((a,u) => a + u.tune_score, 0) / scored.length);
+        document.getElementById('statLastAvg').textContent = lastAvg;
+      }
+
+      // Last tuned
+      const tuned = data.filter(u => u.last_tuned_at).sort((a,b) => new Date(b.last_tuned_at)-new Date(a.last_tuned_at));
+      if (tuned.length) {
+        const d = new Date(tuned[0].last_tuned_at);
+        document.getElementById('statLastTuned').textContent = d.toLocaleDateString([], {month:'short',day:'numeric'});
+      }
+
+      document.getElementById('tuneSubtitle').textContent = `${data.length} unit${data.length!==1?'s':''} · Click TUNE when the pulse reaches each node`;
+      document.getElementById('statusPanel').style.display = 'flex';
+
+      // Load today's attempt history
+      await checkTodayAttempts(user.id, sb);
+
+    } catch(err) {
+      document.getElementById('tuneSubtitle').textContent = 'Error loading units: ' + err.message;
+      console.error(err);
+    }
+  }
+
+  // ── CHECK TODAY'S ATTEMPTS ──
+  async function checkTodayAttempts(userId, sb) {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const { data } = await sb
+        .from('tune_history')
+        .select('attempt_number, score, unit_code, is_best')
+        .eq('player_id', userId)
+        .eq('attempt_date', today);
+
+      if (data && data.length) {
+        // Count distinct attempt numbers
+        const attNums = [...new Set(data.map(r => r.attempt_number || 1))];
+        _attemptNumber = Math.max(...attNums);
+
+        // Find best avg across all attempts today
+        const byAttempt = {};
+        data.forEach(r => {
+          const a = r.attempt_number || 1;
+          if (!byAttempt[a]) byAttempt[a] = [];
+          byAttempt[a].push(r.score);
+        });
+        let best = 0;
+        Object.values(byAttempt).forEach(scores => {
+          const avg = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+          if (avg > best) best = avg;
+        });
+        _bestAvgToday = best;
+      }
+    } catch(e) { console.warn('checkTodayAttempts:', e); }
+    updateAttemptUI();
+  }
+
+  function updateAttemptUI() {
+    const el = document.getElementById('statAttempts');
+    if (el) el.textContent = _attemptNumber + ' / ' + MAX_ATTEMPTS;
+    const btn = document.getElementById('startBtn');
+    if (!btn) return;
+    if (_attemptNumber >= MAX_ATTEMPTS) {
+      btn.disabled = true;
+      btn.textContent = 'Done for today · Best: ' + (_bestAvgToday || '—');
+      btn.style.opacity = '0.45';
+      document.getElementById('tuneSubtitle').textContent =
+        'All ' + MAX_ATTEMPTS + ' attempts used today. Best: ' + (_bestAvgToday || '—') + '. Come back tomorrow!';
+    } else if (_attemptNumber > 0) {
+      btn.textContent = 'Attempt ' + (_attemptNumber + 1) + ' of ' + MAX_ATTEMPTS;
+    }
+  }
+
+  // ── LEADERBOARD ──
+  async function loadLeaderboard() {
+    document.getElementById('lbSection').style.display = 'block';
+    const sb = getSupabase();
+    if (!sb) return;
+    const now = new Date();
+    const day = now.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(now); mon.setUTCDate(now.getUTCDate() + diff);
+    const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+    const fmt = d => d.toLocaleDateString([], { month:'short', day:'numeric' });
+    const weekStart = mon.toISOString().slice(0, 10);
+    const wkEl = document.getElementById('lbWeekLabel');
+    if (wkEl) wkEl.textContent = fmt(mon) + ' – ' + fmt(sun);
+    const me = getSessionUser();
+    try {
+      const { data: hist } = await sb
+        .from('tune_history')
+        .select('player_id, score')
+        .eq('week_start', weekStart)
+        .eq('is_best', true);
+      if (!hist || !hist.length) {
+        document.getElementById('lbRows').innerHTML =
+          '<div style="text-align:center;padding:20px;font-family:Share Tech Mono,monospace;font-size:11px;color:rgba(255,255,255,0.2)">No tunes recorded this week yet.</div>';
+        return;
+      }
+      const agg = {};
+      hist.forEach(r => {
+        if (!agg[r.player_id]) agg[r.player_id] = { total:0, count:0 };
+        agg[r.player_id].total += r.score;
+        agg[r.player_id].count++;
+      });
+      const pids = Object.keys(agg);
+      const { data: users } = await sb.from('users').select('id, username, avatar_url').in('id', pids);
+      const uMap = {};
+      (users||[]).forEach(u => uMap[u.id] = u);
+      const rows = pids
+        .map(pid => ({
+          pid,
+          total: agg[pid].total,
+          count: agg[pid].count,
+          avg:   Math.round(agg[pid].total / agg[pid].count),
+          name:  uMap[pid]?.username || 'Explorer',
+          av:    uMap[pid]?.avatar_url || '',
+        }))
+        .sort((a,b) => b.total - a.total)
+        .slice(0, 10);
+      const topTotal = rows[0]?.total || 1;
+      const medals = ['🥇','🥈','🥉'];
+      const rcls   = ['row-gold','row-silver','row-bronze'];
+      document.getElementById('lbRows').innerHTML = rows.map((r,i) => {
+        const bw = Math.round((r.total / topTotal) * 100);
+        const isMe = me?.id === r.pid;
+        const av = r.av
+          ? '<img src="' + r.av + '" alt="" onerror="this.parentNode.innerHTML=\'◈\'">'
+          : '◈';
+        return '<div class="tune-lb-row ' + (rcls[i]||'') + '">' +
+          '<div class="tune-lb-bar" style="width:' + bw + '%"></div>' +
+          '<div class="tune-lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>' +
+          '<div class="tune-lb-av">' + av + '</div>' +
+          '<div class="tune-lb-info">' +
+            '<div class="tune-lb-name">' + r.name + (isMe ? '<span class="tune-lb-you">YOU</span>' : '') + '</div>' +
+            '<div class="tune-lb-meta">' + r.count + ' tune' + (r.count!==1?'s':'') + ' · avg ' + r.avg + '</div>' +
+          '</div>' +
+          '<div><div class="tune-lb-score">' + r.total + '</div>' +
+          '<div class="tune-lb-score-label">pts</div></div>' +
+        '</div>';
+      }).join('');
+    } catch(e) {
+      console.error('LB error:', e);
+      document.getElementById('lbRows').innerHTML =
+        '<div style="text-align:center;padding:20px;font-size:11px;color:rgba(255,255,255,0.2)">Could not load rankings.</div>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadMyUnits);
+  </script>
+</body>
+</html>

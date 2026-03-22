@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alliance — MINALIA</title>
+  <link rel="stylesheet" href="style.css?v=20260317a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260317a"></script>
+  <script src="auth_auro.js?v=20260317a"></script>
+  <style>
+    body { overflow-x: hidden; padding-top: 92px; }
+
+    .earth-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .earth-footer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
+      opacity: 0.2;
+      display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    }
+    /* Cancel the shared body::after so earth-footer handles the background */
+    body::after { display: none !important; }
+
+    /* Ensure page content sits above the fixed footer */
+    .page-wrap { position: relative; z-index: 1; }
+    .page-wrap { max-width: 900px; margin: 0 auto; padding: 24px 24px 80px; }
+
+    .page-header { margin-bottom: 36px; }
+    .page-header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .page-icon { font-size: 28px; }
+    .page-title { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #FFE08A; }
+    .page-subtitle { font-size: 13px; color: rgba(255,255,255,0.4); }
+
+    .state-panel { display: none; }
+    .state-panel.active { display: block; }
+    .loading-state { text-align: center; padding: 60px 0; color: rgba(255,255,255,0.3); font-size: 13px; }
+
+    /* ── Forms ── */
+    .create-box { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,224,138,0.15); border-radius: 16px; padding: 32px; max-width: 520px; }
+    .create-box h2 { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #FFE08A; margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.4); font-weight: 600; margin-bottom: 8px; }
+    .form-input { width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s; box-sizing: border-box; }
+    .form-input:focus { border-color: rgba(255,224,138,0.4); }
+    .form-input::placeholder { color: rgba(255,255,255,0.25); }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+    .form-hint { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 6px; }
+    .form-feedback { padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-top: 12px; display: none; }
+    .form-ok  { background: rgba(96,255,171,0.08); border: 1px solid rgba(96,255,171,0.2); color: #60ffab; }
+    .form-err { background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #ff8080; }
+
+    /* Colour picker */
+    .colour-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .colour-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
+    .colour-swatch:hover { transform: scale(1.15); }
+    .colour-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+
+    /* Buttons */
+    .btn { padding: 11px 20px; border-radius: 8px; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .15s; border: 1px solid; }
+    .btn-gold  { background: rgba(255,224,138,0.08); border-color: rgba(255,224,138,0.25); color: #FFE08A; }
+    .btn-gold:hover  { background: rgba(255,224,138,0.18); }
+    .btn-purple { background: rgba(180,140,255,0.08); border-color: rgba(180,140,255,0.25); color: rgba(180,140,255,0.9); }
+    .btn-purple:hover { background: rgba(180,140,255,0.18); }
+    .btn-ghost { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.45); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65); }
+    .btn-danger { background: rgba(255,80,80,0.06); border-color: rgba(255,80,80,0.2); color: rgba(255,80,80,0.7); }
+    .btn-danger:hover { background: rgba(255,80,80,0.12); color: rgba(255,80,80,0.9); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .btn-full { width: 100%; }
+
+    /* ── Alliance header ── */
+    .alliance-header { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; position: relative; overflow: hidden; display: flex; gap: 28px; align-items: flex-start; }
+    .alliance-header::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--ac) 0%, transparent 60%); pointer-events: none; opacity: .07; }
+    .alliance-color-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 16px 0 0 16px; background: var(--ac, #FFE08A); }
+
+    .alliance-icon-wrap { flex-shrink: 0; position: relative; }
+    .alliance-icon-svg { width: 80px; height: 80px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: block; cursor: default; overflow: hidden; }
+    .alliance-icon-svg.editable { cursor: pointer; }
+    .alliance-icon-svg.editable:hover::after { content: '✏️'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); border-radius: 12px; font-size: 22px; }
+    .icon-edit-hint { font-size: 9px; color: rgba(255,255,255,0.25); text-align: center; margin-top: 4px; letter-spacing: .04em; }
+
+    .alliance-meta { flex: 1; min-width: 0; }
+    .alliance-role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(255,224,138,0.1); border: 1px solid rgba(255,224,138,0.25); color: #FFE08A; margin-bottom: 10px; }
+    .alliance-role-badge.member-badge { background: rgba(180,140,255,0.1); border-color: rgba(180,140,255,0.25); color: rgba(180,140,255,0.9); }
+    .alliance-name { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; letter-spacing: .06em; margin-bottom: 6px; }
+    .alliance-desc { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px; line-height: 1.5; }
+    .alliance-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+    .astat-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+    .astat-value { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; color: #FFE08A; }
+
+    /* ── Action bar ── */
+    .action-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+
+    /* ── Section ── */
+    .section-title { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 14px; margin-top: 28px; }
+    .members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .member-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .member-avatar { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.08); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .member-name { font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; color: #FFE08A; letter-spacing: .04em; }
+    .member-name a { color: inherit; text-decoration: none; }
+    .member-name a:hover { text-decoration: underline; }
+    .member-role { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+    .member-units { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+
+    .territory-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .territory-pill { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+    .territory-pill a { color: inherit; text-decoration: none; }
+    .territory-pill a:hover { text-decoration: underline; }
+
+    /* ── Minister panel ── */
+    .minister-panel {
+      margin-top: 28px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 20px 20px 16px;
+    }
+    .minister-members-list { display: flex; flex-direction: column; gap: 20px; }
+    .minister-member-row {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .minister-member-name {
+      font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,0.55);
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .minister-cards-row {
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+    .minister-card {
+      display: flex; flex-direction: column; align-items: flex-start;
+      width: 100px; flex-shrink: 0;
+    }
+    .minister-card a:hover .minister-card-img { outline: 2px solid rgba(255,224,138,0.45); outline-offset: -2px; }
+    .minister-card a:hover .minister-card-name { color: #FFE08A; }
+    .minister-card-img {
+      width: 100px;
+      /* full portrait — no crop, no border-radius */
+      display: block;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .minister-card-name {
+      font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: rgba(255,224,138,0.8); margin-top: 5px;
+    }
+    .minister-card-terr {
+      font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .minister-empty {
+      font-size: 12px; color: rgba(255,255,255,0.2); font-style: italic; padding: 8px 0;
+    }
+
+    /* ── Alliance minimap ── */
+    .minimap-wrap {
+      margin-top: 28px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .minimap-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    #allianceMinimap {
+      display: block; width: 100%; border-radius: 8px;
+      background: #080810;
+    }
+    .minimap-legend {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: rgba(255,255,255,0.5);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+    }
+
+    /* ── Alliance projects panel ── */
+    .projects-panel {
+      margin-top: 28px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .projects-empty {
+      text-align: center;
+      padding: 32px 0;
+    }
+    .projects-empty-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+    .projects-empty-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.25);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Danger confirm modal ── */
+    #dangerModal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:24px; }
+    #dangerModal.open { display:flex; }
+    .danger-modal-box { background:rgba(18,6,6,0.98); border:1px solid rgba(255,80,80,0.3); border-radius:16px; padding:28px 24px; max-width:420px; width:100%; }
+    .danger-modal-title { font-family:'Orbitron',monospace; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,80,80,0.9); margin-bottom:6px; }
+    .danger-modal-sub { font-size:13px; color:rgba(255,255,255,0.45); margin-bottom:20px; line-height:1.6; padding-bottom:16px; border-bottom:1px solid rgba(255,80,80,0.1); }
+    .danger-modal-sub strong { color:rgba(255,255,255,0.75); }
+    .danger-confirm-label { font-size:11px; color:rgba(255,80,80,0.6); font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; display:block; }
+    .danger-confirm-input { width:100%; padding:10px 14px; border-radius:8px; background:rgba(255,80,80,0.05); border:1px solid rgba(255,80,80,0.2); color:#fff; font-size:13px; font-family:inherit; outline:none; box-sizing:border-box; margin-bottom:16px; }
+    .danger-confirm-input:focus { border-color:rgba(255,80,80,0.5); }
+    .danger-confirm-input::placeholder { color:rgba(255,255,255,0.2); }
+
+    .danger-zone { margin-top:40px; padding-top: 24px; border-top: 1px solid rgba(255,80,80,0.15); }
+    .danger-title { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,80,80,0.4); margin-bottom: 12px; font-weight: 700; }
+
+    /* ── Alliance switcher (when player has both founded + joined) ── */
+    .alliance-switcher {
+      display: none;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .alliance-switcher.visible { display: flex; }
+    .switcher-tab {
+      flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.45);
+      font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
+      transition: all .15s;
+    }
+    .switcher-tab.active {
+      background: rgba(255,224,138,0.08); border-color: rgba(255,224,138,0.3);
+      color: #FFE08A;
+    }
+    .switcher-tab:hover:not(.active) { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+
+    /* ── No alliance ── */
+    .no-alliance { text-align: center; padding: 60px 24px; }
+    .no-alliance-icon { font-size: 52px; margin-bottom: 16px; }
+    .no-alliance-title { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+    .no-alliance-sub { font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 28px; line-height: 1.6; }
+
+    /* ── Icon editor modal ── */
+    #iconModal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 24px; }
+    #iconModal.open { display: flex; }
+    .icon-modal-box { background: rgba(14,12,22,0.98); border: 1px solid rgba(255,224,138,0.2); border-radius: 16px; padding: 28px 24px; max-width: 440px; width: 100%; }
+    .icon-modal-title { font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #FFE08A; margin-bottom: 20px; }
+    .icon-previews { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .icon-preview { width: 100%; aspect-ratio: 1; border-radius: 10px; background: rgba(255,255,255,0.05); border: 2px solid transparent; cursor: pointer; overflow: hidden; transition: all .15s; }
+    .icon-preview:hover { border-color: rgba(255,255,255,0.2); }
+    .icon-preview.selected { border-color: #FFE08A; }
+
+    /* ── Transfer leadership modal ── */
+    #transferModal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.82); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:24px; }
+    #transferModal.open { display:flex; }
+    .transfer-modal-box { background:rgba(10,8,20,0.98); border:1px solid rgba(255,224,138,0.2); border-radius:16px; padding:28px 24px; max-width:440px; width:100%; }
+    .transfer-modal-title { font-family:'Orbitron',monospace; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#FFE08A; margin-bottom:6px; }
+    .transfer-modal-sub { font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.06); line-height:1.6; }
+
+    /* ── Bonus settings panel ── */
+    .bonus-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
+    .bonus-input { flex:1; padding:9px 14px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:13px; font-family:inherit; outline:none; }
+    .bonus-input:focus { border-color:rgba(255,224,138,0.4); }
+
+    /* ── Invite / request modal ── */
+    #inviteModal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 24px; }
+    #inviteModal.open { display: flex; }
+    .invite-modal-box { background: rgba(14,12,22,0.98); border: 1px solid rgba(180,140,255,0.2); border-radius: 16px; padding: 28px 24px; max-width: 460px; width: 100%; }
+    .invite-modal-title { font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(180,140,255,0.9); margin-bottom: 6px; }
+    .invite-modal-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .player-search { width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box; margin-bottom: 12px; }
+    .player-search::placeholder { color: rgba(255,255,255,0.25); }
+    .player-results { max-height: 200px; overflow-y: auto; margin-bottom: 16px; }
+    .player-result { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background .12s; }
+    .player-result:hover { background: rgba(255,255,255,0.05); }
+    .player-result.selected { background: rgba(180,140,255,0.08); }
+    .pr-avatar { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.08); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .pr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pr-name { font-size: 12px; color: rgba(255,255,255,0.8); font-family: 'Orbitron', monospace; font-size: 10px; }
+    .pr-units { font-size: 10px; color: rgba(255,255,255,0.35); }
+  </style>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+<script src="load-nav.js?v=20260317a"></script>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-header-top">
+      <span class="page-icon">⚔️</span>
+      <h1 class="page-title">Alliance</h1>
+    </div>
+    <div class="page-subtitle" id="pageSubtitle">Loading…</div>
+  </div>
+
+  <div id="loadingState" class="loading-state">Loading your alliance status…</div>
+
+  <!-- No alliance -->
+  <div id="stateNone" class="state-panel">
+    <div class="no-alliance">
+      <div class="no-alliance-icon">⚔️</div>
+      <div class="no-alliance-title">You have no alliance</div>
+      <div class="no-alliance-sub">Found your own alliance and invite others to join,<br>or accept an invite from another player's messages.</div>
+      <button class="btn btn-gold" id="foundAllianceBtn" onclick="showCreate()">+ Found an Alliance</button>
+      <div id="noUnitsNote" style="display:none;font-size:12px;color:rgba(255,80,80,0.6);margin-top:10px;">You need to own at least one unit to found an alliance.</div>
+    </div>
+  </div>
+
+  <!-- Create form -->
+  <div id="stateCreate" class="state-panel">
+    <div class="create-box">
+      <h2>⚔️ Found an Alliance</h2>
+      <div class="form-group">
+        <label class="form-label">Alliance Name</label>
+        <input class="form-input" id="allianceName" type="text" maxlength="40" placeholder="e.g. The Luminaea Guard">
+        <div class="form-hint">Must be unique. Max 40 characters.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-input" id="allianceDesc" maxlength="200" placeholder="What does your alliance stand for?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alliance Colour</label>
+        <div class="colour-grid" id="colourGridCreate"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Icon Style</label>
+        <div class="icon-previews" id="iconPreviewCreate"></div>
+        <div class="form-hint">You can change this later.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="alliancePrivateToggle" style="width:16px;height:16px;accent-color:#BE5AFF;cursor:pointer;">
+          <span>Make this a <strong style="color:#BE5AFF;">Secret Alliance</strong></span>
+        </label>
+        <div class="form-hint" style="margin-top:4px;">Members see full details. All others only see <em>"🔒 Secret Alliance Member"</em> on profiles — no name, no icon.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold btn-full" id="createBtn" onclick="createAlliance()">Found Alliance →</button>
+        <button class="btn btn-ghost btn-full" id="createCancelBtn" onclick="showNone()">Cancel</button>
+      </div>
+      <div class="form-feedback" id="createFeedback"></div>
+    </div>
+  </div>
+
+  <!-- Alliance view (own) -->
+  <div id="stateAlliance" class="state-panel">
+
+    <!-- Shown only when player has both a founded + joined alliance -->
+    <div class="alliance-switcher" id="allianceSwitcher">
+      <button class="switcher-tab active" id="switcherTab0" onclick="switchAlliance(0)">⚔️ <span id="switcherName0">My Alliance</span></button>
+      <button class="switcher-tab" id="switcherTab1" onclick="switchAlliance(1)">🛡️ <span id="switcherName1">Member Of</span></button>
+    </div>
+
+    <div class="alliance-header" id="allianceHeader">
+      <div class="alliance-color-bar" id="allianceColorBar"></div>
+      <div class="alliance-icon-wrap">
+        <div class="alliance-icon-svg" id="allianceIconDisplay" title="Click to change icon"></div>
+        <div class="icon-edit-hint" id="iconEditHint" style="display:none;">Click to change</div>
+      </div>
+      <div class="alliance-meta">
+        <div class="alliance-role-badge" id="allianceRoleBadge">⚔️ High Marshal</div>
+        <div class="alliance-name" id="allianceNameView">—</div>
+        <div id="secretAllianceBadge" style="display:none;margin-top:4px;font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(190,90,255,0.7);letter-spacing:.08em;">🔒 SECRET ALLIANCE — hidden from outsiders</div>
+        <div class="alliance-desc" id="allianceDescView">—</div>
+        <div class="alliance-stats">
+          <div class="astat"><div class="astat-label">Members</div><div class="astat-value" id="statMembers">—</div></div>
+          <div class="astat"><div class="astat-label">Units</div><div class="astat-value" id="statUnits">—</div></div>
+          <div class="astat"><div class="astat-label">Territories</div><div class="astat-value" id="statTerritories">—</div></div>
+          <div class="astat"><div class="astat-label">Founded</div><div class="astat-value" id="statFounded" style="font-size:12px;">—</div></div>
+        </div>
+      </div>
+      <!-- Joining bonus (founder can edit, members just see) -->
+      <div id="bonusSection" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);">
+        <div class="astat-label" style="margin-bottom:6px;">Default Joining Bonus</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span id="bonusAmount" style="font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:#60ffab;">0 ARKIS</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.3);">paid to new members on joining</span>
+          <button id="bonusEditBtn" onclick="openBonusEdit()" style="display:none;" class="btn btn-ghost" style="padding:4px 10px;font-size:10px;">Edit</button>
+        </div>
+        <div id="bonusEditWrap" style="display:none;margin-top:10px;">
+          <div class="bonus-row">
+            <input class="bonus-input" id="bonusValueInput" type="number" min="0" step="100" placeholder="0">
+            <span style="font-size:12px;color:rgba(255,255,255,0.4);">ARKIS</span>
+            <button class="btn btn-gold" onclick="saveBonus()" style="padding:8px 14px;font-size:10px;">Save</button>
+            <button class="btn btn-ghost" onclick="cancelBonusEdit()" style="padding:8px 14px;font-size:10px;">Cancel</button>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:6px;">Deducted from your ARKIS when a member accepts an invite.</div>
+          <div class="form-feedback" id="bonusFeedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action bar (founder only) -->
+    <div class="action-bar" id="founderActions" style="display:none;">
+      <button class="btn btn-purple" onclick="openInviteModal()">💬 Invite Player</button>
+      <button class="btn btn-ghost" onclick="openTransferModal()">👑 Appoint High Marshal</button>
+      <button class="btn btn-ghost" id="privacyToggleBtn" onclick="toggleAlliancePrivacy()" style="border-color:rgba(190,90,255,0.3);color:rgba(190,90,255,0.8);">🔒 Make Secret</button>
+    </div>
+
+    <!-- Member-only: option to also found their own alliance -->
+    <div id="foundOwnWrap" style="margin-top:8px;display:none;">
+      <button class="btn btn-gold" id="foundOwnBtn" onclick="showCreate()" style="display:none;">+ Found your own Alliance</button>
+      <div id="foundOwnNoUnits" style="display:none;font-size:12px;color:rgba(255,80,80,0.6);margin-top:6px;">You need to own at least one unit to found an alliance.</div>
+    </div>
+
+    <div class="section-title">Members</div>
+    <div class="members-grid" id="membersGrid"></div>
+
+    <div class="section-title">Territories</div>
+    <div class="territory-pills" id="territoryPills"></div>
+
+    <!-- Minister Council -->
+    <div class="minister-panel">
+      <div class="minimap-header" style="margin-bottom:16px;">
+        <span class="section-title" style="margin:0;">Minister Council</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.25);">Ministers of territories held by alliance members</span>
+      </div>
+      <div class="minister-members-list" id="ministerMembersList">
+        <div class="minister-empty">Loading ministers…</div>
+      </div>
+    </div>
+
+    <!-- Territory minimap -->
+    <div class="minimap-wrap">
+      <div class="minimap-header">
+        <span class="section-title" style="margin:0;">Territory Control</span>
+        <span id="minimapStats" style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;"></span>
+      </div>
+      <canvas id="allianceMinimap" height="308"></canvas>
+      <div class="minimap-legend" id="minimapLegend"></div>
+    </div>
+
+    <!-- Alliance Projects -->
+    <div class="projects-panel">
+      <div class="minimap-header">
+        <span class="section-title" style="margin:0;">Alliance Projects</span>
+      </div>
+      <div class="projects-empty">
+        <div class="projects-empty-icon">🏗️</div>
+        <div class="projects-empty-text">Alliance projects will show here in the future.<br>Collaborative builds, shared developments, and alliance-wide goals are coming.</div>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <div class="danger-title">Danger Zone</div>
+      <button class="btn btn-danger" id="dangerBtn" onclick="handleDanger()">Leave Alliance</button>
+    </div>
+  </div>
+
+  <!-- View-only (non-member viewing an alliance) -->
+  <div id="stateView" class="state-panel">
+    <div class="alliance-header" id="allianceHeaderView">
+      <div class="alliance-color-bar" id="allianceColorBarView"></div>
+      <div class="alliance-icon-wrap">
+        <div class="alliance-icon-svg" id="allianceIconView"></div>
+      </div>
+      <div class="alliance-meta">
+        <div class="alliance-name" id="allianceNameViewOnly">—</div>
+        <div class="alliance-desc" id="allianceDescViewOnly">—</div>
+        <div class="alliance-stats">
+          <div class="astat"><div class="astat-label">Members</div><div class="astat-value" id="statMembersView">—</div></div>
+          <div class="astat"><div class="astat-label">Units</div><div class="astat-value" id="statUnitsView">—</div></div>
+          <div class="astat"><div class="astat-label">Territories</div><div class="astat-value" id="statTerritoriesView">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-purple" id="requestJoinBtn" onclick="requestToJoin()">⚔️ Request to Join</button>
+    </div>
+    <div class="form-feedback" id="requestFeedback"></div>
+    <div class="section-title">Members</div>
+    <div class="members-grid" id="membersGridView"></div>
+  </div>
+
+</div>
+
+<!-- Icon editor modal -->
+<div id="iconModal">
+  <div class="icon-modal-box">
+    <div class="icon-modal-title">✏️ Change Alliance Icon</div>
+    <div class="icon-previews" id="iconModalPreviews"></div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="saveIcon()">Save Icon</button>
+      <button class="btn btn-ghost" onclick="closeIconModal()">Cancel</button>
+    </div>
+    <div class="form-feedback" id="iconFeedback"></div>
+  </div>
+</div>
+
+<!-- Invite player modal -->
+<div id="inviteModal">
+  <div class="invite-modal-box">
+    <div class="invite-modal-title">💬 Invite Player</div>
+    <div class="invite-modal-sub">Send an alliance invite via the messages system.</div>
+    <input class="player-search" id="playerSearchInput" type="text" placeholder="Search by username…" oninput="searchPlayers(this.value)">
+    <div class="player-results" id="playerResults"></div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="send-msg-label">Per-invite bonus (optional)</label>
+      <div class="bonus-row">
+        <input class="bonus-input" id="inviteBonusInput" type="number" min="0" step="100" placeholder="0" style="padding:8px 12px;font-size:12px;">
+        <span style="font-size:12px;color:rgba(255,255,255,0.4);">ARKIS extra</span>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:4px;">Added on top of the default joining bonus. Deducted from your balance on accept.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-purple" id="sendInviteBtn" onclick="sendInvite()" disabled>Send Invite →</button>
+      <button class="btn btn-ghost" onclick="closeInviteModal()">Cancel</button>
+    </div>
+    <div class="form-feedback" id="inviteFeedback"></div>
+  </div>
+</div>
+
+<!-- Transfer leadership modal -->
+<div id="transferModal">
+  <div class="transfer-modal-box">
+    <div class="transfer-modal-title">👑 Appoint High Marshal</div>
+    <div class="transfer-modal-sub">Choose a member to become the new High Marshal. You will become a regular member. This cannot be undone without their agreement.</div>
+    <span class="send-msg-label">Select new leader</span>
+    <div class="player-results" id="transferPlayerList" style="max-height:220px;overflow-y:auto;margin-bottom:16px;"></div>
+    <span class="danger-confirm-label" id="transferConfirmLabel" style="display:none;">Type their username to confirm</span>
+    <input class="danger-confirm-input" id="transferConfirmInput" type="text" placeholder="" oninput="checkTransferInput()" style="display:none;">
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-gold btn-full" id="transferConfirmBtn" onclick="executeTransfer()" disabled>Appoint High Marshal</button>
+      <button class="btn btn-ghost btn-full" onclick="closeTransferModal()">Cancel</button>
+    </div>
+    <div class="form-feedback" id="transferFeedback"></div>
+  </div>
+</div>
+
+<!-- Danger confirm modal -->
+<div id="dangerModal">
+  <div class="danger-modal-box">
+    <div class="danger-modal-title" id="dangerModalTitle">⚠️ Dissolve Alliance</div>
+    <div class="danger-modal-sub" id="dangerModalSub">This will permanently dissolve your alliance and remove all members. This cannot be undone.</div>
+    <div id="dangerNameWrap">
+      <label class="danger-confirm-label" id="dangerConfirmLabel">Type the alliance name to confirm</label>
+      <input class="danger-confirm-input" id="dangerConfirmInput" type="text" placeholder="" oninput="checkDangerInput()">
+    </div>
+    <!-- Member leave options (shown instead of confirm input for non-founders) -->
+    <div id="dangerLeaveOptions" style="display:none;margin-top:12px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;margin-bottom:10px;line-height:1.6;">Choose how you want to leave:</div>
+      <div class="btn-row" style="flex-direction:column;gap:8px;margin-top:0;">
+        <button class="btn btn-danger btn-full" id="leavePublicBtn" onclick="executeDanger(false)">📢 Leave with Announcement</button>
+        <button class="btn btn-ghost btn-full" id="leaveSilentBtn" onclick="executeDanger(true)" style="border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);">🤫 Leave Silently</button>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:8px;font-family:'Share Tech Mono',monospace;line-height:1.5;">
+        Announcement: posts a news alert to all members.<br>
+        Silent: no notification — only the member list changes.
+      </div>
+    </div>
+    <div class="btn-row" id="dangerFounderBtns" style="margin-top:4px;">
+      <button class="btn btn-danger btn-full" id="dangerConfirmBtn" onclick="executeDanger(false)" disabled>Dissolve Alliance</button>
+      <button class="btn btn-ghost btn-full" onclick="closeDangerModal()">Cancel</button>
+    </div>
+    <div class="form-feedback" id="dangerFeedback"></div>
+  </div>
+</div>
+
+<div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+
+<script>
+  // ── Session ──────────────────────────────────────────────────────────
+  const _session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const myId = _session?.user?.id || null;
+  // ── Avatar resolver — handles emoji avatars + @ in x_username ──────────
+  function isEmojiAvatar(s) {
+    return s && s.length <= 8 && !s.startsWith('http') && !s.startsWith('images/');
+  }
+  function resolveAv(u) {
+    if (!u) return null;
+    const xUser = u.x_username ? u.x_username.replace(/^@/, '') : null;
+    if (u.avatar_url) return u.avatar_url;
+    if (u.avatar && (u.avatar.startsWith('http') || u.avatar.startsWith('images/'))) return u.avatar;
+    if (isEmojiAvatar(u.avatar)) return null;
+    if (xUser) return `https://unavatar.io/twitter/${xUser}`;
+    return null;
+  }
+  function resolveAvHtml(u, fallback) {
+    if (isEmojiAvatar(u?.avatar)) return u.avatar;
+    const src = resolveAv(u);
+    const fb = fallback || u?.username?.[0]?.toUpperCase() || '👤';
+    if (src) return `<img src="${src}" alt="${u?.username||''}" onerror="this.parentNode.innerHTML='${fb}'">`;
+    return fb;
+  }
+
+  const COLOURS = [
+    '#FFE08A','#FFC107','#FF9800','#FF5722','#F44336','#E91E63',
+    '#AB47BC','#7E57C2','#5C6BC0','#42A5F5','#26C6DA','#26A69A',
+    '#66BB6A','#D4E157','#8D6E63','#78909C','#ECEFF1','#60FFAB',
+    '#FF6B6B','#B0BEC5',
+  ];
+
+  const TERRITORY_NAMES = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+
+  let selectedColour = COLOURS[0];
+  let selectedIconSeed = 0;
+  let myAllianceId = null;
+  let myRole = null;
+  let currentAlliance = null;
+  let _myFoundedId = null;  // when player has both alliances
+  let _myJoinedId  = null;
+  let selectedInvitePlayer = null;
+  let _allPlayers = null; // cached on first invite modal open
+  let _db = null;
+
+  // ═══════════════════════════════════════════════════
+  // ── SVG ICON GENERATOR ─────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  // 15 rich alliance emblems — each with a distinct identity and colour
+  const EMBLEM_DEFS = [
+    { name: 'Shield',   color: '#7F77DD', bg: '#0a0820' },
+    { name: 'Radiant',  color: '#EF9F27', bg: '#1a1000' },
+    { name: 'Ouroboros',color: '#1D9E75', bg: '#0a1810' },
+    { name: 'Peak',     color: '#AB47BC', bg: '#150a20' },
+    { name: 'Bolt',     color: '#D85A30', bg: '#1a0800' },
+    { name: 'Hexagon',  color: '#378ADD', bg: '#050f1a' },
+    { name: 'Eye',      color: '#9D4EDD', bg: '#0d0515' },
+    { name: 'Sigil',    color: '#4CAF50', bg: '#021008' },
+    { name: 'Compass',  color: '#EF9F27', bg: '#120e04' },
+    { name: 'Skull',    color: '#E53935', bg: '#100505' },
+    { name: 'Anchor',   color: '#29B6F6', bg: '#030d18' },
+    { name: 'Phoenix',  color: '#FF6D00', bg: '#1a0500' },
+    { name: 'Galaxy',   color: '#7F77DD', bg: '#030310' },
+    { name: 'Hammer',   color: '#C62828', bg: '#0f0505' },
+    { name: 'Tree',     color: '#4CAF50', bg: '#020a04' },
+  ];
+
+  function generateAllianceSVG(seed, overrideColor, size) {
+    size = size || 80;
+    const s = ((seed || 0) % 15);
+    const def = EMBLEM_DEFS[s];
+    const c = overrideColor || def.color;
+    const bg = def.bg;
+    const m = size / 2; // midpoint
+    const r = size * 0.42; // main radius
+    const rx = Math.round(size * 0.12);
+
+    // All 15 drawing functions — return inner SVG markup
+    const drawings = [
+      // 0: Shield
+      () => {
+        const sx = Math.round(size*0.12), ex = Math.round(size*0.88), my = Math.round(size*0.62), by = Math.round(size*0.88);
+        return '<path d="M'+sx+','+Math.round(size*.18)+' L'+ex+','+Math.round(size*.18)+' L'+ex+','+my+' Q'+ex+','+by+' '+m+','+Math.round(size*.95)+' Q'+sx+','+by+' '+sx+','+my+' Z" fill="none" stroke="'+c+'" stroke-width="2.5"/>'
+          + '<path d="M'+Math.round(size*.2)+','+Math.round(size*.26)+' L'+Math.round(size*.8)+','+Math.round(size*.26)+' L'+Math.round(size*.8)+','+Math.round(size*.6)+' Q'+Math.round(size*.8)+','+Math.round(size*.76)+' '+m+','+Math.round(size*.85)+' Q'+Math.round(size*.2)+','+Math.round(size*.76)+' '+Math.round(size*.2)+','+Math.round(size*.6)+' Z" fill="none" stroke="'+c+'" stroke-width="1" opacity="0.4"/>'
+          + '<line x1="'+m+'" y1="'+Math.round(size*.18)+'" x2="'+m+'" y2="'+Math.round(size*.85)+'" stroke="'+c+'" stroke-width="1.5" opacity="0.7"/>'
+          + '<line x1="'+Math.round(size*.12)+'" y1="'+Math.round(size*.5)+'" x2="'+Math.round(size*.88)+'" y2="'+Math.round(size*.5)+'" stroke="'+c+'" stroke-width="1.5" opacity="0.7"/>'
+          + '<circle cx="'+m+'" cy="'+Math.round(size*.5)+'" r="'+Math.round(size*.08)+'" fill="'+c+'"/>';
+      },
+      // 1: Radiant sun
+      () => '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.7)+'" fill="'+bg+'" stroke="'+c+'" stroke-width="2"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.45)+'" fill="none" stroke="'+c+'" stroke-width="1" opacity="0.4"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.2)+'" fill="'+c+'" opacity="0.9"/>'
+          + [0,45,90,135,180,225,270,315].map(a => {
+              const rad = a*Math.PI/180, x1=Math.round(m+r*.52*Math.cos(rad)), y1=Math.round(m+r*.52*Math.sin(rad)), x2=Math.round(m+r*.68*Math.cos(rad)), y2=Math.round(m+r*.68*Math.sin(rad));
+              return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c+'" stroke-width="2" stroke-linecap="round" opacity="'+(a%90===0?'0.9':'0.5')+'"/>';
+            }).join(''),
+      // 2: Ouroboros ring
+      () => '<path d="M'+m+','+Math.round(m-r*.9)+' A'+Math.round(r*.9)+','+Math.round(r*.9)+' 0 1,1 '+Math.round(m+r*.9*.87)+','+Math.round(m+r*.9*.5)+'" fill="none" stroke="'+c+'" stroke-width="'+Math.round(size*.1)+'" stroke-linecap="round" opacity="0.3"/>'
+          + '<path d="M'+m+','+Math.round(m-r*.9)+' A'+Math.round(r*.9)+','+Math.round(r*.9)+' 0 0,1 '+Math.round(m+r*.9*.87)+','+Math.round(m+r*.9*.5)+'" fill="none" stroke="'+c+'" stroke-width="'+Math.round(size*.09)+'" stroke-linecap="round" opacity="0.9"/>'
+          + '<circle cx="'+m+'" cy="'+Math.round(m-r*.9)+'" r="'+Math.round(size*.07)+'" fill="'+c+'"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.28)+'" fill="none" stroke="'+c+'" stroke-width="1.5" opacity="0.5"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.8"/>',
+      // 3: Twin peaks
+      () => '<rect x="'+Math.round(size*.08)+'" y="'+Math.round(size*.08)+'" width="'+Math.round(size*.84)+'" height="'+Math.round(size*.84)+'" rx="'+rx+'" fill="none" stroke="'+c+'" stroke-width="2"/>'
+          + '<polygon points="'+m+','+Math.round(size*.18)+' '+Math.round(size*.26)+','+Math.round(size*.8)+' '+Math.round(size*.74)+','+Math.round(size*.8)+'" fill="none" stroke="'+c+'" stroke-width="2"/>'
+          + '<polygon points="'+Math.round(size*.64)+','+Math.round(size*.3)+' '+Math.round(size*.44)+','+Math.round(size*.8)+' '+Math.round(size*.84)+','+Math.round(size*.8)+'" fill="none" stroke="'+c+'" stroke-width="1.5" opacity="0.5"/>'
+          + '<circle cx="'+m+'" cy="'+Math.round(size*.18)+'" r="'+Math.round(size*.05)+'" fill="'+c+'" opacity="0.9"/>'
+          + '<line x1="'+Math.round(size*.08)+'" y1="'+Math.round(size*.8)+'" x2="'+Math.round(size*.92)+'" y2="'+Math.round(size*.8)+'" stroke="'+c+'" stroke-width="1" opacity="0.4"/>',
+      // 4: Lightning bolt
+      () => '<polygon points="'+m+','+Math.round(size*.1)+' '+Math.round(m-size*.14)+','+Math.round(size*.55)+' '+Math.round(m+size*.06)+','+Math.round(size*.55)+' '+Math.round(m-size*.06)+','+Math.round(size*.9)+' '+Math.round(m+size*.16)+','+Math.round(size*.45)+' '+Math.round(m-size*.04)+','+Math.round(size*.45)+'" fill="'+c+'" opacity="0.9"/>'
+          + '<polygon points="'+m+','+Math.round(size*.1)+' '+Math.round(m-size*.14)+','+Math.round(size*.55)+' '+Math.round(m+size*.06)+','+Math.round(size*.55)+' '+Math.round(m-size*.06)+','+Math.round(size*.9)+' '+Math.round(m+size*.16)+','+Math.round(size*.45)+' '+Math.round(m-size*.04)+','+Math.round(size*.45)+'" fill="none" stroke="white" stroke-width="1" opacity="0.25"/>',
+      // 5: Nested hexagon
+      () => { const h6=(cx,cy,rad) => [0,1,2,3,4,5].map(i=>{const a=i*60*Math.PI/180-Math.PI/6;return Math.round(cx+rad*Math.cos(a))+','+Math.round(cy+rad*Math.sin(a));}).join(' ');
+        return '<polygon points="'+h6(m,m,r*.88)+'" fill="none" stroke="'+c+'" stroke-width="2.5"/>'
+          + '<polygon points="'+h6(m,m,r*.6)+'" fill="none" stroke="'+c+'" stroke-width="1.5" opacity="0.5"/>'
+          + '<polygon points="'+h6(m,m,r*.32)+'" fill="'+c+'" opacity="0.2"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.15)+'" fill="'+c+'" opacity="0.9"/>'; },
+      // 6: Eye
+      () => '<path d="M'+Math.round(m-r*.95)+','+m+' Q'+m+','+Math.round(m-r*.7)+' '+Math.round(m+r*.95)+','+m+' Q'+m+','+Math.round(m+r*.7)+' '+Math.round(m-r*.95)+','+m+' Z" fill="'+bg+'" stroke="'+c+'" stroke-width="2"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.4)+'" fill="'+c+'" opacity="0.4"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.24)+'" fill="'+c+'" opacity="0.85"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.1)+'" fill="white" opacity="0.95"/>'
+          + '<circle cx="'+Math.round(m-r*.1)+'" cy="'+Math.round(m-r*.1)+'" r="'+Math.round(r*.05)+'" fill="white" opacity="0.7"/>',
+      // 7: Fleur sigil
+      () => '<line x1="'+m+'" y1="'+Math.round(size*.1)+'" x2="'+m+'" y2="'+Math.round(size*.9)+'" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>'
+          + '<path d="M'+m+','+Math.round(size*.38)+' C'+Math.round(m-size*.18)+','+Math.round(size*.22)+' '+Math.round(m-size*.36)+','+Math.round(size*.24)+' '+Math.round(m-size*.32)+','+Math.round(size*.4)+' C'+Math.round(m-size*.28)+','+Math.round(size*.56)+' '+Math.round(m-size*.12)+','+Math.round(size*.54)+' '+m+','+Math.round(size*.38)+' Z" fill="'+c+'" opacity="0.75"/>'
+          + '<path d="M'+m+','+Math.round(size*.38)+' C'+Math.round(m+size*.18)+','+Math.round(size*.22)+' '+Math.round(m+size*.36)+','+Math.round(size*.24)+' '+Math.round(m+size*.32)+','+Math.round(size*.4)+' C'+Math.round(m+size*.28)+','+Math.round(size*.56)+' '+Math.round(m+size*.12)+','+Math.round(size*.54)+' '+m+','+Math.round(size*.38)+' Z" fill="'+c+'" opacity="0.75"/>'
+          + '<ellipse cx="'+m+'" cy="'+Math.round(size*.7)+'" rx="'+Math.round(size*.18)+'" ry="'+Math.round(size*.1)+'" fill="none" stroke="'+c+'" stroke-width="1.5" opacity="0.7"/>'
+          + '<line x1="'+Math.round(m-size*.2)+'" y1="'+Math.round(size*.8)+'" x2="'+Math.round(m+size*.2)+'" y2="'+Math.round(size*.8)+'" stroke="'+c+'" stroke-width="2"/>',
+      // 8: Compass rose
+      () => '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.88)+'" fill="'+bg+'" stroke="'+c+'" stroke-width="2"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.5)+'" fill="none" stroke="'+c+'" stroke-width="0.5" opacity="0.4"/>'
+          + '<polygon points="'+m+','+Math.round(m-r*.85)+' '+Math.round(m+r*.12)+','+Math.round(m-r*.1)+' '+m+','+Math.round(m-r*.3)+' '+Math.round(m-r*.12)+','+Math.round(m-r*.1)+'" fill="'+c+'"/>'
+          + '<polygon points="'+m+','+Math.round(m+r*.85)+' '+Math.round(m+r*.12)+','+Math.round(m+r*.1)+' '+m+','+Math.round(m+r*.3)+' '+Math.round(m-r*.12)+','+Math.round(m+r*.1)+'" fill="'+c+'" opacity="0.5"/>'
+          + '<polygon points="'+Math.round(m-r*.85)+','+m+' '+Math.round(m-r*.1)+','+Math.round(m-r*.12)+' '+Math.round(m-r*.3)+','+m+' '+Math.round(m-r*.1)+','+Math.round(m+r*.12)+'" fill="'+c+'" opacity="0.7"/>'
+          + '<polygon points="'+Math.round(m+r*.85)+','+m+' '+Math.round(m+r*.1)+','+Math.round(m-r*.12)+' '+Math.round(m+r*.3)+','+m+' '+Math.round(m+r*.1)+','+Math.round(m+r*.12)+'" fill="'+c+'" opacity="0.5"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.1)+'" fill="'+c+'"/>',
+      // 9: Skull
+      () => '<circle cx="'+m+'" cy="'+Math.round(m-r*.1)+'" r="'+Math.round(r*.6)+'" fill="'+c+'" opacity="0.85"/>'
+          + '<rect x="'+Math.round(m-r*.42)+'" y="'+Math.round(m+r*.32)+'" width="'+Math.round(r*.84)+'" height="'+Math.round(r*.5)+'" rx="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.85"/>'
+          + '<ellipse cx="'+Math.round(m-r*.22)+'" cy="'+Math.round(m-r*.18)+'" rx="'+Math.round(r*.16)+'" ry="'+Math.round(r*.2)+'" fill="'+bg+'"/>'
+          + '<ellipse cx="'+Math.round(m+r*.22)+'" cy="'+Math.round(m-r*.18)+'" rx="'+Math.round(r*.16)+'" ry="'+Math.round(r*.2)+'" fill="'+bg+'"/>'
+          + '<rect x="'+Math.round(m-r*.08)+'" y="'+Math.round(m+r*.38)+'" width="'+Math.round(r*.16)+'" height="'+Math.round(r*.36)+'" rx="2" fill="'+bg+'" opacity="0.8"/>',
+      // 10: Anchor
+      () => '<circle cx="'+m+'" cy="'+Math.round(m-r*.52)+'" r="'+Math.round(r*.2)+'" fill="none" stroke="'+c+'" stroke-width="2.5"/>'
+          + '<line x1="'+m+'" y1="'+Math.round(m-r*.32)+'" x2="'+m+'" y2="'+Math.round(m+r*.72)+'" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>'
+          + '<path d="M'+Math.round(m-r*.62)+','+Math.round(m+r*.08)+' Q'+Math.round(m-r*.62)+','+Math.round(m+r*.72)+' '+m+','+Math.round(m+r*.72)+' Q'+Math.round(m+r*.62)+','+Math.round(m+r*.72)+' '+Math.round(m+r*.62)+','+Math.round(m+r*.08)+'" fill="none" stroke="'+c+'" stroke-width="2.5" stroke-linecap="round"/>'
+          + '<line x1="'+Math.round(m-r*.66)+'" y1="'+Math.round(m+r*.08)+'" x2="'+Math.round(m+r*.66)+'" y2="'+Math.round(m+r*.08)+'" stroke="'+c+'" stroke-width="2.5" stroke-linecap="round"/>'
+          + '<circle cx="'+Math.round(m-r*.62)+'" cy="'+Math.round(m+r*.72)+'" r="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.7"/>'
+          + '<circle cx="'+Math.round(m+r*.62)+'" cy="'+Math.round(m+r*.72)+'" r="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.7"/>',
+      // 11: Phoenix wings
+      () => '<path d="M'+m+','+Math.round(m-r*.2)+' C'+Math.round(m-r*.4)+','+Math.round(m-r*.5)+' '+Math.round(m-r*.9)+','+Math.round(m-r*.4)+' '+Math.round(m-r*.88)+','+Math.round(m-r*.05)+' C'+Math.round(m-r*.78)+','+Math.round(m-r*.2)+' '+Math.round(m-r*.5)+','+Math.round(m-r*.2)+' '+Math.round(m-r*.28)+','+Math.round(m+r*.05)+' C'+Math.round(m-r*.55)+','+Math.round(m+r*.2)+' '+Math.round(m-r*.72)+','+Math.round(m+r*.55)+' '+Math.round(m-r*.54)+','+Math.round(m+r*.72)+' C'+Math.round(m-r*.4)+','+Math.round(m+r*.56)+' '+Math.round(m-r*.18)+','+Math.round(m+r*.36)+' '+m+','+Math.round(m+r*.3)+'" fill="'+c+'" opacity="0.8"/>'
+          + '<path d="M'+m+','+Math.round(m-r*.2)+' C'+Math.round(m+r*.4)+','+Math.round(m-r*.5)+' '+Math.round(m+r*.9)+','+Math.round(m-r*.4)+' '+Math.round(m+r*.88)+','+Math.round(m-r*.05)+' C'+Math.round(m+r*.78)+','+Math.round(m-r*.2)+' '+Math.round(m+r*.5)+','+Math.round(m-r*.2)+' '+Math.round(m+r*.28)+','+Math.round(m+r*.05)+' C'+Math.round(m+r*.55)+','+Math.round(m+r*.2)+' '+Math.round(m+r*.72)+','+Math.round(m+r*.55)+' '+Math.round(m+r*.54)+','+Math.round(m+r*.72)+' C'+Math.round(m+r*.4)+','+Math.round(m+r*.56)+' '+Math.round(m+r*.18)+','+Math.round(m+r*.36)+' '+m+','+Math.round(m+r*.3)+'" fill="'+c+'" opacity="0.8"/>'
+          + '<ellipse cx="'+m+'" cy="'+Math.round(m-r*.3)+'" rx="'+Math.round(r*.2)+'" ry="'+Math.round(r*.25)+'" fill="white" opacity="0.9"/>'
+          + '<polygon points="'+Math.round(m-r*.08)+','+Math.round(m-r*.55)+' '+m+','+Math.round(m-r*.7)+' '+Math.round(m+r*.08)+','+Math.round(m-r*.55)+'" fill="white" opacity="0.9"/>',
+      // 12: Galaxy spiral
+      () => '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.88)+'" fill="'+bg+'" stroke="'+c+'" stroke-width="1.5"/>'
+          + '<path d="M'+m+','+m+' C'+m+','+Math.round(m-r*.4)+' '+Math.round(m+r*.4)+','+Math.round(m-r*.6)+' '+Math.round(m+r*.6)+','+Math.round(m-r*.1)+' C'+Math.round(m+r*.7)+','+Math.round(m+r*.3)+' '+Math.round(m+r*.3)+','+Math.round(m+r*.7)+' '+m+','+Math.round(m+r*.7)+'" fill="none" stroke="'+c+'" stroke-width="2" opacity="0.9"/>'
+          + '<path d="M'+m+','+m+' C'+m+','+Math.round(m+r*.4)+' '+Math.round(m-r*.4)+','+Math.round(m+r*.6)+' '+Math.round(m-r*.6)+','+Math.round(m+r*.1)+' C'+Math.round(m-r*.7)+','+Math.round(m-r*.3)+' '+Math.round(m-r*.3)+','+Math.round(m-r*.7)+' '+m+','+Math.round(m-r*.7)+'" fill="none" stroke="'+c+'" stroke-width="1.5" opacity="0.5"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.15)+'" fill="'+c+'"/>'
+          + '<circle cx="'+m+'" cy="'+m+'" r="'+Math.round(r*.06)+'" fill="white" opacity="0.9"/>',
+      // 13: Hammer
+      () => '<rect x="'+Math.round(m-r*.56)+'" y="'+Math.round(m-r*.65)+'" width="'+Math.round(r*1.12)+'" height="'+Math.round(r*.7)+'" rx="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.9"/>'
+          + '<rect x="'+Math.round(m-r*.1)+'" y="'+Math.round(m+r*.05)+'" width="'+Math.round(r*.2)+'" height="'+Math.round(r*.78)+'" rx="'+Math.round(r*.05)+'" fill="'+c+'" opacity="0.85"/>'
+          + '<rect x="'+Math.round(m-r*.46)+'" y="'+Math.round(m-r*.56)+'" width="'+Math.round(r*.92)+'" height="'+Math.round(r*.4)+'" rx="'+Math.round(r*.08)+'" fill="none" stroke="white" stroke-width="1" opacity="0.2"/>'
+          + '<circle cx="'+m+'" cy="'+Math.round(m-r*.3)+'" r="'+Math.round(r*.1)+'" fill="white" opacity="0.3"/>',
+      // 14: Tree of life
+      () => '<line x1="'+m+'" y1="'+Math.round(m+r*.85)+'" x2="'+m+'" y2="'+Math.round(m-r*.3)+'" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>'
+          + '<path d="M'+m+','+Math.round(m-r*.28)+' C'+Math.round(m-r*.4)+','+Math.round(m-r*.58)+' '+Math.round(m-r*.82)+','+Math.round(m-r*.5)+' '+Math.round(m-r*.78)+','+Math.round(m-r*.22)+' C'+Math.round(m-r*.74)+','+Math.round(m+r*.06)+' '+Math.round(m-r*.34)+','+Math.round(m+r*.06)+' '+m+','+Math.round(m-r*.1)+'" fill="'+c+'" opacity="0.8"/>'
+          + '<path d="M'+m+','+Math.round(m-r*.28)+' C'+Math.round(m+r*.4)+','+Math.round(m-r*.58)+' '+Math.round(m+r*.82)+','+Math.round(m-r*.5)+' '+Math.round(m+r*.78)+','+Math.round(m-r*.22)+' C'+Math.round(m+r*.74)+','+Math.round(m+r*.06)+' '+Math.round(m+r*.34)+','+Math.round(m+r*.06)+' '+m+','+Math.round(m-r*.1)+'" fill="'+c+'" opacity="0.8"/>'
+          + '<path d="M'+m+','+Math.round(m+r*.08)+' C'+Math.round(m-r*.52)+','+Math.round(m-r*.3)+' '+Math.round(m-r*.88)+','+Math.round(m-r*.1)+' '+Math.round(m-r*.82)+','+Math.round(m+r*.25)+' C'+Math.round(m-r*.76)+','+Math.round(m+r*.5)+' '+Math.round(m-r*.34)+','+Math.round(m+r*.5)+' '+m+','+Math.round(m+r*.28)+'" fill="'+c+'" opacity="0.65"/>'
+          + '<path d="M'+m+','+Math.round(m+r*.08)+' C'+Math.round(m+r*.52)+','+Math.round(m-r*.3)+' '+Math.round(m+r*.88)+','+Math.round(m-r*.1)+' '+Math.round(m+r*.82)+','+Math.round(m+r*.25)+' C'+Math.round(m+r*.76)+','+Math.round(m+r*.5)+' '+Math.round(m+r*.34)+','+Math.round(m+r*.5)+' '+m+','+Math.round(m+r*.28)+'" fill="'+c+'" opacity="0.65"/>'
+          + '<ellipse cx="'+m+'" cy="'+Math.round(m+r*.85)+'" rx="'+Math.round(r*.3)+'" ry="'+Math.round(r*.1)+'" fill="'+c+'" opacity="0.5"/>',
+    ];
+
+    const inner = drawings[s]();
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'
+      + '<rect width="'+size+'" height="'+size+'" rx="'+rx+'" fill="'+bg+'"/>'
+      + inner
+      + '</svg>';
+  }
+
+  // Render icon previews into a container (for create form & modal)
+  // Render icon previews into a container (for create form & modal)
+  function renderIconPreviews(containerId, colour, selectedSeed, onSelect) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+      const div = document.createElement('div');
+      div.className = 'icon-preview' + (i === selectedSeed ? ' selected' : '');
+      div.innerHTML = generateAllianceSVG(i, colour, 60);
+      div.onclick = () => {
+        el.querySelectorAll('.icon-preview').forEach(x => x.classList.remove('selected'));
+        div.classList.add('selected');
+        onSelect(i);
+      };
+      el.appendChild(div);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── BOOT ───────────────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  async function boot() {
+    if (!myId) {
+      document.getElementById('loadingState').innerHTML = '<a href="login.html" style="color:#FFE08A;">Login</a> to view your alliance.';
+      return;
+    }
+
+    // Build create-form colour grid
+    buildColourGrid('colourGridCreate', (c) => {
+      selectedColour = c;
+      renderIconPreviews('iconPreviewCreate', selectedColour, selectedIconSeed, (i) => { selectedIconSeed = i; });
+    });
+
+    // Initial icon previews for create form
+    renderIconPreviews('iconPreviewCreate', selectedColour, selectedIconSeed, (i) => { selectedIconSeed = i; });
+
+    // Wait for Supabase
+    for (let i = 0; i < 40; i++) {
+      _db = window.supabaseClient || window.supabase;
+      if (_db && typeof _db.from === 'function') break;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (!_db) { document.getElementById('loadingState').textContent = 'Could not connect.'; return; }
+
+    // Check URL param — viewing a specific alliance?
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('id');
+    if (viewId) { await loadViewMode(viewId); return; }
+
+    await loadMyAlliance();
+  }
+
+  function buildColourGrid(containerId, onChange) {
+    const grid = document.getElementById(containerId);
+    if (!grid) return;
+    COLOURS.forEach(c => {
+      const s = document.createElement('div');
+      s.className = 'colour-swatch' + (c === selectedColour ? ' selected' : '');
+      s.style.background = c;
+      s.onclick = () => {
+        selectedColour = c;
+        grid.querySelectorAll('.colour-swatch').forEach(x => x.classList.remove('selected'));
+        s.classList.add('selected');
+        onChange(c);
+      };
+      grid.appendChild(s);
+    });
+  }
+
+  async function loadMyAlliance() {
+    document.getElementById('loadingState').style.display = 'block';
+    try {
+      const { data: me } = await _db.from('users')
+        .select('founded_alliance_id, joined_alliance_id')
+        .eq('id', myId).single();
+
+      const foundedId = me?.founded_alliance_id;
+      const joinedId  = me?.joined_alliance_id;
+
+      document.getElementById('loadingState').style.display = 'none';
+
+      if (!foundedId && !joinedId) {
+        showNone();
+        // Disable Found button if no units
+        try {
+          const { count } = await _db.from('units').select('unit_code', { count: 'exact', head: true }).eq('owner_id', myId);
+          if (!count || count === 0) {
+            const btn  = document.getElementById('foundAllianceBtn');
+            const note = document.getElementById('noUnitsNote');
+            if (btn)  { btn.disabled = true; btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; }
+            if (note) note.style.display = 'block';
+          }
+        } catch(e) {}
+        return;
+      }
+
+      if (foundedId && joinedId) {
+        // ── Player is in TWO alliances — show switcher ──
+        _myFoundedId = foundedId;
+        _myJoinedId  = joinedId;
+
+        // Load both alliance names for the tabs
+        const [fa, ja] = await Promise.all([
+          _db.from('alliances').select('name').eq('id', foundedId).single(),
+          _db.from('alliances').select('name').eq('id', joinedId).single(),
+        ]);
+        const s0 = document.getElementById('switcherName0');
+        const s1 = document.getElementById('switcherName1');
+        if (s0) s0.textContent = fa.data?.name || 'My Alliance';
+        if (s1) s1.textContent = ja.data?.name || 'Member Of';
+        const switcher = document.getElementById('allianceSwitcher');
+        if (switcher) switcher.classList.add('visible');
+
+        // Default: show founded alliance first
+        myAllianceId = foundedId;
+        myRole = 'founder';
+        await loadAllianceView(foundedId, false);
+
+      } else if (foundedId) {
+        // Founded only
+        myAllianceId = foundedId;
+        myRole = 'founder';
+        await loadAllianceView(foundedId, false);
+
+      } else {
+        // Joined only — show alliance + offer to found their own
+        myAllianceId = joinedId;
+        myRole = 'member';
+        await loadAllianceView(joinedId, false);
+
+        const foundBtn  = document.getElementById('foundOwnBtn');
+        const foundWrap = document.getElementById('foundOwnWrap');
+        if (foundWrap) foundWrap.style.display = 'block';
+        if (foundBtn) {
+          try {
+            const { count: uc } = await _db.from('units').select('unit_code', { count: 'exact', head: true }).eq('owner_id', myId);
+            foundBtn.style.display = (uc && uc > 0) ? 'inline-flex' : 'none';
+          } catch(e) { foundBtn.style.display = 'inline-flex'; }
+        }
+      }
+    } catch(e) {
+      document.getElementById('loadingState').textContent = 'Could not load alliance.';
+      console.error(e);
+    }
+  }
+
+  async function loadAllianceView(allianceId, viewOnly) {
+    const [allianceRes, membersRes] = await Promise.all([
+      _db.from('alliances').select('*').eq('id', allianceId).single(),
+      _db.from('alliance_members').select('user_id, role, status, joined_at, hide_membership').eq('alliance_id', allianceId).eq('status', 'active'),
+    ]);
+
+    const alliance = allianceRes.data;
+    if (!alliance) { showNone(); return; }
+    currentAlliance = alliance;
+
+    const memberIds = (membersRes.data || []).map(m => m.user_id);
+    const [usersRes, unitsRes] = await Promise.all([
+      memberIds.length ? _db.from('users').select('id,username,avatar,avatar_url,territory_color,founded_alliance_id').in('id', memberIds) : { data: [] },
+      memberIds.length ? _db.from('units').select('owner_id,unit_code').in('owner_id', memberIds) : { data: [] },
+    ]);
+
+    const users    = Object.fromEntries((usersRes.data || []).map(u => [u.id, u]));
+    const members  = membersRes.data || [];
+    const units    = unitsRes.data || [];
+    // Cache for transfer modal
+    _cachedMembers = members;
+    _cachedUsers   = users;
+    const territories = [...new Set(units.map(u => u.unit_code.substring(0,6)))];
+
+    // Fetch ministers for all territories the alliance controls
+    // minaliens.area_code format: LUM1, LUM8, LUM19 (no dash, no leading zero)
+    const minalienCodes = territories.map(t => {
+      const num = parseInt(t.replace('LUM-',''), 10);
+      return 'LUM' + num;
+    });
+    const { data: ministersData } = minalienCodes.length
+      ? await _db.from('minaliens').select('token_id,name,image_url,area_code').in('area_code', minalienCodes)
+      : { data: [] };
+    // Index by territory code (LUM-01 format)
+    const ministerByTerritory = {};
+    (ministersData || []).forEach(m => {
+      // convert LUM1 -> LUM-01
+      const num = parseInt(m.area_code.replace('LUM',''), 10);
+      const key = 'LUM-' + String(num).padStart(2,'0');
+      ministerByTerritory[key] = m;
+    });
+    // Build per-member minister list
+    const ministersByMember = {};
+    units.forEach(u => {
+      const terr = u.unit_code.substring(0,6);
+      const min  = ministerByTerritory[terr];
+      if (!min) return;
+      if (!ministersByMember[u.owner_id]) ministersByMember[u.owner_id] = {};
+      ministersByMember[u.owner_id][terr] = min; // deduplicate by territory
+    });
+
+    const unitsByMember = {};
+    units.forEach(u => { unitsByMember[u.owner_id] = (unitsByMember[u.owner_id] || 0) + 1; });
+
+    const ac = alliance.color || '#FFE08A';
+    const iconSvg = alliance.svg_icon || generateAllianceSVG(alliance.name.charCodeAt(0) % 8, ac, 80);
+    const suffix = viewOnly ? 'View' : '';
+
+    // Populate header
+    const headerEl = document.getElementById('allianceHeader' + suffix);
+    if (headerEl) headerEl.style.setProperty('--ac', ac);
+    const colorBar = document.getElementById('allianceColorBar' + suffix);
+    if (colorBar) colorBar.style.background = ac;
+
+    const iconEl = document.getElementById('allianceIcon' + (viewOnly ? 'View' : 'Display'));
+    if (iconEl) {
+      iconEl.innerHTML = iconSvg;
+      if (!viewOnly && myRole === 'founder') {
+        iconEl.classList.add('editable');
+        iconEl.onclick = openIconModal;
+        const hint = document.getElementById('iconEditHint');
+        if (hint) hint.style.display = 'block';
+      }
+    }
+
+    const nameEl = document.getElementById('allianceName' + (viewOnly ? 'ViewOnly' : 'View'));
+    if (nameEl) { nameEl.textContent = alliance.name; nameEl.style.color = ac; }
+    const descEl = document.getElementById('allianceDesc' + (viewOnly ? 'ViewOnly' : 'View'));
+    if (descEl) descEl.textContent = alliance.description || '';
+
+    if (!viewOnly) {
+      document.getElementById('statMembers').textContent = members.length;
+      document.getElementById('statUnits').textContent = units.length;
+      document.getElementById('statTerritories').textContent = territories.length;
+      document.getElementById('statFounded').textContent = new Date(alliance.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      const roleBadge = document.getElementById('allianceRoleBadge');
+      roleBadge.textContent = myRole === 'founder' ? '⚔️ High Marshal' : '🛡️ Member';
+      roleBadge.className = 'alliance-role-badge' + (myRole === 'founder' ? '' : ' member-badge');
+      document.getElementById('founderActions').style.display = myRole === 'founder' ? 'flex' : 'none';
+      document.getElementById('dangerBtn').textContent = myRole === 'founder' ? 'Dissolve Alliance' : 'Leave Alliance';
+      document.getElementById('pageSubtitle').textContent = myRole === 'founder' ? `You are High Marshal of ${alliance.name}` : `You are a member of ${alliance.name}`;
+      // Privacy state — only founders see the toggle button, all members see the secret badge
+      if (myRole === 'founder') _updatePrivacyUI(alliance.is_public !== false);
+      const badge = document.getElementById('secretAllianceBadge');
+      if (badge) badge.style.display = alliance.is_public === false ? 'block' : 'none';
+    } else {
+      document.getElementById('statMembersView').textContent = members.length;
+      document.getElementById('statUnitsView').textContent = units.length;
+      document.getElementById('statTerritoriesView').textContent = territories.length;
+      document.getElementById('pageSubtitle').textContent = `Viewing alliance: ${alliance.name}`;
+    }
+
+    // Member cards — fetch hide_membership alongside member data
+    const gridId = viewOnly ? 'membersGridView' : 'membersGrid';
+    document.getElementById(gridId).innerHTML = members.map(m => {
+      const u = users[m.user_id] || {};
+      const isMe = m.user_id === myId;
+      const isHidden = m.hide_membership;
+
+      // Non-member view: skip hidden members entirely
+      if (viewOnly && isHidden) return '';
+
+      const avatarHtml = resolveAvHtml(u, '👤');
+
+      // Hide toggle — only visible to the member themselves
+      const hideToggle = (!viewOnly && isMe) ? `
+        <div style="margin-top:6px;display:flex;align-items:center;gap:6px;cursor:pointer;" onclick="toggleHideMembership(${isHidden})" title="${isHidden ? 'Your membership is hidden from your profile' : 'Your membership is visible on your profile'}">
+          <span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:${isHidden ? 'rgba(190,90,255,0.7)' : 'rgba(255,255,255,0.2)'};letter-spacing:.06em;" id="hideMembershipLabel">${isHidden ? '🔒 Hidden on profile' : '👁 Visible on profile'}</span>
+        </div>` : '';
+
+      // Dim hidden members slightly for founder so they know
+      const dimStyle = (!viewOnly && isHidden && !isMe) ? 'opacity:0.45;' : '';
+
+      return `<div class="member-card" style="${dimStyle}">
+        <div class="member-avatar">${avatarHtml}</div>
+        <div>
+          <div class="member-name"><a href="profile.html?user=${u.username}">${u.username || 'Unknown'}${isMe ? ' (you)' : ''}${isHidden && !isMe ? ' 🔒' : ''}</a></div>
+          <div class="member-role">${m.role === 'founder' ? '⚔️ High Marshal' : '🛡️ Member'}</div>
+          <div class="member-units">${unitsByMember[m.user_id] || 0} units</div>
+          ${hideToggle}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Territories (own view only)
+    if (!viewOnly) {
+      document.getElementById('territoryPills').innerHTML = territories.length
+        ? territories.map(t => `<span class="territory-pill"><a href="district.html?code=${t}">${TERRITORY_NAMES[t] || t}</a></span>`).join('')
+        : '<span style="color:rgba(255,255,255,0.3);font-size:13px;">No territories yet</span>';
+    }
+
+    showPanel(viewOnly ? 'stateView' : 'stateAlliance');
+
+    // Draw minimap for own-view only
+    if (!viewOnly) {
+      setTimeout(() => drawAllianceMinimap(members, users, units), 50);
+      renderMinisterCouncil(members, users, ministersByMember);
+      renderBonusDisplay();
+    }
+  }
+
+  async function loadViewMode(allianceId) {
+    // Non-member viewing — check they're not already a member
+    document.getElementById('loadingState').style.display = 'block';
+    try {
+      const { data: me } = myId ? await _db.from('users').select('founded_alliance_id,joined_alliance_id').eq('id', myId).single() : { data: null };
+      const isMember = me && (me.founded_alliance_id === allianceId || me.joined_alliance_id === allianceId);
+      if (isMember) {
+        myAllianceId = allianceId;
+        myRole = me.founded_alliance_id === allianceId ? 'founder' : 'member';
+        document.getElementById('loadingState').style.display = 'none';
+        await loadAllianceView(allianceId, false);
+        return;
+      }
+      // Check if alliance is private before showing view-only panel
+      const { data: peek } = await _db.from('alliances').select('is_public').eq('id', allianceId).single();
+      if (peek && peek.is_public === false) {
+        document.getElementById('loadingState').style.display = 'none';
+        showPanel('stateNone');
+        document.getElementById('pageSubtitle').textContent = '🔒 This is a Secret Alliance';
+        document.getElementById('pageTitle').textContent = 'Secret Alliance';
+        // Show a simple locked message in place of content
+        const none = document.getElementById('stateNone');
+        none.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+          <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:rgba(190,90,255,0.8);margin-bottom:8px;">Secret Alliance</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.3);line-height:1.7;">This alliance has chosen to operate in secret.<br>No details are visible to non-members.</div>
+        </div>`;
+        none.classList.add('active');
+        return;
+      }
+      document.getElementById('loadingState').style.display = 'none';
+      await loadAllianceView(allianceId, true);
+    } catch(e) {
+      document.getElementById('loadingState').textContent = 'Could not load alliance.';
+    }
+  }
+
+  // ── Toggle alliance privacy (founder only) ──
+  async function toggleAlliancePrivacy() {
+    if (!myAllianceId || myRole !== 'founder') return;
+    const btn = document.getElementById('privacyToggleBtn');
+    const badge = document.getElementById('secretAllianceBadge');
+    btn.disabled = true;
+    try {
+      const isNowPrivate = currentAlliance.is_public !== false; // toggling to private
+      const { error } = await _db.from('alliances')
+        .update({ is_public: !isNowPrivate })
+        .eq('id', myAllianceId);
+      if (error) throw error;
+      currentAlliance.is_public = !isNowPrivate;
+      _updatePrivacyUI(currentAlliance.is_public);
+    } catch(e) {
+      alert('Failed to update privacy: ' + (e.message || 'please try again'));
+    }
+    btn.disabled = false;
+  }
+
+  function _updatePrivacyUI(isPublic) {
+    const btn   = document.getElementById('privacyToggleBtn');
+    const badge = document.getElementById('secretAllianceBadge');
+    if (btn) {
+      btn.textContent  = isPublic ? '🔒 Make Secret' : '🔓 Make Public';
+      btn.style.color  = isPublic ? 'rgba(190,90,255,0.8)' : 'rgba(96,255,171,0.8)';
+      btn.style.borderColor = isPublic ? 'rgba(190,90,255,0.3)' : 'rgba(96,255,171,0.3)';
+    }
+    if (badge) badge.style.display = isPublic ? 'none' : 'block';
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── CREATE ─────────────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  async function createAlliance() {
+    const name = document.getElementById('allianceName').value.trim();
+    const desc = document.getElementById('allianceDesc').value.trim();
+    const fb   = document.getElementById('createFeedback');
+    const btn  = document.getElementById('createBtn');
+
+    if (!name || name.length < 3) { showFb(fb, 'err', 'Name must be at least 3 characters.'); return; }
+    btn.disabled = true; btn.textContent = 'Creating…'; fb.style.display = 'none';
+
+    try {
+      const { data: me } = await _db.from('users').select('founded_alliance_id').eq('id', myId).single();
+      if (me?.founded_alliance_id) { showFb(fb, 'err', 'You have already founded an alliance.'); btn.disabled = false; btn.textContent = 'Found Alliance →'; return; }
+
+      const { count: unitCount } = await _db.from('units').select('unit_code', { count: 'exact', head: true }).eq('owner_id', myId);
+      if (!unitCount || unitCount === 0) { showFb(fb, 'err', 'You need to own at least one unit to found an alliance.'); btn.disabled = false; btn.textContent = 'Found Alliance →'; return; }
+
+      const { data: existing } = await _db.from('alliances').select('id').eq('name', name).maybeSingle();
+      if (existing) { showFb(fb, 'err', 'That name is already taken.'); btn.disabled = false; btn.textContent = 'Found Alliance →'; return; }
+
+      const iconSvg  = generateAllianceSVG(selectedIconSeed, selectedColour, 80);
+      const isPrivate = document.getElementById('alliancePrivateToggle')?.checked || false;
+
+      const { data: newAlliance, error: aErr } = await _db.from('alliances').insert({
+        name, description: desc || null, color: selectedColour, created_by: myId, svg_icon: iconSvg,
+        is_public: !isPrivate,
+      }).select().single();
+      if (aErr) throw aErr;
+
+      await _db.from('alliance_members').insert({
+        alliance_id: newAlliance.id, user_id: myId, role: 'founder', status: 'active', joined_at: new Date().toISOString(),
+      });
+      await _db.from('users').update({ founded_alliance_id: newAlliance.id }).eq('id', myId);
+
+      myAllianceId = newAlliance.id; myRole = 'founder';
+      showFb(fb, 'ok', 'Alliance founded!');
+      setTimeout(async () => { await loadAllianceView(newAlliance.id, false); }, 1000);
+    } catch(e) {
+      showFb(fb, 'err', 'Failed: ' + (e.message || 'please try again.'));
+      btn.disabled = false; btn.textContent = 'Found Alliance →';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── ICON EDITOR ────────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  let _pendingIconSeed = 0;
+
+  function openIconModal() {
+    _pendingIconSeed = selectedIconSeed;
+    const ac = currentAlliance?.color || selectedColour;
+    renderIconPreviews('iconModalPreviews', ac, _pendingIconSeed, (i) => { _pendingIconSeed = i; });
+    document.getElementById('iconFeedback').style.display = 'none';
+    document.getElementById('iconModal').classList.add('open');
+  }
+
+  function closeIconModal() { document.getElementById('iconModal').classList.remove('open'); }
+
+  async function saveIcon() {
+    if (!currentAlliance || myRole !== 'founder') return;
+    const ac = currentAlliance.color || '#FFE08A';
+    const newSvg = generateAllianceSVG(_pendingIconSeed, ac, 80);
+    const fb = document.getElementById('iconFeedback');
+    try {
+      await _db.from('alliances').update({ svg_icon: newSvg }).eq('id', myAllianceId);
+      currentAlliance.svg_icon = newSvg;
+      selectedIconSeed = _pendingIconSeed;
+      document.getElementById('allianceIconDisplay').innerHTML = newSvg;
+      showFb(fb, 'ok', 'Icon saved!');
+      setTimeout(closeIconModal, 900);
+    } catch(e) { showFb(fb, 'err', 'Could not save icon.'); }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── INVITE PLAYER ──────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  const PLAYER_DROPDOWN_LIMIT = 50;
+
+  async function openInviteModal() {
+    selectedInvitePlayer = null;
+    document.getElementById('playerSearchInput').value = '';
+    document.getElementById('sendInviteBtn').disabled = true;
+    document.getElementById('inviteFeedback').style.display = 'none';
+    document.getElementById('inviteModal').classList.add('open');
+
+    if (!_allPlayers) {
+      document.getElementById('playerResults').innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 10px;">Loading players…</div>';
+      const { data } = await _db.from('users')
+        .select('id, username, avatar, avatar_url, founded_alliance_id, joined_alliance_id')
+        .not('username', 'is', null)
+        .order('username');
+      _allPlayers = data || [];
+    }
+
+    const eligible = _allPlayers.filter(p => p.id !== myId);
+    const useDropdown = eligible.length <= PLAYER_DROPDOWN_LIMIT;
+    document.getElementById('playerSearchInput').placeholder = useDropdown ? 'Filter by username…' : 'Search by username…';
+    renderPlayerList('');
+  }
+
+  function closeInviteModal() { document.getElementById('inviteModal').classList.remove('open'); }
+
+  function renderPlayerList(query) {
+    const results = document.getElementById('playerResults');
+    if (!_allPlayers) return;
+    const q = (query || '').toLowerCase().trim();
+    const eligible = _allPlayers.filter(p => p.id !== myId);
+    const useDropdown = eligible.length <= PLAYER_DROPDOWN_LIMIT;
+
+    if (!useDropdown && q.length < 2) {
+      results.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 10px;">Type at least 2 characters to search…</div>';
+      return;
+    }
+
+    let players = eligible.slice();
+    if (q) players = players.filter(p => (p.username || '').toLowerCase().includes(q));
+
+    if (!players.length) {
+      results.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 10px;">No players found</div>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
+      var avatarHtml = resolveAvHtml(p, '👤');
+      var hasTwo = p.founded_alliance_id && p.joined_alliance_id;
+      var inThisAlliance = p.founded_alliance_id === myAllianceId || p.joined_alliance_id === myAllianceId;
+      var disabled = hasTwo || inThisAlliance;
+      var note = inThisAlliance ? '· already a member' : (hasTwo ? '· in two alliances' : 'Available');
+      var safeUser = (p.username || '').replace(/'/g, "\\'");
+      var onclick = disabled ? '' : ("selectPlayer('" + p.id + "','" + safeUser + "',this)");
+      html += '<div class="player-result" onclick="' + onclick + '" style="' + (disabled ? 'opacity:.45;cursor:not-allowed;' : 'cursor:pointer;') + '">'
+            + '<div class="pr-avatar">' + avatarHtml + '</div>'
+            + '<div><div class="pr-name">' + (p.username || 'Unknown') + '</div>'
+            + '<div class="pr-units">' + note + '</div></div>'
+            + '</div>';
+    }
+    results.innerHTML = html;
+  }
+
+  function searchPlayers(query) { renderPlayerList(query); }
+
+    function selectPlayer(id, username, el) {
+    selectedInvitePlayer = { id, username };
+    document.querySelectorAll('.player-result').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('sendInviteBtn').disabled = false;
+  }
+
+  async function sendInvite() {
+    if (!selectedInvitePlayer || !myAllianceId || !currentAlliance) return;
+    const fb = document.getElementById('inviteFeedback');
+    const btn = document.getElementById('sendInviteBtn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+
+    try {
+      const { error } = await _db.from('messages').insert({
+        sender_id: myId,
+        recipient_id: selectedInvitePlayer.id,
+        template_key: 'alliance_invite',
+        context_json: {
+          alliance_id: myAllianceId,
+          alliance_name: currentAlliance.name,
+          member_count: document.getElementById('statMembers').textContent,
+          unit_count: document.getElementById('statUnits').textContent,
+          default_bonus: currentAlliance.joining_bonus || 0,
+          invite_bonus: parseInt(document.getElementById('inviteBonusInput').value, 10) || 0,
+        },
+        read: false, dismissed: false,
+      });
+      if (error) throw error;
+      showFb(fb, 'ok', `Invite sent to ${selectedInvitePlayer.username}!`);
+      btn.textContent = 'Sent ✓';
+      setTimeout(closeInviteModal, 1200);
+    } catch(e) {
+      showFb(fb, 'err', 'Failed to send invite.'); btn.disabled = false; btn.textContent = 'Send Invite →';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── REQUEST TO JOIN ────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  async function requestToJoin() {
+    if (!currentAlliance || !myId) return;
+    const fb = document.getElementById('requestFeedback');
+    const btn = document.getElementById('requestJoinBtn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+
+    try {
+      // Check user isn't already in two alliances
+      const { data: me } = await _db.from('users').select('founded_alliance_id,joined_alliance_id').eq('id', myId).single();
+      if (me?.founded_alliance_id && me?.joined_alliance_id) {
+        showFb(fb, 'err', 'You are already in two alliances. Leave one before requesting to join another.');
+        btn.disabled = false; btn.textContent = '⚔️ Request to Join'; return;
+      }
+
+      // Check user owns at least one unit
+      const { count: unitCount } = await _db.from('units').select('unit_code', { count: 'exact', head: true }).eq('owner_id', myId);
+      if (!unitCount || unitCount === 0) {
+        showFb(fb, 'err', 'You need to own at least one unit in Luminaea to join an alliance.');
+        btn.disabled = false; btn.textContent = '⚔️ Request to Join'; return;
+      }
+
+      // Send a message to the alliance founder
+      const { error } = await _db.from('messages').insert({
+        sender_id: myId,
+        recipient_id: currentAlliance.created_by,
+        template_key: 'alliance_seek',
+        context_json: { alliance_id: currentAlliance.id, alliance_name: currentAlliance.name },
+        read: false, dismissed: false,
+      });
+      if (error) throw error;
+      showFb(fb, 'ok', `Request sent to the High Marshal of ${currentAlliance.name}!`);
+      btn.textContent = 'Request Sent ✓';
+    } catch(e) {
+      showFb(fb, 'err', 'Failed to send request.'); btn.disabled = false; btn.textContent = '⚔️ Request to Join';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── LEAVE / DISSOLVE ───────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  function handleDanger() {
+    if (!myAllianceId || !currentAlliance) return;
+    const isFounder = myRole === 'founder';
+    const allianceName = currentAlliance.name || 'this alliance';
+
+    document.getElementById('dangerModalTitle').textContent = isFounder ? '⚠️ Dissolve Alliance' : '⚠️ Leave Alliance';
+    document.getElementById('dangerFeedback').style.display = 'none';
+    document.getElementById('dangerConfirmInput').value = '';
+
+    if (isFounder) {
+      document.getElementById('dangerModalSub').innerHTML =
+        'This will permanently dissolve <strong>' + allianceName + '</strong> and remove all members. This cannot be undone.';
+      document.getElementById('dangerConfirmLabel').textContent = 'Type the alliance name to confirm';
+      document.getElementById('dangerConfirmInput').placeholder = allianceName;
+      document.getElementById('dangerNameWrap').style.display = 'block';
+      document.getElementById('dangerLeaveOptions').style.display = 'none';
+      document.getElementById('dangerFounderBtns').style.display = 'flex';
+      document.getElementById('dangerConfirmBtn').disabled = true;
+      document.getElementById('dangerConfirmBtn').textContent = 'Dissolve Alliance';
+    } else {
+      document.getElementById('dangerModalSub').innerHTML =
+        'You are leaving <strong>' + allianceName + '</strong>. You can rejoin later if the High Marshal invites you again.';
+      document.getElementById('dangerNameWrap').style.display = 'none';
+      document.getElementById('dangerFounderBtns').style.display = 'none';
+      document.getElementById('dangerLeaveOptions').style.display = 'block';
+    }
+
+    document.getElementById('dangerModal').classList.add('open');
+  }
+
+  function checkDangerInput() {
+    if (!currentAlliance) return;
+    const val = document.getElementById('dangerConfirmInput').value.trim();
+    document.getElementById('dangerConfirmBtn').disabled = (val !== currentAlliance.name);
+  }
+
+  function closeDangerModal() {
+    document.getElementById('dangerModal').classList.remove('open');
+  }
+
+  async function executeDanger(silent) {
+    if (!myAllianceId) return;
+    const btn = document.getElementById(myRole === 'founder' ? 'dangerConfirmBtn' : (silent ? 'leaveSilentBtn' : 'leavePublicBtn'));
+    const fb  = document.getElementById('dangerFeedback');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
+    try {
+      if (myRole === 'founder') {
+        // Dissolve — remove all members, clear references, delete alliance
+        await _db.from('alliance_members').delete().eq('alliance_id', myAllianceId);
+        await _db.from('users').update({ founded_alliance_id: null }).eq('founded_alliance_id', myAllianceId);
+        await _db.from('users').update({ joined_alliance_id: null }).eq('joined_alliance_id', myAllianceId);
+        await _db.from('alliances').delete().eq('id', myAllianceId);
+      } else {
+        // Member leaving
+        const allianceName = currentAlliance?.name || 'the alliance';
+        const myUsername   = _session?.user?.username || 'A member';
+
+        if (!silent) {
+          // Post an alert to all remaining members
+          const remainingMembers = (_cachedMembers || []).filter(m => m.user_id !== myId);
+          await Promise.all(remainingMembers.map(m =>
+            _db.from('minister_alerts').insert({
+              user_id:    m.user_id,
+              alert_type: 'alliance_left',
+              message:    `${myUsername} has left ${allianceName}.`,
+              action_url: 'alliance.html',
+              share_text: `${myUsername} has left ${allianceName}`,
+              created_at: new Date().toISOString(),
+            })
+          ));
+        }
+
+        await _db.from('alliance_members').delete().eq('alliance_id', myAllianceId).eq('user_id', myId);
+        // Clear the correct column (founded or joined)
+        const col = myRole === 'founder' ? 'founded_alliance_id' : 'joined_alliance_id';
+        await _db.from('users').update({ [col]: null }).eq('id', myId);
+      }
+      myAllianceId = null; myRole = null; currentAlliance = null;
+      closeDangerModal();
+      showNone();
+    } catch(e) {
+      if (fb) {
+        fb.className = 'form-feedback form-err';
+        fb.textContent = 'Could not complete: ' + (e.message || 'please try again.');
+        fb.style.display = 'block';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = myRole === 'founder' ? 'Dissolve Alliance' : (silent ? '🤫 Leave Silently' : '📢 Leave with Announcement');
+      }
+    }
+  }
+
+  // ── Toggle own membership visibility ──
+  async function toggleHideMembership(currentlyHidden) {
+    if (!myAllianceId || !myId) return;
+    const newHidden = !currentlyHidden;
+    try {
+      const { error } = await _db.from('alliance_members')
+        .update({ hide_membership: newHidden })
+        .eq('alliance_id', myAllianceId)
+        .eq('user_id', myId);
+      if (error) throw error;
+      // Update label without full reload
+      const lbl = document.getElementById('hideMembershipLabel');
+      if (lbl) {
+        lbl.textContent = newHidden ? '🔒 Hidden on profile' : '👁 Visible on profile';
+        lbl.style.color = newHidden ? 'rgba(190,90,255,0.7)' : 'rgba(255,255,255,0.2)';
+        lbl.parentElement.onclick = () => toggleHideMembership(newHidden);
+      }
+      // Update cached member
+      if (_cachedMembers) {
+        const me = _cachedMembers.find(m => m.user_id === myId);
+        if (me) me.hide_membership = newHidden;
+      }
+    } catch(e) {
+      alert('Could not update visibility: ' + (e.message || 'please try again'));
+    }
+  }
+
+  function showPanel(id) {
+    ['stateNone','stateCreate','stateAlliance','stateView'].forEach(p => {
+      document.getElementById(p).classList.toggle('active', p === id);
+    });
+    document.getElementById('loadingState').style.display = 'none';
+  }
+  function showNone() { document.getElementById('pageSubtitle').textContent = 'Found an alliance or accept an invite.'; showPanel('stateNone'); }
+  function showCreate() {
+    // If already in an alliance as member, Cancel should go back to it not to stateNone
+    const cancelBtn = document.getElementById('createCancelBtn');
+    if (cancelBtn) {
+      if (myAllianceId && myRole === 'member') {
+        cancelBtn.onclick = function() { loadAllianceView(myAllianceId, false); };
+      } else {
+        cancelBtn.onclick = showNone;
+      }
+    }
+    showPanel('stateCreate');
+  }
+  function showFb(el, type, msg) { el.className = 'form-feedback form-' + type; el.textContent = msg; el.style.display = 'block'; }
+
+
+  // ═══════════════════════════════════════════════════
+  // ── MINISTER COUNCIL ───────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  const TERRITORY_NAMES_MIN = {
+    'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+    'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+    'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+    'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+    'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+  };
+
+  function renderMinisterCouncil(members, users, ministersByMember) {
+    var container = document.getElementById('ministerMembersList');
+    if (!container) return;
+
+    var html = '';
+    var hasAny = false;
+
+    members.forEach(function(m) {
+      if (m.status !== 'active') return;
+      var u = users[m.user_id] || {};
+      var memberMins = ministersByMember[m.user_id] || {};
+      var minList = Object.entries(memberMins); // [[territory, ministerObj], ...]
+      if (!minList.length) return;
+      hasAny = true;
+
+      html += '<div class="minister-member-row">';
+      html += '<div class="minister-member-name">' + (u.username || 'Unknown') + '</div>';
+      html += '<div class="minister-cards-row">';
+
+      minList.forEach(function(entry) {
+        var terr = entry[0];
+        var min  = entry[1];
+        var imgSrc = min.image_url || '';
+        // Ensure absolute URL
+        if (imgSrc && imgSrc.startsWith('/')) imgSrc = 'https://play.minaliens.xyz' + imgSrc;
+        var terrName = TERRITORY_NAMES_MIN[terr] || terr;
+
+        var cardUrl = min.name ? 'minalien.html?id=' + encodeURIComponent(min.name.toLowerCase()) : null;
+        var cardOpen  = cardUrl ? '<a href="' + cardUrl + '" style="color:inherit;text-decoration:none;">' : '';
+        var cardClose = cardUrl ? '</a>' : '';
+
+        html += '<div class="minister-card">';
+        html += cardOpen;
+        if (imgSrc) {
+          html += '<img class="minister-card-img" src="' + imgSrc + '"'
+               + ' alt="' + (min.name || '') + '"'
+               + ' style="display:block;"'
+               + ' onload="this.style.opacity=1" onerror="this.remove()">';
+        }
+        html += '<div class="minister-card-name">' + (min.name || '—') + '</div>';
+        html += cardClose;
+        html += '<div class="minister-card-terr">' + terrName + '</div>';
+        html += '</div>';
+      });
+
+      html += '</div></div>';
+    });
+
+    container.innerHTML = hasAny
+      ? html
+      : '<div class="minister-empty">No ministers found — alliance members need units in claimed territories.</div>';
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── ALLIANCE MINIMAP ───────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  const _MAP_HEXES = {
+    "LUM-01":[[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2],[3,2],[1,3],[2,3],[3,3],[2,4],[3,4],[4,4],[3,5]],
+    "LUM-02":[[5,1],[6,1],[4,2],[5,2],[6,2],[7,2],[4,3],[5,3],[6,3],[7,3],[8,3],[5,4],[6,4],[7,4],[8,4],[7,5]],
+    "LUM-03":[[-5,1],[-4,1],[-5,2],[-6,3],[-5,3],[-4,3],[-5,4],[-10,8],[-9,8],[-8,8],[-10,9],[-9,9],[-7,7],[-8,7],[-9,7],[-10,7]],
+    "LUM-04":[[-2,3],[-1,3],[0,3],[-2,4],[-1,4],[0,4],[1,4],[-2,5],[-1,5],[0,5],[1,5],[-1,6],[0,6],[1,6],[0,7],[1,7]],
+    "LUM-05":[[-11,7],[-12,7],[-11,8],[-11,9],[-12,10],[-13,11],[-14,11],[-14,10],[-13,9],[-13,8],[-13,7],[-14,8],[-14,7],[-13,6],[-14,6],[-13,5]],
+    "LUM-06":[[-7,10],[-6,10],[-5,10],[-7,11],[-6,11],[-5,11],[-4,11],[-7,12],[-6,12],[-5,12],[-4,12],[-6,13],[-5,13],[-4,13],[-5,14],[-4,14]],
+    "LUM-07":[[2,8],[3,8],[4,8],[2,9],[3,9],[4,9],[5,9],[2,10],[3,10],[4,10],[5,10],[3,11],[4,11],[5,11],[4,12],[5,12]],
+    "LUM-08":[[6,10],[7,10],[8,10],[9,10],[6,11],[7,11],[8,11],[9,11],[6,12],[7,12],[8,12],[9,12],[7,13],[8,13],[9,13],[8,14]],
+    "LUM-09":[[4,17],[2,18],[3,18],[4,18],[5,18],[2,19],[3,19],[4,19],[5,19],[2,20],[3,20],[4,20],[5,20],[3,21],[4,21],[3,22]],
+    "LUM-10":[[10,10],[10,11],[11,11],[10,12],[11,12],[12,11],[10,13],[11,13],[10,14],[11,14],[12,14],[10,15],[11,15],[12,15],[11,16],[12,16]],
+    "LUM-11":[[0,13],[1,13],[2,13],[3,13],[0,14],[1,14],[2,14],[3,14],[1,15],[2,15],[3,15],[4,15],[2,16],[3,16],[4,16],[3,17]],
+    "LUM-12":[[-5,16],[-5,15],[-4,15],[-3,15],[-2,14],[-1,14],[-4,16],[-4,17],[-3,17],[-2,16],[-1,16],[-1,17],[-2,18],[-3,16],[-1,18],[-6,15]],
+    "LUM-13":[[-9,16],[-9,17],[-10,17],[-10,18],[-11,19],[-10,19],[-11,20],[-11,21],[-10,21],[-9,21],[-10,22],[-11,22],[-12,22],[-12,23],[-13,23],[-14,23]],
+    "LUM-14":[[9,14],[8,15],[9,15],[8,16],[7,17],[8,17],[7,18],[6,18],[6,17],[5,17],[6,19],[6,20],[5,21],[4,22],[3,23],[2,23]],
+    "LUM-15":[[-10,16],[-11,16],[-12,16],[-12,17],[-11,17],[-13,18],[-12,18],[-11,18],[-12,19],[-13,20],[-14,20],[-14,21],[-14,22],[-13,22],[-15,23],[-15,22]],
+    "LUM-16":[[-3,21],[-2,20],[-1,19],[0,18],[1,18],[0,19],[1,19],[1,20],[0,17],[1,17],[2,17],[2,21],[0,21],[-1,22],[-2,23],[-1,23]],
+    "LUM-17":[[-8,16],[-7,16],[-6,16],[-8,17],[-7,17],[-6,17],[-5,17],[-7,18],[-6,18],[-5,18],[-4,18],[-6,19],[-5,19],[-4,19],[-5,20],[-4,20]],
+    "LUM-18":[[-7,4],[-6,4],[-7,5],[-6,5],[-5,5],[-7,6],[-6,6],[-5,6],[-6,7],[-5,7],[-4,7],[-6,8],[-5,8],[-4,8],[-5,9],[-4,9]],
+    "LUM-19":[[-3,6],[-2,7],[-3,8],[-2,9],[-3,10],[-2,11],[-3,12],[-2,13],[-3,14],[-2,15],[-1,15],[-2,17],[-3,18],[-2,19],[-3,20],[-2,21]],
+    "LUM-20":[[-11,10],[-10,10],[-9,10],[-9,11],[-10,12],[-10,13],[-9,13],[-8,13],[-7,13],[-13,13],[-12,12],[-13,12],[-14,13],[-14,14],[-13,14],[-12,14]],
+  };
+
+  const _MAP_LETTERS = 'ABCDEFGHIJKLMNOP';
+  const _MAP_H = 8;
+  const _MAP_OX = 168.4;
+  const _MAP_OY = 16.0;
+
+  function _mapAxialToPixel(q, r) {
+    return {
+      x: _MAP_H * 1.7320508 * (q + r / 2) + _MAP_OX,
+      y: _MAP_H * 1.5 * r + _MAP_OY
+    };
+  }
+
+  function _drawHex(ctx, cx, cy, size, fill, stroke, strokeW) {
+    ctx.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i - 30);
+      var x = cx + (size - 0.5) * Math.cos(a);
+      var y = cy + (size - 0.5) * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = strokeW || 0.5; ctx.stroke(); }
+  }
+
+  function drawAllianceMinimap(members, users, units) {
+    var canvas = document.getElementById('allianceMinimap');
+    if (!canvas) return;
+
+    // Build unit → owner colour map
+    var unitColors = {};
+    var memberColors = {};
+    members.forEach(function(m) {
+      var u = users[m.user_id];
+      if (!u) return;
+      memberColors[m.user_id] = u.territory_color || '#FFE08A';
+    });
+    units.forEach(function(u) {
+      if (memberColors[u.owner_id]) unitColors[u.unit_code] = memberColors[u.owner_id];
+    });
+
+    var W = 462, H = 308;
+    canvas.width = W;
+    canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#080810';
+    ctx.fillRect(0, 0, W, H);
+
+    for (var spaceCode in _MAP_HEXES) {
+      var hexes = _MAP_HEXES[spaceCode];
+      for (var i = 0; i < hexes.length; i++) {
+        var q = hexes[i][0], r = hexes[i][1];
+        var unitCode = spaceCode + '-' + _MAP_LETTERS[i];
+        var pos = _mapAxialToPixel(q, r);
+        var owned = unitColors[unitCode];
+        if (owned) {
+          _drawHex(ctx, pos.x, pos.y, _MAP_H, owned + 'CC', owned, 0.8);
+        } else {
+          _drawHex(ctx, pos.x, pos.y, _MAP_H, '#12121e', '#1e1e2e', 0.4);
+        }
+      }
+    }
+
+    var legend = document.getElementById('minimapLegend');
+    var statEl  = document.getElementById('minimapStats');
+    if (legend) {
+      legend.innerHTML = Object.keys(memberColors).map(function(uid) {
+        var u = users[uid];
+        var uname = u ? u.username : 'Unknown';
+        var count = units.filter(function(un) { return un.owner_id === uid; }).length;
+        return '<div class="legend-item">'
+          + '<div class="legend-dot" style="background:' + memberColors[uid] + ';"></div>'
+          + uname + ' (' + count + ')'
+          + '</div>';
+      }).join('');
+    }
+    var totalOwned = Object.keys(unitColors).length;
+    if (statEl) statEl.textContent = totalOwned + ' / 320 units';
+  }
+
+
+  // ═══════════════════════════════════════════════════
+  // ── JOINING BONUS ──────────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  function renderBonusDisplay() {
+    var bonus = (currentAlliance && currentAlliance.joining_bonus) ? Number(currentAlliance.joining_bonus) : 0;
+    var amountEl = document.getElementById('bonusAmount');
+    var editBtn  = document.getElementById('bonusEditBtn');
+    if (amountEl) amountEl.textContent = bonus.toLocaleString() + ' ARKIS';
+    if (editBtn)  editBtn.style.display = myRole === 'founder' ? 'inline-flex' : 'none';
+  }
+
+  function openBonusEdit() {
+    var bonus = (currentAlliance && currentAlliance.joining_bonus) ? Number(currentAlliance.joining_bonus) : 0;
+    document.getElementById('bonusValueInput').value = bonus;
+    document.getElementById('bonusEditWrap').style.display = 'block';
+    document.getElementById('bonusEditBtn').style.display  = 'none';
+    document.getElementById('bonusFeedback').style.display = 'none';
+  }
+
+  function cancelBonusEdit() {
+    document.getElementById('bonusEditWrap').style.display = 'none';
+    document.getElementById('bonusEditBtn').style.display  = myRole === 'founder' ? 'inline-flex' : 'none';
+  }
+
+  async function saveBonus() {
+    var val = parseInt(document.getElementById('bonusValueInput').value, 10) || 0;
+    if (val < 0) val = 0;
+    var fb = document.getElementById('bonusFeedback');
+    try {
+      var { error } = await _db.from('alliances').update({ joining_bonus: val }).eq('id', myAllianceId);
+      if (error) throw error;
+      currentAlliance.joining_bonus = val;
+      renderBonusDisplay();
+      cancelBonusEdit();
+    } catch(e) {
+      showFb(fb, 'err', 'Could not save bonus: ' + (e.message || 'try again.'));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── TRANSFER LEADERSHIP ────────────────────────────
+  // ═══════════════════════════════════════════════════
+
+  var _cachedMembers = null;
+  var _cachedUsers   = null;
+  var _transferTargetId   = null;
+  var _transferTargetName = null;
+
+  function openTransferModal() {
+    _transferTargetId = null; _transferTargetName = null;
+    document.getElementById('transferConfirmInput').value = '';
+    document.getElementById('transferConfirmInput').style.display = 'none';
+    document.getElementById('transferConfirmLabel').style.display = 'none';
+    document.getElementById('transferConfirmBtn').disabled = true;
+    document.getElementById('transferFeedback').style.display = 'none';
+
+    // List current members (excluding self)
+    var list = document.getElementById('transferPlayerList');
+    if (!list) return;
+    // Re-use cached members from loadAllianceView via _cachedMembers
+    if (!_cachedMembers || !_cachedUsers) {
+      list.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px;">Reload the page and try again.</div>';
+    } else {
+      var others = _cachedMembers.filter(function(m) { return m.user_id !== myId && m.status === 'active'; });
+      if (!others.length) {
+        list.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px;">No other members to transfer to.</div>';
+      } else {
+        var html = '';
+        others.forEach(function(m) {
+          var u = _cachedUsers[m.user_id] || {};
+          var alreadyFounder = !!u.founded_alliance_id;
+          var avatarHtml = resolveAvHtml(u, '👤');
+          if (alreadyFounder) {
+            html += '<div class="player-result" style="opacity:.4;cursor:not-allowed;">'
+              + '<div class="pr-avatar">' + avatarHtml + '</div>'
+              + '<div><div class="pr-name">' + (u.username || 'Unknown') + '</div>'
+              + '<div class="pr-units">leads their own alliance</div></div>'
+              + '</div>';
+          } else {
+            html += '<div class="player-result" style="cursor:pointer;" data-uid="' + m.user_id + '" data-uname="' + (u.username||'').replace(/"/g,'&quot;') + '" onclick="selectTransferTarget(this.dataset.uid,this.dataset.uname,this)">'
+              + '<div class="pr-avatar">' + avatarHtml + '</div>'
+              + '<div><div class="pr-name">' + (u.username || 'Unknown') + '</div>'
+              + '<div class="pr-units">' + m.role + '</div></div>'
+              + '</div>';
+          }
+        });
+        list.innerHTML = html;
+      }
+    }
+    document.getElementById('transferModal').classList.add('open');
+  }
+
+  function selectTransferTarget(userId, username, el) {
+    _transferTargetId   = userId;
+    _transferTargetName = username;
+    document.querySelectorAll('#transferPlayerList .player-result').forEach(function(x) { x.classList.remove('selected'); });
+    el.classList.add('selected');
+    // Show confirm input
+    var inp = document.getElementById('transferConfirmInput');
+    var lbl = document.getElementById('transferConfirmLabel');
+    inp.placeholder = username;
+    inp.value = '';
+    inp.style.display = 'block';
+    lbl.style.display = 'block';
+    document.getElementById('transferConfirmBtn').disabled = true;
+  }
+
+  function checkTransferInput() {
+    var val = document.getElementById('transferConfirmInput').value.trim();
+    document.getElementById('transferConfirmBtn').disabled = (val !== _transferTargetName);
+  }
+
+  function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('open');
+  }
+
+  async function executeTransfer() {
+    if (!_transferTargetId || !myAllianceId) return;
+    var btn = document.getElementById('transferConfirmBtn');
+    var fb  = document.getElementById('transferFeedback');
+    btn.disabled = true; btn.textContent = 'Transferring…';
+
+    try {
+      // Update roles in alliance_members
+      await _db.from('alliance_members').update({ role: 'member' }).eq('alliance_id', myAllianceId).eq('user_id', myId);
+      await _db.from('alliance_members').update({ role: 'founder' }).eq('alliance_id', myAllianceId).eq('user_id', _transferTargetId);
+
+      // Update alliances.created_by
+      await _db.from('alliances').update({ created_by: _transferTargetId }).eq('id', myAllianceId);
+
+      // Swap founded/joined on both users
+      // Old founder: had founded_alliance_id — give them joined_alliance_id instead
+      await _db.from('users').update({ founded_alliance_id: null, joined_alliance_id: myAllianceId }).eq('id', myId);
+      // New founder: had joined_alliance_id — give them founded_alliance_id
+      await _db.from('users').update({ joined_alliance_id: null, founded_alliance_id: myAllianceId }).eq('id', _transferTargetId);
+
+      showFb(fb, 'ok', _transferTargetName + ' is now High Marshal of your alliance!');
+      myRole = 'member';
+      btn.textContent = 'Done';
+      setTimeout(function() {
+        closeTransferModal();
+        // Reload the view to reflect new roles
+        loadAllianceView(myAllianceId, false);
+      }, 1200);
+    } catch(e) {
+      showFb(fb, 'err', 'Transfer failed: ' + (e.message || 'try again.'));
+      btn.disabled = false; btn.textContent = 'Transfer Leadership';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ── BONUS ON ACCEPT (called from alerts.html) ──────
+  // ═══════════════════════════════════════════════════
+  // The joinAlliance function in alerts.html handles the
+  // ARKIS transfer — context_json carries the bonus amount.
+
+  async function switchAlliance(idx) {
+    if (!_myFoundedId || !_myJoinedId) return;
+    const targetId   = idx === 0 ? _myFoundedId : _myJoinedId;
+    const targetRole = idx === 0 ? 'founder' : 'member';
+    document.getElementById('switcherTab0').classList.toggle('active', idx === 0);
+    document.getElementById('switcherTab1').classList.toggle('active', idx === 1);
+    myAllianceId = targetId;
+    myRole = targetRole;
+    await loadAllianceView(targetId, false);
+  }
+
+  // Expose globals
+
+  window.switchAlliance  = switchAlliance;
+  window.showCreate      = showCreate;
+  window.showNone        = showNone;
+  window.createAlliance  = createAlliance;
+  window.handleDanger      = handleDanger;
+  window.checkDangerInput  = checkDangerInput;
+  window.closeDangerModal  = closeDangerModal;
+  window.executeDanger     = executeDanger;
+  window.openIconModal   = openIconModal;
+  window.closeIconModal  = closeIconModal;
+  window.saveIcon        = saveIcon;
+  window.openInviteModal    = openInviteModal;
+  window.openTransferModal  = openTransferModal;
+  window.selectTransferTarget = selectTransferTarget;
+  window.checkTransferInput = checkTransferInput;
+  window.closeTransferModal = closeTransferModal;
+  window.executeTransfer    = executeTransfer;
+  window.openBonusEdit      = openBonusEdit;
+  window.cancelBonusEdit    = cancelBonusEdit;
+  window.saveBonus          = saveBonus;
+  window.closeInviteModal = closeInviteModal;
+  window.searchPlayers   = searchPlayers;
+  window.selectPlayer    = selectPlayer;
+  window.sendInvite      = sendInvite;
+  window.requestToJoin         = requestToJoin;
+  window.toggleAlliancePrivacy = toggleAlliancePrivacy;
+  window.toggleHideMembership  = toggleHideMembership;
+  window.executeDanger         = executeDanger;
+
+  boot();
+</script>
+
+</body>
+</html>

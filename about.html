@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Story · MINALIA</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="auth_auro.js"></script>
+  <style>
+    body::after { display: none !important; }
+    .earth-footer { display: none !important; }
+    .stars, .twinkling { display: none !important; }
+
+    /* Reuse all ob- classes from login.html */
+    #about-wrap {
+      position: relative;
+      z-index: 10;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding-top: 130px;
+    }
+
+    .ob-content {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 820px;
+      padding: 80px 24px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+
+    .ob-step {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .ob-step.active { display: flex; }
+    .ob-step.visible { opacity: 1; transform: translateY(0); }
+
+    .ob-progress {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 30;
+      opacity: 1;
+    }
+    .ob-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,224,138,0.25);
+      transition: all 0.3s ease;
+    }
+    .ob-dot.active {
+      background: #FFE08A;
+      box-shadow: 0 0 8px rgba(255,224,138,0.6);
+      width: 20px;
+      border-radius: 3px;
+    }
+    .ob-dot.done { background: rgba(255,224,138,0.5); }
+
+    .ob-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,224,138,0.5);
+      margin-bottom: 16px;
+    }
+    .ob-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-align: center;
+      background: linear-gradient(135deg, #FFE08A 0%, #FFF4D6 50%, #FFD060 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 30px rgba(255,224,138,0.3));
+    }
+    .ob-title.small {
+      font-size: clamp(22px, 4vw, 42px);
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    @media (max-width: 700px) { .ob-title.small { white-space: normal; } }
+
+    .ob-lore-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .ob-lore-line {
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      line-height: 2.0;
+      color: rgba(255,255,255,0.0);
+      text-align: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: color 0.4s ease;
+    }
+    .ob-lore-line:last-child { border-bottom: none; }
+    .ob-lore-line strong, .ob-lore-line em { color: inherit; transition: color 0.4s ease; }
+    .ob-lore-line.revealed { color: rgba(255,255,255,0.78); }
+    .ob-lore-line.revealed strong { color: rgba(255,224,138,0.95); font-weight: 600; }
+    .ob-lore-line.revealed em { color: rgba(255,255,255,0.9); font-style: normal; }
+    .ob-lore-line--closing { font-style: italic; }
+    .ob-lore-line--closing.revealed { color: rgba(255,224,138,0.7) !important; }
+
+    .ob-btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .ob-btn-row.revealed { opacity: 1; }
+
+    .ob-btn {
+      padding: 14px 36px;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+      min-width: 160px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ob-btn-primary {
+      background: linear-gradient(135deg, rgba(255,224,138,0.25), rgba(255,224,138,0.15));
+      border: 1.5px solid rgba(255,224,138,0.5);
+      color: #FFE08A;
+    }
+    .ob-btn-primary:hover {
+      background: linear-gradient(135deg, rgba(255,224,138,0.35), rgba(255,224,138,0.22));
+      border-color: rgba(255,224,138,0.8);
+      box-shadow: 0 4px 20px rgba(255,224,138,0.2);
+      transform: translateY(-2px);
+    }
+    .ob-btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.4);
+    }
+    .ob-btn-ghost:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.7);
+    }
+
+
+    /* Final step */
+    .ob-final-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      max-width: 480px;
+      margin-bottom: 36px;
+    }
+    .ob-final-sub strong { color: rgba(255,224,138,0.85); font-weight: 600; }
+
+  </style>
+</head>
+<body>
+<!-- WIP Banner -->
+<div style="
+  position: fixed; top: 92px; left: 0; right: 0; z-index: 200;
+  background: rgba(255,180,30,0.12);
+  border-bottom: 1px solid rgba(255,180,30,0.3);
+  padding: 8px 24px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(255,200,60,0.9);
+">
+  <span style="font-size:14px;">⚙️</span>
+  Work in Progress — This page is being updated. Content may be incomplete or change soon.
+</div>
+
+
+<!-- Stars (same as all pages) -->
+
+
+<script src="load-nav.js"></script>
+
+
+
+<!-- Progress dots -->
+<div class="ob-progress" id="obProgress">
+  <div class="ob-dot" id="dot-1"></div>
+  <div class="ob-dot" id="dot-2"></div>
+  <div class="ob-dot" id="dot-3"></div>
+  <div class="ob-dot" id="dot-4"></div>
+  <div class="ob-dot" id="dot-5"></div>
+  <div class="ob-dot" id="dot-6"></div>
+  <div class="ob-dot" id="dot-7"></div>
+</div>
+
+<!-- Main -->
+<div id="about-wrap">
+  <div class="ob-content">
+
+    <!-- ══ STEP 1 ══ -->
+    <div class="ob-step" id="step-1">
+      <div class="ob-eyebrow">The Chronicles of Etheria</div>
+      <div class="ob-title small">Before Luminaea</div>
+      <div class="ob-lore-lines" id="loreLines1">
+        <div class="ob-lore-line">Long ago, on the vibrant and harmonious planet <strong>Etheria</strong>, the ancestors of Baby Minaliens faced an impossible choice.</div>
+        <div class="ob-lore-line">Their twin suns, once the source of life and stability, had begun their catastrophic dance toward destruction.</div>
+        <div class="ob-lore-line">The wisest of their kind, the <strong>Elders of Etheria</strong>, devised the <strong>Ark Initiative</strong> — a plan to send their youngest and brightest to a new world.</div>
+        <div class="ob-lore-line">A planet discovered in the distant reaches of space, similar to their own — a civilisation on the verge of extinction reaching out across the stars.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow1">
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 2 ══ -->
+    <div class="ob-step" id="step-2">
+      <div class="ob-eyebrow">The Ark Initiative</div>
+      <div class="ob-title small">A Civilisation Encoded in Light</div>
+      <div class="ob-lore-lines" id="loreLines2">
+        <div class="ob-lore-line">The <strong>Ark Initiative</strong> was their final gambit — a civilisation encoded into light, launched across the void.</div>
+        <div class="ob-lore-line">The Arks were no mere ships; they were hallowed sanctuaries of stasis.</div>
+        <div class="ob-lore-line">By weaving <strong>Vyralon</strong> — the crystalline life-blood of Etheria's core — into the very air, the Elders suspended the touch of time itself.</div>
+        <div class="ob-lore-line">Inside each Ark, the Elders created <strong>Knowledge Chambers</strong> — crystalline, biomechanical spaces infused with the essence of Etherian wisdom.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow2">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 3 ══ -->
+    <div class="ob-step" id="step-3">
+      <div class="ob-eyebrow">The Knowledge Chambers</div>
+      <div class="ob-title small">Learning Through Light</div>
+      <div class="ob-lore-lines" id="loreLines3">
+        <div class="ob-lore-line">Instead of books or lectures, the chambers used <strong>liquid light pools</strong> — viscous, glowing substances the Baby Minaliens could absorb through touch, sight, and even taste.</div>
+        <div class="ob-lore-line">When they dipped their hands into the pools, the liquid light flowed into them, embedding knowledge directly into their minds.</div>
+        <div class="ob-lore-line">History, science, art, survival skills — everything the Elders knew became part of them, not as dry facts, but as <em>vivid, immersive experiences</em>.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow3">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 4 ══ -->
+    <div class="ob-step" id="step-4">
+      <div class="ob-eyebrow">The Voyage</div>
+      <div class="ob-title small">Frozen in Dawn</div>
+      <div class="ob-lore-lines" id="loreLines4">
+        <div class="ob-lore-line">The chambers were interactive environments where the travellers could consume knowledge in a way that felt natural to their playful and inquisitive nature.</div>
+        <div class="ob-lore-line">Within this glowing embrace, the Baby Minaliens remained <strong>unaged</strong> — their hearts and bodies frozen in a dawn that never ended.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow4">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 5 ══ -->
+    <div class="ob-step" id="step-5">
+      <div class="ob-eyebrow">The Elders' Legacy</div>
+      <div class="ob-title small">Ageless Pioneers</div>
+      <div class="ob-lore-lines" id="loreLines5">
+        <div class="ob-lore-line">This eternal youth was the Elders' ultimate legacy. They sought to bottle the boundless wonder and tireless creativity of childhood, shielding it from the decay of years.</div>
+        <div class="ob-lore-line">They dreamed that when these voyagers finally touched a new shore, they would step forth not as weary survivors, but as <strong>ageless pioneers</strong>.</div>
+        <div class="ob-lore-line">Possessing the innocence of the young and the tempered wisdom of the stars.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow5">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 6 ══ -->
+    <div class="ob-step" id="step-6">
+      <div class="ob-eyebrow">The Ark Initiative · Year 27</div>
+      <div class="ob-title small">A New World Awaits</div>
+      <div class="ob-lore-lines" id="loreLines6">
+        <div class="ob-lore-line">The Elders selected a small group of Baby Minaliens to govern each territory on the planet — the <strong>Ministers</strong>.</div>
+        <div class="ob-lore-line">After <strong>27 years of travel</strong>, the Arks reached a new world — <em>Luminaea</em>.</div>
+        <div class="ob-lore-line">You are one of the first to arrive. You have been chosen to help the Ministers create a brave new world.</div>
+        <div class="ob-lore-line ob-lore-line--closing" style="padding-top: 8px;">Your decisions will shape what Luminaea becomes.</div>
+      </div>
+      <div class="ob-btn-row" id="btnRow6">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 7: FINAL ══ -->
+    <div class="ob-step" id="step-7">
+      <div class="ob-eyebrow">Luminaea Awaits</div>
+      <div class="ob-title small">Return to the World</div>
+      <p class="ob-final-sub">
+        You have heard the story of <strong>Etheria</strong>.<br>
+        Now return to Luminaea and shape its future.
+      </p>
+      <div class="ob-btn-row revealed">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">← Back</button>
+        <a href="map.html" class="ob-btn ob-btn-primary">Return to Luminaea →</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<script>
+  const TOTAL_STEPS = 7;
+  let currentStep = 0;
+
+  const LINE_STAGGER = 80;   // tiny delay between each line (feels natural, not slow)
+  const TITLE_PAUSE  = 400;   // wait after step title before lines appear
+  const BTN_DELAY    = 200;   // extra wait after last line before button appears
+
+
+  function showStep(n) {
+    // Hide current
+    if (currentStep > 0) {
+      const prev = document.getElementById(`step-${currentStep}`);
+      if (prev) { prev.classList.remove('visible'); setTimeout(() => prev.classList.remove('active'), 300); }
+    }
+
+    currentStep = n;
+    updateDots();
+
+    setTimeout(() => {
+      const el = document.getElementById(`step-${n}`);
+      if (!el) return;
+      el.classList.add('active');
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+
+      // Staggered lore line reveal
+      const linesContainer = document.getElementById(`loreLines${n}`);
+      const btnRow = document.getElementById(`btnRow${n}`);
+
+      if (linesContainer) {
+        const lines = linesContainer.querySelectorAll('.ob-lore-line');
+        // Reset
+        lines.forEach(l => l.classList.remove('revealed'));
+        if (btnRow) btnRow.classList.remove('revealed');
+
+        // Reveal all lines quickly with a tiny stagger, then show button
+        lines.forEach((line, i) => {
+          setTimeout(() => line.classList.add('revealed'), TITLE_PAUSE + (i * LINE_STAGGER));
+        });
+        const totalLinesTime = TITLE_PAUSE + (lines.length * LINE_STAGGER) + BTN_DELAY;
+        if (btnRow) setTimeout(() => btnRow.classList.add('revealed'), totalLinesTime);
+      }
+    }, currentStep === n ? 0 : 350);
+  }
+
+  function nextStep() {
+    if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
+  }
+
+  function prevStep() {
+    if (currentStep > 1) showStep(currentStep - 1);
+  }
+
+  function updateDots() {
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const dot = document.getElementById(`dot-${i}`);
+      if (!dot) continue;
+      dot.className = 'ob-dot';
+      if (i === currentStep) dot.classList.add('active');
+      else if (i < currentStep) dot.classList.add('done');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => showStep(1));
+</script>
+<script src="lum-time.js"></script>
+<script>startLumClock();</script>
+<script src="nav-audio.js"></script>
+</body>
+</html>

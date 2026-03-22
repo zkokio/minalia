@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — MINALIA</title>
+<link rel="stylesheet" href="style.css?v=20260311a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=20260311a"></script>
+<script src="auth_auro.js?v=20260311a"></script>
+
+<style>
+  body {
+    overflow-x: hidden;
+    background-color: #0a0812;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(60,30,90,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(20,40,80,0.2) 0%, transparent 55%),
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 45% 35%, rgba(255,240,200,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 75% 65%, rgba(200,220,255,0.4) 0%, transparent 100%);
+    background-attachment: fixed;
+  }
+
+  .stars, .twinkling, .earth-footer { display: none !important; }
+  body::after { display: none !important; }
+
+  .page-wrap {
+    position: relative; z-index: 2;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 100px 24px 100px;
+  }
+
+  /* ── HERO ── */
+  .faq-hero {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .faq-hero-eyebrow {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    color: rgba(255,200,60,0.5);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .faq-hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 900;
+    color: #FFE08A;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .faq-hero p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ── SECTION NAVIGATION ── */
+  .faq-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 48px;
+  }
+  .faq-nav-btn {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .faq-nav-btn:hover {
+    border-color: rgba(255,200,60,0.35);
+    color: rgba(255,200,60,0.8);
+    background: rgba(255,200,60,0.06);
+  }
+
+  /* ── SECTION ── */
+  .faq-section {
+    margin-bottom: 52px;
+    scroll-margin-top: 80px;
+  }
+  .faq-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,200,60,0.12);
+  }
+  .faq-section-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .faq-section-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,200,60,0.7);
+  }
+
+  /* ── ACCORDION ITEM ── */
+  .faq-item {
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.02);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .faq-item.open {
+    border-color: rgba(255,200,60,0.2);
+    background: rgba(255,200,60,0.025);
+  }
+  .faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    user-select: none;
+    line-height: 1.4;
+  }
+  .faq-item.open .faq-question { color: #FFE08A; }
+  .faq-chevron {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: rgba(255,200,60,0.4);
+    transition: transform 0.2s;
+  }
+  .faq-item.open .faq-chevron { transform: rotate(180deg); }
+  .faq-answer {
+    display: none;
+    padding: 0 18px 18px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.75;
+  }
+  .faq-item.open .faq-answer { display: block; }
+
+  /* ── ANSWER FORMATTING ── */
+  .faq-answer p { margin: 0 0 10px; }
+  .faq-answer p:last-child { margin-bottom: 0; }
+  .faq-answer strong { color: rgba(255,255,255,0.8); font-weight: 700; }
+  .faq-answer em { color: rgba(255,200,60,0.8); font-style: normal; font-weight: 600; }
+
+  /* Inline stat table */
+  .faq-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 11px;
+  }
+  .faq-table th {
+    text-align: left;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,200,60,0.5);
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .faq-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.55);
+    vertical-align: top;
+  }
+  .faq-table tr:last-child td { border-bottom: none; }
+  .faq-table td:first-child { color: rgba(255,255,255,0.75); font-weight: 600; }
+  .faq-table .tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .faq-table .tag.rare       { background: rgba(80,160,255,0.15); color: rgba(120,190,255,0.9); }
+  .faq-table .tag.legendary  { background: rgba(160,100,255,0.15); color: rgba(200,150,255,0.9); }
+  .faq-table .tag.common     { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
+
+  /* Pill chips */
+  .faq-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 5px;
+    margin: 2px 3px 2px 0;
+  }
+  .faq-pill.arkis  { background: rgba(255,200,60,0.12); color: rgba(255,200,60,0.9); }
+  .faq-pill.plasm  { background: rgba(255,144,32,0.12); color: rgba(255,160,60,0.9); }
+  .faq-pill.wire   { background: rgba(80,160,255,0.12); color: rgba(120,190,255,0.9); }
+  .faq-pill.lichen { background: rgba(70,220,130,0.12); color: rgba(90,240,150,0.9); }
+  .faq-pill.spore  { background: rgba(200,100,255,0.12); color: rgba(210,130,255,0.9); }
+
+  /* Callout box */
+  .faq-callout {
+    background: rgba(255,200,60,0.05);
+    border: 1px solid rgba(255,200,60,0.15);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 12px;
+    color: rgba(255,200,60,0.7);
+    line-height: 1.6;
+  }
+  .faq-callout.purple {
+    background: rgba(160,100,255,0.05);
+    border-color: rgba(160,100,255,0.15);
+    color: rgba(200,150,255,0.75);
+  }
+  .faq-callout.green {
+    background: rgba(70,220,130,0.05);
+    border-color: rgba(70,220,130,0.15);
+    color: rgba(90,240,150,0.75);
+  }
+  .faq-callout.warning {
+    background: rgba(255,100,60,0.06);
+    border-color: rgba(255,100,60,0.25);
+    color: rgba(255,140,100,0.85);
+  }
+
+  /* ── FOOTER NAV ── */
+  .faq-footer-nav {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .faq-footer-nav a {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255,200,60,0.5);
+    text-decoration: none;
+    margin: 0 12px;
+    transition: color 0.15s;
+  }
+  .faq-footer-nav a:hover { color: rgba(255,200,60,0.9); }
+
+  @media (max-width: 600px) {
+    .faq-table { font-size: 10px; }
+    .faq-table th, .faq-table td { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="page-wrap" id="top">
+
+  <!-- ── HERO ── -->
+  <div class="faq-hero">
+    <div class="faq-hero-eyebrow">Luminaea Field Guide</div>
+    <h1>Frequently Asked Questions</h1>
+    <p>Everything you need to know about owning land, earning resources, collaborating with other players, and building in Luminaea.</p>
+  </div>
+
+  <!-- ── SECTION NAV ── -->
+  <nav class="faq-nav">
+    <a class="faq-nav-btn" href="#getting-started">Getting Started</a>
+    <a class="faq-nav-btn" href="#units-territories">Units & Territories</a>
+    <a class="faq-nav-btn" href="#currencies">Currencies</a>
+    <a class="faq-nav-btn" href="#tuning">Tuning</a>
+    <a class="faq-nav-btn" href="#stewardship">Stewardship</a>
+    <a class="faq-nav-btn" href="#buildings">Buildings</a>
+    <a class="faq-nav-btn" href="#upgrades">Upgrades</a>
+    <a class="faq-nav-btn" href="#trading">Trading & Auctions</a>
+    <a class="faq-nav-btn" href="#taxes">Taxes & Fees</a>
+    <a class="faq-nav-btn" href="#events">World Events</a>
+    <a class="faq-nav-btn" href="#nexus">Nexus Points</a>
+    <a class="faq-nav-btn" href="#teleportation">Teleportation Gates</a>
+    <a class="faq-nav-btn" href="#minaliens">Minaliens</a>
+    <a class="faq-nav-btn" href="#population">Population</a>
+    <a class="faq-nav-btn" href="#demolish">Demolishing</a>
+    <a class="faq-nav-btn" href="#exchange">Token Exchange</a>
+    <a class="faq-nav-btn" href="#privacy">Privacy & Identity</a>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 1 — GETTING STARTED
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="getting-started">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🚀</span>
+      <span class="faq-section-title">Getting Started</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is MINALIA? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>MINALIA is a blockchain-based territory strategy game built on the <strong>Mina Protocol</strong>. Players own land units across the world of <strong>Luminaea</strong>, earn resources, develop their territories, collaborate with other players on special buildings, and compete on weekly leaderboards.</p>
+        <p>The game is persistent — your land, buildings, and earnings exist on-chain and in our database whether you're logged in or not.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I connect and play? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Connect your <strong>Auro Wallet</strong> to sign in. Your wallet address is your identity in MINALIA — no email or password needed. Once connected you'll see your owned units, resource balances, and any active collaborations.</p>
+        <div class="faq-callout">💡 If you don't have Auro Wallet, download it as a browser extension at auro-wallet.com. It's the standard wallet for Mina Protocol.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What do I start with? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Every player starts with <em>5,000,000 ARKIS</em> — the primary in-game currency. OG players (early supporters) receive a larger starting allocation. Your ARKIS balance is used to purchase developments, contribute to collaborative buildings, and upgrade nexus structures.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I get land units? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Land units are tied to <strong>Minalien NFTs</strong>. Each Minalien NFT corresponds to a territory, and owning the NFT grants you control over units in that territory. Units can also change hands through future trading and marketplace mechanics.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 2 — UNITS & TERRITORIES
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="units-territories">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">⬡</span>
+      <span class="faq-section-title">Units & Territories</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is a unit? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A <strong>unit</strong> is a single hexagonal land tile in Luminaea. Each unit has a position within a territory, a value tier (Common → Legendary), and various attributes like whether it's coastal, isolated, or on a border. You can build one development on each unit you own.</p>
+        <p>There are <strong>320 units total</strong> across 20 territories, with 16 units per territory.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What makes a unit more valuable? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Units are scored and tiered by several factors:</p>
+        <table class="faq-table">
+          <tr><th>Factor</th><th>Why it matters</th></tr>
+          <tr><td>Coastal</td><td>Access to water — boosts certain building types</td></tr>
+          <tr><td>Border</td><td>Shares a boundary with another territory — eligible for nexus collaborations</td></tr>
+          <tr><td>Dual Border</td><td>Touches two other territories — even more collaboration eligible</td></tr>
+          <tr><td>Isolated</td><td>Far from edges — quieter, fewer collaboration options but stable</td></tr>
+          <tr><td>Value Tier</td><td>Common / Uncommon / Rare / Legendary — affects base yields</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is a territory? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A <strong>territory</strong> is a cluster of 16 hexagonal units, identified by a code like <em>LUM-01</em> through <em>LUM-20</em>. Each territory has a colour, a Minalien minister, and its own treasury. Territories that share borders with other territories can participate in <strong>Nexus Point</strong> collaborations.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 3 — CURRENCIES
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="currencies">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">💰</span>
+      <span class="faq-section-title">Currencies & Resources</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What currencies exist in MINALIA? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>There are five resource types:</p>
+        <table class="faq-table">
+          <tr><th>Currency</th><th>Role</th><th>How to earn</th></tr>
+          <tr><td><span class="faq-pill arkis">ARKIS</span></td><td>Primary currency — used for all construction and upgrades</td><td>Starting balance, building yields, nexus vault yields</td></tr>
+          <tr><td><span class="faq-pill plasm">PLASM</span></td><td>Energy resource — fuels advanced tech buildings</td><td>Resonance Tower, Ley Anchor, The Confluence, The Artery</td></tr>
+          <tr><td><span class="faq-pill wire">WIRE</span></td><td>Infrastructure resource — used for signal and transit builds</td><td>Signal Relay, Waygate Station, The Confluence</td></tr>
+          <tr><td><span class="faq-pill lichen">LICHEN</span></td><td>Organic resource — tied to population and food systems</td><td>Border Granary, Ley Anchor, The Confluence</td></tr>
+          <tr><td><span class="faq-pill spore">SPORE</span></td><td>Rare biological resource — used in legendary builds</td><td>The Confluence (legendary nexus only)</td></tr>
+        </table>
+        <div class="faq-callout green">Alt-currency earning mechanics (monthly yields from buildings) are being activated progressively. ARKIS is live now.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is ARKIS used for? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>ARKIS is your primary spending currency. Current uses:</p>
+        <p>• Building territory developments (costs range from ~150,000 to 750,000 ARKIS depending on tier)<br>
+           • Contributing to nexus collaborations (1,750,000–4,000,000 per player)<br>
+           • Upgrading nexus buildings (500,000 × level per upgrade)<br>
+           • Future: marketplace purchases, auctions, loans</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 4 — TUNING
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="tuning">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">⚡</span>
+      <span class="faq-section-title">Tuning & Pulse State</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is tuning? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Each unit you own has a <strong>pulse state</strong> — a measure of how actively maintained it is. Tuning is the act of interacting with your units to keep them active. Think of it as checking in on your land and keeping the infrastructure humming.</p>
+        <p>Tune scores range from <strong>0–100</strong>. A freshly tuned unit scores near 100; an untended unit decays over time.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What happens if I don't tune my units? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Units decay based on how long since you last logged in. There are two separate systems — <strong>pulse state</strong> (visual) and <strong>stewardship</strong> (ownership):</p>
+        <p><strong>Pulse State (visual only — you keep your unit):</strong></p>
+        <table class="faq-table">
+          <tr><th>Threshold</th><th>Days inactive</th><th>What happens</th></tr>
+          <tr><td>🟡 Flicker</td><td>14 days</td><td>Unit pulse turns amber and stutters — visible to all players</td></tr>
+          <tr><td>⚫ Forfeited</td><td>21 days</td><td>Unit pulse goes dark/dead — signals neglect to the territory</td></tr>
+        </table>
+        <p><strong>Stewardship (ownership at risk):</strong></p>
+        <table class="faq-table">
+          <tr><th>Threshold</th><th>Days inactive</th><th>What happens</th></tr>
+          <tr><td>⚠️ Warning</td><td>21–30 days</td><td>Urgent alert fires — you have days left to log in</td></tr>
+          <tr><td>🏛️ Suspended</td><td>30 days</td><td>Unit transfers to Territory Minister. All development income stops.</td></tr>
+          <tr><td>🔴 Resale</td><td>37 days</td><td>Minister lists unit for resale. Sale proceeds go to territory treasury.</td></tr>
+        </table>
+        <div class="faq-callout">🔔 You'll receive urgent minister alerts between days 21–30 with a countdown and direct link to tune.html. Logging in resets your clock immediately.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What does tune score affect? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Your tune score (0–100) affects three things:</p>
+        <p><strong>1. Development yield income</strong> — your monthly income from all developments on a unit is multiplied by your tune power. The multiplier is based on how recently you logged in:</p>
+        <table class="faq-table">
+          <tr><th>Days inactive</th><th>Yield multiplier</th></tr>
+          <tr><td>0–7 days</td><td style="color:rgba(70,220,130,0.9);">100% — full income</td></tr>
+          <tr><td>7–14 days</td><td style="color:rgba(255,200,60,0.9);">90%</td></tr>
+          <tr><td>14–21 days</td><td style="color:rgba(255,140,30,0.9);">75%</td></tr>
+          <tr><td>21–30 days</td><td style="color:rgba(255,80,80,0.9);">50%</td></tr>
+          <tr><td>30+ days</td><td style="color:rgba(255,80,80,0.9);">0% — unit suspended</td></tr>
+        </table>
+        <p><strong>2. Weekly leaderboard</strong> — higher average tune scores = higher rank = larger share of weekly rewards.</p>
+        <p><strong>3. Unit sale price</strong> — a perfect score (100) adds a small +1% premium to your unit's suggested price.</p>
+        <p>Score brackets: <strong style="color:rgba(70,220,130,0.9);">80–100 = TUNED</strong> · <strong style="color:rgba(255,200,60,0.9);">50–79 = ACTIVE</strong> · <strong style="color:rgba(255,140,30,0.9);">25–49 = WEAK</strong> · <strong style="color:rgba(255,80,80,0.9);">0–24 = LOW</strong></p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is tune decay rate and how can I slow it? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p><strong>Tune decay</strong> is how your unit's pulse state and yield multiplier degrade when you're inactive. The clock runs from your last login — not from when you last tuned.</p>
+        <p>The most important thing is simply to <strong>log in regularly</strong>. Logging in resets the clock for all your units at once. Tuning on top of that earns leaderboard points and keeps your battery bar full.</p>
+        <p>You can slow passive decay with nexus buildings that have a <em>tune decay reduction</em> effect. For example, a <strong>Resonance Tower</strong> built at a nexus connecting your territory reduces the decay rate — meaning your units stay healthier between logins.</p>
+        <div class="faq-callout purple">💡 Tip: Even a quick daily login keeps all your units at 100% yield. You only need to actively tune to earn leaderboard score.</div>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — STEWARDSHIP
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="stewardship">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🏛️</span>
+      <span class="faq-section-title">Stewardship & Inactivity</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is the stewardship system? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Stewardship is MINALIA's way of ensuring that land in Luminaea stays active and in the hands of engaged players. If a player goes inactive for 30 days, their units are transferred to the Territory Minister — a guardian figure who holds and eventually relists the unit for another player to claim.</p>
+        <p>This is not a punishment — it's designed to keep the world alive. Abandoned territory should eventually return to circulation.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is the full inactivity timeline? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <table class="faq-table">
+          <tr><th>Day</th><th>Event</th><th>Can I stop it?</th></tr>
+          <tr><td>Day 14</td><td>🟡 Unit pulse turns amber and flickers</td><td>Yes — log in</td></tr>
+          <tr><td>Day 21</td><td>⚫ Unit pulse goes dark/dead</td><td>Yes — log in</td></tr>
+          <tr><td>Day 21–30</td><td>⚠️ Urgent warning alerts fire every 7 days</td><td>Yes — log in</td></tr>
+          <tr><td>Day 30</td><td>🏛️ Minister takes unit. Dev income stops.</td><td>Only before this point</td></tr>
+          <tr><td>Day 37</td><td>🔴 Minister lists unit for resale</td><td>No</td></tr>
+        </table>
+        <div class="faq-callout">The clock resets to zero the moment you log in. Any login — even without tuning — is enough to keep your units safe.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What happens to my developments when a unit is suspended? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>All developments on a suspended unit are paused — they stop generating income for the duration of the suspension. The buildings themselves are not demolished. If the unit is eventually resold to a new owner, the developments transfer with it.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Where does the money go when a suspended unit is resold? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>All sale proceeds go directly to the territory treasury — not to the original owner. The Minister acts as a neutral steward, not a beneficiary. The territory's economy benefits instead.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Will I get a warning before losing my unit? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — the warning system fires an urgent alert between days 21–30, with a countdown showing exactly how many days you have left. The alert is pinned at the top of your alerts page and includes a direct link to tune.html so you can act immediately.</p>
+        <p>Warnings fire at most once per 7 days during the warning window, so you won't be spammed. But if you dismiss it and don't log back in, you will lose the unit at day 30.</p>
+        <div class="faq-callout">📱 Make sure to check your Alerts page if you haven't played in a while — the warning will be pinned at the very top.</div>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 5 — BUILDINGS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="buildings">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🏗️</span>
+      <span class="faq-section-title">Territory Buildings</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What are territory buildings? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Territory buildings are developments you build on individual units you own. Each unit can hold <strong>one building</strong>. Buildings are purchased with ARKIS (and sometimes alt-currencies) and provide monthly yields, attribute bonuses, and territory-wide effects.</p>
+        <p>There are 29 buildings across four tiers:</p>
+        <table class="faq-table">
+          <tr><th>Tier</th><th>Cost range</th><th>Examples</th></tr>
+          <tr><td><span class="tag common">Common</span></td><td>~150,000–225,000 ARKIS</td><td>Outpost, Solar Farm, Wind Turbine</td></tr>
+          <tr><td><span class="tag rare">Uncommon</span></td><td>~300,000–450,000 ARKIS</td><td>Trading Post, Signal Tower, Watchtower</td></tr>
+          <tr><td><span class="tag rare">Rare</span></td><td>~450,000–600,000 ARKIS</td><td>Research Lab, Energy Vault, Archive</td></tr>
+          <tr><td><span class="tag legendary">Legendary</span></td><td>~600,000–750,000 ARKIS</td><td>Capital Building, Grand Observatory</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can any building be placed on any unit? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Most buildings can go anywhere, but some have restrictions:</p>
+        <p>• <strong>Core territory buildings</strong> — certain legendary buildings are exclusive to specific territories based on their lore and geography<br>
+           • <strong>Coastal buildings</strong> — some structures require a coastal unit<br>
+           • <strong>Max per territory</strong> — some powerful buildings have a cap on how many can exist in one territory</p>
+        <p>These restrictions are shown on each building card in the development panel.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 6 — NEXUS POINTS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="nexus">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">✦</span>
+      <span class="faq-section-title">Nexus Points</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is a Nexus Point? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Nexus Points are special hexagonal tiles on the map that sit at the junction between two or three territories. They cannot be owned individually — instead, players from the connected territories collaborate to build structures <em>on</em> the nexus point together.</p>
+        <p>There are <strong>23 Nexus Points</strong> in Luminaea. They are permanently fixed on the map and named — places like <em>The Convergence</em>, <em>The Meridian</em>, and <em>Veilgate</em>.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Who can collaborate at a Nexus Point? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>To register interest at a nexus, you must <strong>own at least one unit in one of the touching territories</strong>. For a nexus that connects LUM-01 and LUM-04, you need a unit in either LUM-01 or LUM-04 — not both.</p>
+        <div class="faq-callout">You signal interest first (free). ARKIS is only deducted when the build is confirmed — once all required contributor slots are filled.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How does a 2-way nexus collaboration work? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A <strong>2-way nexus</strong> sits between exactly two territories. It requires <strong>exactly 2 contributors</strong> — one from each territory. Both players pay an equal share of the total cost.</p>
+        <p>Example: Trade Conduit at a 2-way nexus costs <em>3,500,000 ARKIS total</em> → <strong>1,750,000 ARKIS per player</strong>.</p>
+        <p>Once both slots are filled the building activates and both contributors receive monthly yields and territory effects.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How does a 3-way nexus collaboration work? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A <strong>3-way nexus</strong> sits at the junction of three territories. It only requires <strong>2 players from 2 different territories to start</strong> — the 3rd player from the remaining territory can join later.</p>
+        <table class="faq-table">
+          <tr><th>State</th><th>Contributors</th><th>Yields</th></tr>
+          <tr><td>2-builder active</td><td>2 players, 2 territories</td><td>Base yields (1× multiplier)</td></tr>
+          <tr><td>Triple strength</td><td>3 players, 3 territories</td><td>Boosted yields (1.5× multiplier)</td></tr>
+        </table>
+        <p>The 3rd player pays the same per-head cost as the original builders. Once they join, the building upgrades to <em>triple strength</em> and all three territories receive the full enhanced benefits.</p>
+        <div class="faq-callout purple">The optional 3rd slot shows as a purple "Optional 3rd Slot" card on the nexus page once 2 contributors are already in.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What nexus buildings can be built? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p><strong>Rare buildings</strong> (3,500,000 ARKIS total · 1,750,000 each):</p>
+        <table class="faq-table">
+          <tr><th>Building</th><th>Junction</th><th>Monthly yield</th><th>Effect</th></tr>
+          <tr><td>🔀 Trade Conduit</td><td>2-way</td><td>4,000 ARKIS/mo</td><td>+15% ARKIS yield across territories</td></tr>
+          <tr><td>📡 Resonance Tower</td><td>2-way</td><td>800 PLASM/mo</td><td>−40% tune decay rate</td></tr>
+          <tr><td>🌾 Border Granary</td><td>2-way</td><td>1,200 LICHEN/mo</td><td>+20% population growth</td></tr>
+          <tr><td>🔭 Signal Relay</td><td>2-way</td><td>600 WIRE/mo</td><td>Visibility & prestige boost</td></tr>
+          <tr><td>⚖️ Flux Market</td><td>3-way</td><td>3,500 ARKIS/mo</td><td>Merchant attribute bonus</td></tr>
+          <tr><td>🚉 Waygate Station</td><td>3-way</td><td>500 PLASM + 500 WIRE/mo</td><td>−30% travel time (coming soon)</td></tr>
+          <tr><td>⚓ Ley Anchor</td><td>3-way</td><td>600 PLASM + 600 LICHEN/mo</td><td>+25% population growth</td></tr>
+        </table>
+        <p><strong>Legendary buildings</strong> (8,000,000 ARKIS total · 4,000,000 each):</p>
+        <table class="faq-table">
+          <tr><th>Building</th><th>Junction</th><th>Monthly yield</th><th>Effects</th></tr>
+          <tr><td>✦ The Confluence</td><td>Any</td><td>1,500 each of PLASM · WIRE · LICHEN · SPORE/mo</td><td>+10% ARKIS yield · +10% pop growth · −10% tune decay</td></tr>
+          <tr><td>🏛️ Nexus Vault</td><td>Any</td><td>8,000 ARKIS/mo</td><td>+5% ARKIS yield across territories</td></tr>
+          <tr><td>🫀 The Artery</td><td>Any</td><td>2,000 ARKIS + 500 PLASM/mo</td><td>+10% ARKIS yield · +5% pop growth · −10% tune decay · −10% build time</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can nexus buildings be upgraded? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. Nexus buildings can be upgraded from <strong>Level 1 to Level 10</strong>. Each level costs <em>500,000 × level number</em> in ARKIS and adds <strong>+1% to all yields</strong> from that building.</p>
+        <table class="faq-table">
+          <tr><th>Upgrade</th><th>Cost</th><th>Cumulative yield bonus</th></tr>
+          <tr><td>Level 1 → 2</td><td>1,000,000 ARKIS</td><td>+1%</td></tr>
+          <tr><td>Level 2 → 3</td><td>1,500,000 ARKIS</td><td>+2%</td></tr>
+          <tr><td>Level 5 → 6</td><td>3,000,000 ARKIS</td><td>+5%</td></tr>
+          <tr><td>Level 9 → 10</td><td>5,000,000 ARKIS</td><td>+9%</td></tr>
+        </table>
+        <p>Any contributor (original builder or 3rd-slot player) can pay for an upgrade. The upgrade history is recorded on-chain.</p>
+        <div class="faq-callout green">Upgrade UI is coming soon — the underlying mechanics are already live in the database.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What does "effect across territories" mean? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Some nexus buildings apply a percentage bonus across <strong>all connected territories</strong>, not just your own. For example, a <em>+15% ARKIS yield</em> from a Trade Conduit applies to yield-generating buildings in both territories connected at that nexus.</p>
+        <p>This is why collaborative builds are strategically valuable — the effect is shared, but so is the cost.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 7 — MINALIENS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="minaliens">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">👽</span>
+      <span class="faq-section-title">Minaliens</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is a Minalien? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Minaliens are the NFT characters of MINALIA. Each Minalien is a unique portrait-card character with stats across 9 attributes: <em>Strength, Intelligence, Creativity, Kindness, Humour, Spirituality, Speed, Fame,</em> and <em>Eco-Friendliness</em>.</p>
+        <p>There are <strong>20 Minaliens</strong>, one per territory. Each one serves as the <strong>minister</strong> of their territory — their stats and superpowers provide passive buffs to all players in that territory.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What do minister buffs do? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Each Minalien minister has a superpower that generates a <strong>territory buff</strong> — a passive bonus that applies to all unit owners in that territory. Buffs can affect ARKIS yield rates, build times, population growth, or other territory-wide metrics.</p>
+        <p>Buffs are visible on the district page for each territory.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is the minister balance? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Each Minalien minister holds a <strong>45,000,000 ARKIS</strong> balance representing the collective wealth of their territory. This balance will be used in future governance and treasury mechanics — ministers will be able to fund territory projects, sponsor collaborations, and reward loyal unit owners.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 8 — POPULATION
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="population">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">👥</span>
+      <span class="faq-section-title">Population</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is population? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Each unit has a <strong>population count</strong> representing the number of inhabitants in that land tile. Population grows over time based on your territory's conditions, buildings, and nexus effects. Larger populations generate more economic activity and will unlock additional gameplay in future updates.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I grow my population? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Several factors accelerate population growth:</p>
+        <p>• <strong>Border Granary</strong> nexus building: +20% population growth across connected territories<br>
+           • <strong>Ley Anchor</strong> nexus building: +25% population growth<br>
+           • <strong>The Confluence</strong> legendary nexus: +10% population growth<br>
+           • <strong>The Artery</strong> legendary nexus: +5% population growth<br>
+           • Certain territory buildings also contribute bonuses</p>
+        <p>Population growth mechanics are being activated progressively alongside the broader economy rollout.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — BUILDING UPGRADES
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="upgrades">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">⬆️</span>
+      <span class="faq-section-title">Building Upgrades</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I upgrade a building after it's built? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. Every territory building can be upgraded from <strong>Level 1 (Standard)</strong> up to <strong>Level 5 (Ultimate)</strong>. Each level increases monthly income and makes the unit worth more on the market.</p>
+        <table class="faq-table">
+          <tr><th>Level</th><th>Name</th><th>Income multiplier</th><th>Upgrade cost</th></tr>
+          <tr><td>1</td><td style="color:rgba(255,255,255,0.5);">Standard</td><td>1× (base)</td><td>— built at this level</td></tr>
+          <tr><td>2</td><td style="color:rgba(34,197,94,0.9);">Enhanced</td><td>1.4×</td><td>50% of original build cost</td></tr>
+          <tr><td>3</td><td style="color:rgba(59,130,246,0.9);">Advanced</td><td>1.9×</td><td>100% of original build cost</td></tr>
+          <tr><td>4</td><td style="color:rgba(168,85,247,0.9);">Superior</td><td>2.6×</td><td>200% of original build cost</td></tr>
+          <tr><td>5</td><td style="color:#FFE08A;">Ultimate</td><td>3.5×</td><td>400% of original build cost</td></tr>
+        </table>
+        <div class="faq-callout">💡 Example — a Trading Outpost costs 30,000 ARKIS to build. Upgrading it all the way to Ultimate costs a further 225,000 ARKIS. At Ultimate it earns <strong>8,750 ARKIS/month</strong> instead of 2,500.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Does upgrade level affect my unit's sale price? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — directly. The suggested price shown when you list a unit is automatically recalculated using the building's current level. A unit with an <em>Ultimate</em> building is worth significantly more than the same unit at <em>Standard</em>, because a buyer is acquiring both the land and a fully upgraded income-generating asset.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Is there a fee to upgrade? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A small <strong>3% Upgrade Permit</strong> fee is charged on each upgrade and goes into your territory's treasury.</p>
+        <p>Example: upgrading Standard → Enhanced on a 30,000 ARKIS building costs 15,000 ARKIS + 450 ARKIS permit fee = <strong>15,450 ARKIS total</strong>.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — TRADING & AUCTIONS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="trading">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🔨</span>
+      <span class="faq-section-title">Trading & Auctions</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I sell my units to other players? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. From your <strong>Profile</strong>, each unit card has two listing options:</p>
+        <p><strong>Direct Sale</strong> — set a fixed price. Any player can buy it instantly. Good when you know what you want and don't want to wait.</p>
+        <p><strong>Auction</strong> — set a minimum bid and a duration. Players compete and the highest bid wins when time runs out. Good when you want the market to decide the price.</p>
+        <div class="faq-callout">💡 The system suggests a price based on your unit's location, value tier, developments, and tune score. You can set your own price — the suggestion is just a guide.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How does bidding work? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>When you bid, your ARKIS is held in <strong>escrow</strong> — reserved but not spent. If someone outbids you, your ARKIS is returned automatically and you receive an alert. You can then raise your bid or walk away.</p>
+        <p>When the auction closes, the winning bidder's ARKIS transfers to the seller and ownership changes hands.</p>
+        <p>Important rules:</p>
+        <p>• You <strong>cannot bid on your own auction</strong><br>
+           • Bids are <strong>binding</strong> — you cannot cancel once placed<br>
+           • You can make a bid <strong>private</strong> — your identity is hidden from other bidders (the seller can still see it)</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How is the suggested price calculated? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>The suggested price factors in everything that makes a unit valuable:</p>
+        <table class="faq-table">
+          <tr><th>Factor</th><th>Effect on price</th></tr>
+          <tr><td>Value score (0–10)</td><td>Sets the base land value</td></tr>
+          <tr><td>Tier (Common → Legendary)</td><td>Multiplier: 1× up to 2.8×</td></tr>
+          <tr><td>Coastal location</td><td>+15%</td></tr>
+          <tr><td>Isolated outpost</td><td>+25% scarcity premium</td></tr>
+          <tr><td>Tip unit</td><td>+10% for outermost position</td></tr>
+          <tr><td>Border territories</td><td>+8–18% for trade route access</td></tr>
+          <tr><td>Tune score</td><td>Up to +1% for a perfectly tuned unit</td></tr>
+          <tr><td>Developments</td><td>Build cost × 1.4 or 4× annual income (whichever is higher), scaled by level</td></tr>
+        </table>
+        <p>The <strong>minimum offer floor</strong> is 40% of the suggested price.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What if nobody bids on my auction? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>The unit stays with you — no penalty. You can cancel a running auction at any time from your profile. If there are active bids when you cancel, those bids are refunded in full to the bidders.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — TAXES & FEES
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="taxes">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🏛️</span>
+      <span class="faq-section-title">Taxes & Fees</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are there taxes in MINALIA? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — Luminaea has a small tax and fee system. Think of it like a real city: roads, services, and shared infrastructure need funding. All taxes and fees flow into the <strong>territory treasury</strong>, controlled by that territory's minister.</p>
+        <p>The rates are kept low enough that they never get in your way, but meaningful enough that active territories genuinely accumulate wealth over time.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is the weekly holding tax? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Owning units carries a small <strong>weekly holding tax</strong> — similar to property tax. The cost scales with how many units you own:</p>
+        <table class="faq-table">
+          <tr><th>Units owned</th><th>Weekly cost per unit</th></tr>
+          <tr><td>1–4 units</td><td><em>Free</em> — no tax on your first four</td></tr>
+          <tr><td>5–8 units</td><td>1,250 ARKIS per unit per week</td></tr>
+          <tr><td>9–12 units</td><td>5,000 ARKIS per unit per week</td></tr>
+          <tr><td>13–16 units</td><td>30,000 ARKIS per unit per week</td></tr>
+        </table>
+        <div class="faq-callout">💡 The steep scaling is intentional — it keeps land circulating in the economy and prevents any one player from hoarding all 320 units indefinitely. Active players earn <strong>activity credits</strong> that offset their bill.</div>
+
+        <p style="margin-top:14px;"><strong>Inactivity penalty</strong></p>
+        <p>If you stop logging in, your holding tax rate increases automatically. The longer you're absent, the higher the multiplier applied to your weekly bill:</p>
+        <table class="faq-table">
+          <tr><th>Days since last login</th><th>Tax multiplier</th><th>Example — 8 taxable units</th></tr>
+          <tr><td>0–7 days</td><td>× 1 <em>(standard)</em></td><td>10,000 ARKIS/week</td></tr>
+          <tr><td>8–14 days</td><td>× 1.5</td><td>15,000 ARKIS/week</td></tr>
+          <tr><td>15–30 days</td><td>× 2</td><td>20,000 ARKIS/week</td></tr>
+          <tr><td>31+ days</td><td>× 3</td><td>30,000 ARKIS/week</td></tr>
+        </table>
+        <div class="faq-callout warning">⚠️ The inactivity penalty is applied automatically every week. Your ARKIS balance will drain faster the longer you stay away. If your balance goes negative and you remain inactive, your units may be reclaimed by the territory.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What fees apply when I trade or build? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Every significant action carries a small fee to the territory treasury:</p>
+        <table class="faq-table">
+          <tr><th>Action</th><th>Fee</th><th>Paid by</th></tr>
+          <tr><td>Win an auction</td><td>3% of final price</td><td>Seller</td></tr>
+          <tr><td>Direct sale</td><td>2% of sale price</td><td>Seller</td></tr>
+          <tr><td>Build a development</td><td>5% of build cost</td><td>Builder</td></tr>
+          <tr><td>Upgrade a development</td><td>3% of upgrade cost</td><td>Builder</td></tr>
+          <tr><td>Place a bid (escrow fee)</td><td>0.5% of bid amount</td><td>Bidder</td></tr>
+        </table>
+        <p>The <strong>bid escrow fee</strong> is held while your bid is active. If you're outbid, your main bid amount is returned in full — only the small escrow fee is kept by the treasury.</p>
+        <div class="faq-callout green">All fees go to the treasury of the territory where the unit lives — not to Minalia as a platform. The minister of that territory sees every transaction in their ledger.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What does the territory treasury do with the money? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>The treasury accumulates ARKIS from holding taxes, auction fees, sale fees, and build permits. The minister can see a full itemised ledger on their Minalien page — broken down by source.</p>
+        <p>In future updates, ministers will be able to use treasury funds to fund territory-wide special buildings, sponsor collaborations, reward loyal unit owners, and respond to world events that affect their territory.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I reduce my tax bill? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Through <strong>activity credits</strong>. The more you participate, the more credits you earn to offset your weekly tax:</p>
+        <p>• <strong>Tuning a unit</strong> — 10 activity points<br>
+           • <strong>Completing a build</strong> — 20 activity points<br>
+           • <strong>Making a trade offer</strong> — 5 activity points<br>
+           • <strong>Daily check-in</strong> — 2 activity points</p>
+        <p>Credits reward players who engage regularly and ensure that active builders pay less than passive landholders sitting on undeveloped units.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — WORLD EVENTS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="events">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🌍</span>
+      <span class="faq-section-title">World Events</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What are world events? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Luminaea is a living world. Things happen — some wonderful, some catastrophic. <strong>World events</strong> are dynamic occurrences that affect units, territories, or all of Luminaea at once, without warning.</p>
+        <p>Events can be <strong>negative</strong> (disasters, invasions, plagues) or <strong>positive</strong> (rare discoveries, festivals, cosmic gifts). They affect population, building income, and territory conditions — sometimes dramatically.</p>
+        <div class="faq-callout">🌐 When an event is active it appears prominently on the <strong>live ticker</strong> at the top of every page and your minister sends you an alert.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What kinds of events can happen? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p><strong>Negative events</strong> include things like famine, plague, forest fires, tidal waves, alien invasions, tree blight, and mass migration away from struggling territories.</p>
+        <p><strong>Positive events</strong> include alien tech transfers that upgrade a building for free, galactic investment funds, travelling stageshows that boost happiness and culture income, miracle harvests, scientific breakthroughs, population booms, and rare cosmic phenomena that enhance entire territories.</p>
+        <p>Some events strike a single unit. Others sweep across multiple territories. A few affect all of Luminaea at once.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I protect my units from negative events? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — certain buildings provide protection against specific threats:</p>
+        <p>• <strong>Flood Defence Wall</strong> — dramatically reduces tidal wave damage<br>
+           • <strong>Underground Drainage System</strong> — reduces flood and storm damage<br>
+           • <strong>Arborist Research Station</strong> — protects nature buildings from tree blight<br>
+           • <strong>Interplanetary Defence Tower</strong> — reduces alien invasion impact<br>
+           • <strong>Nectar-Infusion Clinic / Meditation Sanctuary</strong> — reduce plague impact and speed recovery</p>
+        <p>The broader principle: <em>diversify your developments</em>. A territory built entirely on one type of building is exposed to events that target that type. A balanced mix provides natural resilience.</p>
+        <div class="faq-callout purple">🌲 Nature buildings like the Primal Seed Vault and Energy Garden are more vulnerable to Tree Blight and Forest Fire — but an Arborist Research Station in the territory can shield them.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Do units recover after a negative event? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. Population and income recover naturally once an event resolves. The speed of recovery depends on what's built in the territory — health buildings like clinics and sanctuaries accelerate recovery significantly. The more of these you have, the faster and more completely the territory bounces back.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Will I get a warning before something happens? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Sometimes. Your minister may send a <strong>prophecy alert</strong> — a cryptic warning that something unusual has been sensed in the territory. Whether you act on it is up to you.</p>
+        <p>Not every event comes with a warning. Luminaea keeps its secrets.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — TELEPORTATION GATES
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="teleportation">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🌀</span>
+      <span class="faq-section-title">Teleportation Gates</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is a Teleportation Gate? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>A <strong>Teleportation Gate</strong> is a legendary nexus building that connects permanently to <em>The Convergence</em> — Luminaea's central teleportation hub. Once a second Gate is built anywhere in the world, direct routes form between all active Gates, enabling instant travel across Luminaea.</p>
+        <p>Gates are the most powerful structures in the game — they cost <strong>8,000,000 ARKIS</strong> to build (split between 2–3 co-builders), complete in just <strong>24 real hours</strong>, and generate <strong>3,000,000 ARKIS per month</strong> in total yield split between the owners.</p>
+        <div class="faq-callout">🌀 Gates can only be built at nexus points. Visit any nexus page to register interest.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How does the co-building process work? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Building a Gate requires players from the territories touching that nexus point:</p>
+        <p>• <strong>Player A</strong> registers interest — 4M ARKIS held in escrow<br>
+           • <strong>Player B</strong> joins — another 4M ARKIS in escrow. A 7-day recruitment window opens<br>
+           • <strong>Optional Player C</strong> joins within 7 days — pays 3M ARKIS. A &amp; B are each refunded 1M ARKIS. Build starts immediately<br>
+           • If no 3rd player joins after 7 days, the 2-player build starts automatically</p>
+        <p>Build completes after 24 real hours and daily yield begins immediately.</p>
+        <div class="faq-callout">💰 2-player build: 50,000 ARKIS/day each · 3-player build: 33,333 ARKIS/day each</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is the 50% ownership cap? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>No single player can own more than <strong>50%</strong> of any Teleportation Gate — enforced at the database level. This applies both at build time and when buying shares on the secondary market.</p>
+        <p>Ownership is tracked in <em>basis points</em> (10,000 = 100%). A 2-player build gives 5,000bp each. A 3-player build gives 3,333bp each. Shares can be sold in lots — quarter-holdings for 2-player builds, third-holdings for 3-player builds.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What happens if I go inactive? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Gate ownership requires staying active. If you don't log in for <strong>30 days</strong>, your share is automatically transferred to the territory ministers of the touching territories. You will receive a <strong>7-day warning</strong> alert before this happens.</p>
+        <p>If you return within the warning window, the clock resets and your co-owners are notified. If your share has already transferred to ministers, you can buy it back at the standard market price — and as the original builder, the 5% commission fee is <strong>waived</strong>.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I sell my Gate share? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. Player-to-player sales have <strong>no commission</strong> and you set your own price. Minister shares (transferred due to inactivity) are sold at a fixed price with 5% going to the territory treasury and 95% going to The Convergence treasury. Original builders buying back their own share pay no commission.</p>
+        <div class="faq-callout purple">Remember the 50% cap — buyers cannot purchase shares that would take them over 50% of total ownership.</div>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — DEMOLISHING BUILDINGS
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="demolish">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🗑️</span>
+      <span class="faq-section-title">Demolishing Buildings</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I remove a development from my unit? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — any completed regular development can be demolished from your unit page. You will receive a <strong>25% refund</strong> of the original build cost, paid from the territory treasury.</p>
+        <p>For example, demolishing a building that cost 60,000 ARKIS returns 15,000 ARKIS to your wallet. The refund comes from the territory's treasury balance — if the treasury has insufficient funds, you receive whatever is available (minimum 0).</p>
+        <div class="faq-callout">⚠️ Demolition is permanent and cannot be undone. Buildings under construction cannot be demolished.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are there any buildings that can't be demolished? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Special collaborative buildings (the unique per-territory buildings built with co-contributors) cannot be demolished. These are permanent structures once built. Regular buildings from the development catalog can always be demolished as long as they are fully completed.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Where does the refund come from and where is it recorded? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>The 25% refund is paid <em>from the territory treasury</em> of the territory your unit is in. It appears as a <em>demolish_refund</em> outflow in the territory's treasury transactions — visible to the minister on their Minalien page, and in your own Treasury page under the combined transaction history.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — TOKEN EXCHANGE
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="exchange">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">💱</span>
+      <span class="faq-section-title">Token Exchange</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I exchange tokens? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>The <strong>Trade widget</strong> on your Profile page (Capital panel) lets you exchange any of the five tokens — ARKIS, PLASM, WIRE, LICHEN, and SPORE — with each other at live market rates. You can type an amount into either side of the trade to calculate the other direction automatically.</p>
+        <p>The full <a href="exchange.html">Exchange page</a> shows live rate pills, your complete token balances, recent network-wide trades, and deeper token lore.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What are the exchange rates based on? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Rates are stored in the <em>token_exchange_rates</em> table and updated periodically. ARKIS is the base currency (rate = 1). Current approximate rates:</p>
+        <p>• <strong>$PLASM</strong> — 0.9 ARKIS each<br>
+           • <strong>$WIRE</strong> — 2.2 ARKIS each<br>
+           • <strong>$LICHEN</strong> — 2.7 ARKIS each<br>
+           • <strong>$SPORE</strong> — 3.5 ARKIS each</p>
+        <p>These rates reflect the relative scarcity and yield of each token across Luminaea. Rarer tokens produced by fewer buildings tend to have higher rates.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are there any fees on token exchanges? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>No fees are charged on token-to-token exchanges through the Trade widget or Exchange page. You receive the full calculated amount based on the current rate. Fees only apply to unit sales (2%), auction listings (3%), and development permit fees (5% to the territory treasury).</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION — PRIVACY & IDENTITY
+  ═══════════════════════════════════════════════ -->
+  <div class="faq-section" id="privacy">
+    <div class="faq-section-header">
+      <span class="faq-section-icon">🔒</span>
+      <span class="faq-section-title">Privacy &amp; Identity</span>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What is an Anonymous Investor? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>When registering interest in a Teleportation Gate or joining a gate build, you can choose to submit as an <strong>Anonymous Investor</strong>. Your identity is hidden from public-facing alerts, broadcasts, and the nexus page — other players see "An anonymous investor" instead of your username.</p>
+        <p>Once the build <em>starts</em>, your identity is revealed to your co-builders only. You remain anonymous to all other players permanently unless you change the setting.</p>
+        <div class="faq-callout">The default is public. You can change your default in <a href="settings.html">Settings → Privacy → Default Bidding Identity</a>.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I hide my Gate ownership from other players? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes. In <a href="settings.html">Settings → Privacy</a>, toggle <em>Show Gate Network Ownership</em> off to hide your Gate holdings from other players viewing your profile. You always see your own holdings regardless of this setting.</p>
+        <p>Individual holdings can also be set to private — if you submitted as an Anonymous Investor at build time, your holding on the nexus page and profile will show as "Anonymous Investor" to outsiders.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What other privacy settings are available? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>From <a href="settings.html">Settings → Privacy</a> you can control:</p>
+        <p>• <strong>Public Profile</strong> — allow others to view your profile at all<br>
+           • <strong>Show Unit Count</strong> — display how many units you own<br>
+           • <strong>Show Badges</strong> — display earned badges<br>
+           • <strong>Show Wallet Address</strong> — show truncated wallet on public profile<br>
+           • <strong>Show Trade History</strong> — allow others to see completed trades<br>
+           • <strong>Show Tune Scores</strong> — display tune history<br>
+           • <strong>Show Treasury Activity</strong> — show treasury transactions<br>
+           • <strong>Show Tax History</strong> — show holding tax records<br>
+           • <strong>Show Gate Network Ownership</strong> — show Gate holdings<br>
+           • <strong>Default Bidding Identity</strong> — public or Anonymous Investor</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I send messages to other players? <span class="faq-chevron">▼</span></div>
+      <div class="faq-answer">
+        <p>Yes — visit another player's profile and click the <em>Message</em> button. You'll be shown a set of pre-defined message templates to choose from: trade enquiries, collaboration proposals, alliance invitations, and more. Free-text messaging is not currently available — all messages use structured templates to keep communication focused and spam-free.</p>
+        <p>A rate limit of 3 messages to the same player per 24 hours applies.</p>
+      </div>
+    </div>
+  </div>
+  <a href="#top" class="back-to-top">↑ Back to top</a>
+
+  <!-- ── FOOTER NAV ── -->
+  <div class="faq-footer-nav">
+    <a href="map.html">← Map</a>
+    <a href="district.html">Districts</a>
+    <a href="nexus.html?id=NEXUS-01">Nexus Points</a>
+    <a href="profile.html">Profile</a>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script src="load-nav.js"></script>
+<script>
+  // Simple accordion toggle
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.closest('.faq-item');
+      const wasOpen = item.classList.contains('open');
+      // Close all in same section
+      item.closest('.faq-section').querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // Open first item in each section by default
+  document.querySelectorAll('.faq-section').forEach(section => {
+    const first = section.querySelector('.faq-item');
+    if (first) first.classList.add('open');
+  });
+</script>
+</body>
+</html>

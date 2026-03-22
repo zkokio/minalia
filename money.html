@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treasury — MINALIA</title>
+<link rel="stylesheet" href="style.css?v=20260315a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="config.js?v=20260320a"></script>
+<script src="auth_auro.js?v=20260320a"></script>
+<style>
+  body { padding-top: 92px; overflow-x: hidden; }
+  body::after { display: none !important; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+
+  .earth-footer { position:fixed; bottom:0; left:0; right:0; height:45vh; pointer-events:none; z-index:1; }
+  .earth-footer img { width:100%; height:100%; object-fit:cover; object-position:center 60%; opacity:0.15; display:block;
+    mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%); }
+
+  .page-wrap { max-width:1100px; margin:0 auto; padding:28px 24px 80px; position:relative; z-index:2; }
+
+  .breadcrumb { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; font-weight:600; letter-spacing:.02em; margin-bottom:28px; }
+  .breadcrumb a { color:rgba(255,255,255,0.4); text-decoration:none; transition:color .15s; }
+  .breadcrumb a:hover { color:rgba(255,255,255,0.8); }
+  .breadcrumb span { color:rgba(255,255,255,0.85); }
+  .breadcrumb .sep { color:rgba(255,255,255,0.2); font-size:10px; }
+
+  .page-header { margin-bottom:28px; }
+  .page-eyebrow { font-family:'Orbitron',monospace; font-size:9px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,224,138,0.5); margin-bottom:8px; }
+  .page-title { font-size:28px; font-weight:900; letter-spacing:-.01em; color:#fff; margin-bottom:6px; }
+  .page-title span { color:#FFE08A; }
+  .page-subtitle { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.5; }
+
+  /* ── Net summary bar ── */
+  .net-bar {
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:28px;
+  }
+  @media(max-width:700px) { .net-bar { grid-template-columns:1fr; } }
+  .net-card {
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+    border-radius:12px; padding:18px 20px;
+  }
+  .net-card.income { border-color:rgba(96,255,171,0.2); background:rgba(96,255,171,0.03); }
+  .net-card.expense { border-color:rgba(255,100,100,0.2); background:rgba(255,100,100,0.03); }
+  .net-card.net-pos { border-color:rgba(255,224,138,0.2); background:rgba(255,224,138,0.03); }
+  .net-card.net-neg { border-color:rgba(255,100,100,0.25); background:rgba(255,100,100,0.04); }
+  .net-label { font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:8px; }
+  .net-value { font-size:22px; font-weight:800; color:#fff; }
+  .net-value.green { color:#60ffab; }
+  .net-value.red   { color:rgba(255,110,110,0.9); }
+  .net-value.gold  { color:#FFE08A; }
+  .net-sub { font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px; }
+
+  /* ── Tabs ── */
+  .section-tabs { display:flex; gap:4px; margin-bottom:20px; flex-wrap:wrap; }
+  .stab { padding:7px 18px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03);
+          color:rgba(255,255,255,0.45); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+          cursor:pointer; transition:all .15s; }
+  .stab:hover { border-color:rgba(255,224,138,0.2); color:rgba(255,224,138,0.7); }
+  .stab.active { border-color:rgba(255,224,138,0.4); background:rgba(255,224,138,0.08); color:#FFE08A; }
+
+  /* ── Panel ── */
+  .money-panel { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:24px; margin-bottom:24px; }
+  .panel-title { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+  .panel-title-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-green { background:#60ffab; box-shadow:0 0 6px #60ffab; }
+  .dot-red   { background:rgba(255,110,110,0.9); box-shadow:0 0 6px rgba(255,110,110,0.5); }
+
+  /* ── Combined chart ── */
+  .chart-legend { display:flex; gap:20px; margin-bottom:12px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,0.5); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  .chart-period-row { display:flex; gap:6px; margin-bottom:12px; }
+  .chart-period-btn { padding:4px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:rgba(255,255,255,0.4); font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+  .chart-period-btn.active { border-color:rgba(255,224,138,0.4); background:rgba(255,224,138,0.08); color:#FFE08A; }
+  .chart-period-btn:hover:not(.active) { border-color:rgba(255,255,255,0.2); color:rgba(255,255,255,0.7); }
+
+  .chart-wrap { position:relative; width:100%; }
+  .chart-canvas { width:100%; display:block; }
+  .chart-empty { text-align:center; padding:40px 0; font-size:13px; color:rgba(255,255,255,0.25); }
+  .chart-x-labels { display:flex; justify-content:space-between; padding:0 60px 0 60px; margin-top:4px; }
+  .chart-x-label { font-size:9px; color:rgba(255,255,255,0.25); font-family:'Share Tech Mono',monospace; text-align:center; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ── Income breakdown ── */
+  .income-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  .income-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+  .income-icon { font-size:22px; flex-shrink:0; }
+  .income-info { flex:1; min-width:0; }
+  .income-name { font-size:12px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .income-unit { font-size:10px; color:rgba(255,255,255,0.3); margin-bottom:6px; }
+  .income-yields { display:flex; gap:8px; flex-wrap:wrap; }
+  .yield-pill { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+  .yield-arkis  { background:rgba(96,255,171,0.1);  color:#60ffab;  border:1px solid rgba(96,255,171,0.2); }
+  .yield-wire   { background:rgba(160,216,255,0.1); color:#a0d8ff; border:1px solid rgba(160,216,255,0.2); }
+  .yield-plasm  { background:rgba(200,160,255,0.1); color:#c8a0ff; border:1px solid rgba(200,160,255,0.2); }
+  .yield-lichen { background:rgba(128,224,160,0.1); color:#80e0a0; border:1px solid rgba(128,224,160,0.2); }
+  .yield-spore  { background:rgba(240,192,96,0.1);  color:#f0c060; border:1px solid rgba(240,192,96,0.2); }
+
+  /* ── Tax / history table ── */
+  .history-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .history-table th { font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.3); font-weight:700; padding:8px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .history-table td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.75); vertical-align:middle; }
+  .history-table tr:last-child td { border-bottom:none; }
+  .history-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .td-green { color:#60ffab !important; font-weight:700; }
+  .td-red   { color:rgba(255,110,110,0.9) !important; font-weight:700; }
+  .td-gold  { color:#FFE08A !important; font-weight:700; }
+  .td-mono  { font-family:'Share Tech Mono',monospace; }
+  .td-badge { display:inline-block; padding:2px 7px; border-radius:8px; font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .badge-income  { background:rgba(96,255,171,0.1);  color:#60ffab;  border:1px solid rgba(96,255,171,0.2); }
+  .badge-tax     { background:rgba(255,110,110,0.1); color:rgba(255,110,110,0.9); border:1px solid rgba(255,110,110,0.2); }
+
+  /* ── Element income cards (mirrored from realestate.html) ── */
+  .el-income-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 16px; margin-bottom: 24px; }
+  .re-el-card { border-radius: 14px; padding: 22px 20px 18px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); transition: transform 0.2s, box-shadow 0.2s; }
+  .re-el-card:hover { transform: translateY(-3px); }
+  .el-arkis  { background: rgba(8,8,4,0.7);   border-color: rgba(255,224,138,0.18); box-shadow: inset 0 0 80px rgba(255,200,50,0.04); }
+  .el-plasm  { background: rgba(12,8,2,0.6);  border-color: rgba(255,160,30,0.18);  box-shadow: inset 0 0 80px rgba(255,140,0,0.04); }
+  .el-lichen { background: rgba(2,10,6,0.6);  border-color: rgba(70,220,130,0.18);  box-shadow: inset 0 0 80px rgba(60,200,100,0.04); }
+  .el-wire   { background: rgba(2,6,14,0.6);  border-color: rgba(80,160,255,0.18);  box-shadow: inset 0 0 80px rgba(60,120,240,0.04); }
+  .el-spore  { background: rgba(10,4,14,0.6); border-color: rgba(190,90,255,0.18);  box-shadow: inset 0 0 80px rgba(180,60,240,0.04); }
+  .el-orb { position:absolute; top:-60px; right:-60px; width:160px; height:160px; border-radius:50%; filter:blur(50px); pointer-events:none; opacity:0.18; }
+  .el-arkis  .el-orb { background: #FFE08A; }
+  .el-plasm  .el-orb { background: #FF9020; }
+  .el-lichen .el-orb { background: #46DC82; }
+  .el-wire   .el-orb { background: #50A0FF; }
+  .el-spore  .el-orb { background: #BE5AFF; }
+  .el-symbol { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px; }
+  .el-arkis  .el-symbol { color: #FFE08A; }
+  .el-plasm  .el-symbol { color: #FF9020; }
+  .el-lichen .el-symbol { color: #46DC82; }
+  .el-wire   .el-symbol { color: #50A0FF; }
+  .el-spore  .el-symbol { color: #BE5AFF; }
+  .el-name   { font-family:'Orbitron',monospace; font-size:18px; font-weight:900; color:#fff; margin-bottom:2px; }
+  .el-role   { font-size:10px; color:rgba(255,255,255,0.3); margin-bottom:14px; letter-spacing:.04em; }
+  .el-price  { font-family:'Orbitron',monospace; font-size:26px; font-weight:900; line-height:1; }
+  .el-arkis  .el-price { color: #FFE08A; }
+  .el-plasm  .el-price { color: #FF9020; }
+  .el-lichen .el-price { color: #46DC82; }
+  .el-wire   .el-price { color: #50A0FF; }
+  .el-spore  .el-price { color: #BE5AFF; }
+  .el-price-row { display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
+  .el-unit  { font-size:11px; color:rgba(255,255,255,0.25); }
+  .el-arkis-eq { font-size:11px; color:rgba(255,255,255,0.35); margin-bottom:14px; }
+  .el-arkis-eq span { color:rgba(255,224,138,0.7); font-weight:700; }
+  .el-spark { height:52px; margin-bottom:6px; }
+  .el-periods { display:flex; gap:3px; margin-bottom:0; }
+  .el-period { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; letter-spacing:.08em; padding:3px 8px; border-radius:4px; cursor:pointer; background:transparent; color:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.07); transition:all .15s; }
+  .el-period:hover { color:rgba(255,255,255,0.55); border-color:rgba(255,255,255,0.18); }
+  .el-arkis  .el-period.active { background:rgba(255,224,138,0.1); color:#FFE08A; border-color:rgba(255,224,138,0.3); }
+  .el-plasm  .el-period.active { background:rgba(255,144,32,0.12); color:#FF9020; border-color:rgba(255,144,32,0.3); }
+  .el-lichen .el-period.active { background:rgba(70,220,130,0.12); color:#46DC82; border-color:rgba(70,220,130,0.3); }
+  .el-wire   .el-period.active { background:rgba(80,160,255,0.12); color:#50A0FF; border-color:rgba(80,160,255,0.3); }
+  .el-spore  .el-period.active { background:rgba(190,90,255,0.12); color:#BE5AFF; border-color:rgba(190,90,255,0.3); }
+
+  /* ── Tooltip ── */
+  .chart-tooltip { position:absolute; background:rgba(18,14,24,0.97); border:1px solid rgba(255,224,138,0.2); border-radius:8px; padding:8px 12px; font-size:11px; pointer-events:none; white-space:nowrap; z-index:10; display:none; }
+
+  /* ── Empty / loading ── */
+  .loading-msg { text-align:center; padding:60px 0; color:rgba(255,255,255,0.3); font-size:13px; }
+  .section-hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+<script src="load-nav.js"></script>
+
+<div class="page-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="profile.html" id="profileLink">Profile</a>
+    <span class="sep">›</span>
+    <span id="pageUsername">Treasury</span>
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-eyebrow">Financial Record</div>
+    <h1 class="page-title" id="pageTitle">My <span>Treasury</span></h1>
+    <p class="page-subtitle" id="pageSubtitle">Income earned and taxes paid across your Luminaea territory.</p>
+    <div id="privacyToggleWrap" style="display:none;margin-top:10px;">
+      <button onclick="togglePrivacy()" id="privacyBtn"
+        style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;
+               background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+               color:rgba(255,255,255,0.35);font-size:10px;font-weight:700;letter-spacing:.06em;
+               text-transform:uppercase;cursor:pointer;transition:all .15s;"
+        onmouseover="this.style.borderColor='rgba(255,224,138,0.3)';this.style.color='rgba(255,224,138,0.7)'"
+        onmouseout="updatePrivacyBadge(viewUser.treasury_public !== false)">
+        <span id="privacyIcon">🌐</span>
+        <span id="privacyLabel">Public — click to make private</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-msg" id="pageLoading">Loading treasury data…</div>
+
+  <!-- Main content -->
+  <div id="mainContent" style="display:none;">
+
+    <!-- Net summary -->
+    <div class="net-bar">
+      <div class="net-card income">
+        <div class="net-label">Total Income (all time)</div>
+        <div class="net-value green" id="statTotalIncome">—</div>
+        <div class="net-sub" id="statIncomeMonths">across all developments</div>
+      </div>
+      <div class="net-card expense">
+        <div class="net-label">Total Tax Paid (all time)</div>
+        <div class="net-value red" id="statTotalTax">—</div>
+        <div class="net-sub" id="statTaxWeeks">across all weeks</div>
+      </div>
+      <div class="net-card" id="netCard">
+        <div class="net-label">Net Position</div>
+        <div class="net-value" id="statNet">—</div>
+        <div class="net-sub">income minus tax</div>
+      </div>
+    </div>
+
+    <!-- Combined chart -->
+    <div class="money-panel">
+      <div class="panel-title">Cash Flow</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#60ffab;"></div> Income</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,110,110,0.9);"></div> Tax</div>
+      </div>
+      <div class="chart-period-row">
+        <button class="chart-period-btn active" onclick="setPeriod('all',this)">All time</button>
+        <button class="chart-period-btn" onclick="setPeriod('90',this)">90 days</button>
+        <button class="chart-period-btn" onclick="setPeriod('30',this)">30 days</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas class="chart-canvas" id="flowChart"></canvas>
+        <div class="chart-empty" id="chartEmpty" style="display:none;">No financial history yet.</div>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+      <div class="chart-x-labels" id="chartXLabels"></div>
+    </div>
+
+    <!-- Income breakdown by token -->
+    <div class="money-panel" id="incomeBreakdownPanel" style="display:none;">
+      <div class="panel-title"><span class="panel-title-dot dot-green"></span>Income by Token — Monthly</div>
+      <div class="el-income-grid" id="incomeTokenGrid"></div>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="section-tabs">
+      <button class="stab active" onclick="showSection('income',this)">💰 Income</button>
+      <button class="stab" onclick="showSection('tax',this)">⚖️ Tax History</button>
+      <button class="stab" onclick="showSection('combined',this)">📋 All Transactions</button>
+    </div>
+
+    <!-- Income panel -->
+    <div id="sectionIncome">
+      <div class="money-panel">
+        <div class="panel-title"><span class="panel-title-dot dot-green"></span>Active Developments — Monthly Income</div>
+        <div id="incomeGrid" class="income-grid"></div>
+      </div>
+    </div>
+
+    <!-- Tax panel -->
+    <div id="sectionTax" class="section-hidden">
+
+      <!-- Inactivity penalty explainer -->
+      <div class="money-panel" style="margin-bottom:14px;border-color:rgba(255,100,60,0.2);">
+        <div class="panel-title" style="color:rgba(255,140,100,0.8);"><span class="panel-title-dot" style="background:rgba(255,100,60,0.7);"></span>Inactivity Penalty</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:14px;">Your holding tax rate increases automatically the longer you go without logging in. Log in regularly to stay at the standard rate.</p>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Days since last login</th>
+              <th>Tax multiplier</th>
+              <th>Effect</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0–7 days</td><td style="color:rgba(96,255,171,0.8);font-weight:700;">× 1.0</td><td style="color:rgba(255,255,255,0.4);">Standard rate</td></tr>
+            <tr><td>8–14 days</td><td style="color:rgba(255,224,138,0.8);font-weight:700;">× 1.5</td><td style="color:rgba(255,255,255,0.4);">50% penalty</td></tr>
+            <tr><td>15–30 days</td><td style="color:rgba(255,160,60,0.9);font-weight:700;">× 2.0</td><td style="color:rgba(255,255,255,0.4);">Double rate</td></tr>
+            <tr><td>31+ days</td><td style="color:rgba(255,80,60,0.9);font-weight:700;">× 3.0</td><td style="color:rgba(255,255,255,0.4);">Triple rate — units at risk</td></tr>
+          </tbody>
+        </table>
+        <div id="inactivityStatusBar" style="margin-top:14px;padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);font-size:12px;color:rgba(255,255,255,0.4);">
+          Checking your activity status…
+        </div>
+      </div>
+
+      <div class="money-panel">
+        <div class="panel-title"><span class="panel-title-dot dot-red"></span>Tax History</div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Week Commencing</th>
+              <th>Units Held</th>
+              <th>Gross Tax</th>
+              <th>Credit</th>
+              <th>Net Paid</th>
+              <th>Balance After</th>
+            </tr>
+          </thead>
+          <tbody id="taxTableBody"></tbody>
+        </table>
+        <div id="taxEmpty" style="display:none;padding:32px 0;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">No tax history yet.</div>
+      </div>
+    </div>
+
+    <!-- Combined panel -->
+    <div id="sectionCombined" class="section-hidden">
+      <div class="money-panel">
+        <div class="panel-title">All Transactions</div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="combinedTableBody"></tbody>
+        </table>
+        <div id="combinedEmpty" style="display:none;padding:32px 0;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">No transactions yet.</div>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /page-wrap -->
+
+<div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+
+<script>
+let viewUser = null, isOwnPage = false;
+let taxHistory = [], devIncome = [], yieldHistory = [];
+let chartPeriod = 'all';
+// Note: currentUser is set globally by auth_auro.js
+
+(async function init() {
+  try {
+    // ── Auth: mirror tax.html pattern exactly ──
+    let session = null;
+    try { session = JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) {}
+    if (!session?.wallet_address) { window.location.replace('login.html'); return; }
+
+    let db = null;
+    for (let i = 0; i < 50; i++) {
+      if (window.supabase && typeof window.supabase.from === 'function') { db = window.supabase; break; }
+      if (window.supabaseClient && typeof window.supabaseClient.from === 'function') { db = window.supabaseClient; break; }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    if (!db) { document.getElementById('pageLoading').textContent = 'Could not connect to database.'; return; }
+
+    // Who am I?
+    let me = session.user || null;
+    if (!me?.id) {
+      const { data } = await db.from('users').select('*')
+        .eq('mina_wallet_address', session.wallet_address).maybeSingle();
+      me = data;
+    }
+    if (!me) { document.getElementById('pageLoading').textContent = 'Could not identify user.'; return; }
+
+    // Who are we viewing?
+    const params = new URLSearchParams(window.location.search);
+    const viewUsername = params.get('user');
+
+    if (!viewUsername || viewUsername === me.username) {
+      viewUser = me; isOwnPage = true;
+    } else {
+      const { data: other, error: otherErr } = await db.from('users').select('*')
+        .eq('username', viewUsername).maybeSingle();
+      if (otherErr) console.warn('User lookup:', otherErr.message);
+      if (!other) { document.getElementById('pageLoading').textContent = `Player "${viewUsername}" not found.`; return; }
+      viewUser = other; isOwnPage = false;
+    }
+
+    document.getElementById('profileLink').href = isOwnPage ? 'profile.html' : `profile.html?user=${encodeURIComponent(viewUser.username)}`;
+    document.getElementById('pageTitle').innerHTML = isOwnPage ? 'My <span>Treasury</span>' : `${viewUser.username}'s <span>Treasury</span>`;
+    document.getElementById('pageUsername').textContent = isOwnPage ? 'Treasury' : `${viewUser.username} · Treasury`;
+    document.getElementById('pageSubtitle').textContent = isOwnPage
+      ? 'Income earned and taxes paid across your Luminaea territory.'
+      : `Income earned and taxes paid by ${viewUser.username}.`;
+    document.title = `${viewUser.username} — Treasury — MINALIA`;
+
+    // Privacy check — if viewing other user and they have treasury set to private
+    if (!isOwnPage && viewUser.treasury_public === false) {
+      document.getElementById('pageLoading').style.display = 'none';
+      document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;padding:80px 20px;color:rgba(255,255,255,0.3);">
+          <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px;">${viewUser.username} has set their treasury to private.</div>
+          <a href="profile.html?user=${encodeURIComponent(viewUser.username)}" style="color:rgba(255,224,138,0.6);font-size:13px;">View their profile →</a>
+        </div>`;
+      document.getElementById('mainContent').style.display = '';
+      return;
+    }
+
+    // Show privacy toggle for own page
+    if (isOwnPage) {
+      const toggleWrap = document.getElementById('privacyToggleWrap');
+      if (toggleWrap) {
+        toggleWrap.style.display = 'inline-flex';
+        updatePrivacyBadge(viewUser.treasury_public !== false);
+      }
+    }
+
+    // Fetch tax history
+    const { data: taxData } = await db.from('holding_tax_log')
+      .select('week_start,units_held,taxable_units,gross_tax,activity_points,credit_applied,net_tax,balance_before,balance_after')
+      .eq('player_id', viewUser.id)
+      .order('week_start', { ascending: true });
+    taxHistory = taxData || [];
+
+    // Fetch active developments with yields
+    const { data: devData } = await db.from('developments')
+      .select('unit_code, building_name, building_type, monthly_income, status, development_catalog!developments_catalog_id_fkey(name, icon, category, yield_arkis, yield_plasm, yield_wire, yield_lichen, yield_spore)')
+      .eq('owner_id', viewUser.id)
+      .eq('status', 'completed');
+    devIncome = devData || [];
+
+    // Fetch demolish refund transactions for this player
+    const { data: demolishData } = await db.from('treasury_transactions')
+      .select('amount, description, created_at, unit_code, territory_code')
+      .eq('player_id', viewUser.id)
+      .eq('type', 'demolish_refund')
+      .eq('direction', 'out')
+      .order('created_at', { ascending: false });
+    const demolishRefunds = demolishData || [];
+
+    // Fetch daily yield payout history
+    const { data: yieldData } = await db.from('yield_payouts')
+      .select('payout_date, arkis_amount, plasm_amount, wire_amount, lichen_amount, spore_amount')
+      .eq('owner_id', viewUser.id)
+      .order('payout_date', { ascending: true });
+    // Aggregate by date (multiple buildings per day → sum)
+    const yieldByDate = {};
+    (yieldData || []).forEach(r => {
+      if (!yieldByDate[r.payout_date]) yieldByDate[r.payout_date] = { arkis:0, plasm:0, wire:0, lichen:0, spore:0 };
+      yieldByDate[r.payout_date].arkis  += Number(r.arkis_amount);
+      yieldByDate[r.payout_date].plasm  += Number(r.plasm_amount);
+      yieldByDate[r.payout_date].wire   += Number(r.wire_amount);
+      yieldByDate[r.payout_date].lichen += Number(r.lichen_amount);
+      yieldByDate[r.payout_date].spore  += Number(r.spore_amount);
+    });
+    yieldHistory = Object.entries(yieldByDate)
+      .map(([date, v]) => ({
+        date,
+        // Convert all tokens to ARKIS equivalent for chart
+        total: Math.round(v.arkis + v.wire*2.2 + v.plasm*0.9 + v.lichen*2.7 + v.spore*3.5),
+        arkis: v.arkis, wire: v.wire, plasm: v.plasm, lichen: v.lichen, spore: v.spore
+      }))
+      .sort((a,b) => a.date.localeCompare(b.date));
+
+    // Fetch activity_log income events
+    const { data: actData } = await db.from('activity_log')
+      .select('activity_type, description, created_at')
+      .eq('user_id', viewUser.id)
+      .eq('activity_type', 'income_received')
+      .order('created_at', { ascending: true });
+
+    // ── Summary stats ──
+    const totalTax    = taxHistory.reduce((s,r) => s + Number(r.net_tax), 0);
+    const totalIncome = devIncome.reduce((s,d) => {
+      const dc = d['development_catalog!developments_catalog_id_fkey'] || d.development_catalog || {};
+      return s + Number(d.monthly_income || dc.yield_arkis || 0)
+               + Number(dc.yield_wire   || 0) * 2.2
+               + Number(dc.yield_plasm  || 0) * 0.9
+               + Number(dc.yield_lichen || 0) * 2.7
+               + Number(dc.yield_spore  || 0) * 3.5;
+    }, 0);
+    // Total all-time income from activity_log
+    const actIncome   = (actData || []).reduce((s,a) => {
+      const m = a.description.match(/(\d[\d,]+)\s*ARKIS/);
+      return s + (m ? parseInt(m[1].replace(/,/g,'')) : 0);
+    }, 0);
+    const allTimeIncome = Math.max(totalIncome, actIncome);
+    const net = allTimeIncome - totalTax;
+
+    document.getElementById('statTotalIncome').textContent = allTimeIncome.toLocaleString() + ' ARKIS';
+    document.getElementById('statIncomeMonths').textContent = devIncome.length + ' active development' + (devIncome.length !== 1 ? 's' : '');
+    document.getElementById('statTotalTax').textContent = totalTax.toLocaleString() + ' ARKIS';
+    document.getElementById('statTaxWeeks').textContent = taxHistory.length + ' week' + (taxHistory.length !== 1 ? 's' : '') + ' of holding tax';
+
+    const netEl = document.getElementById('statNet');
+    const netCard = document.getElementById('netCard');
+    netEl.textContent = (net >= 0 ? '+' : '') + net.toLocaleString() + ' ARKIS';
+    netEl.className = 'net-value ' + (net >= 0 ? 'gold' : 'red');
+    netCard.className = 'net-card ' + (net >= 0 ? 'net-pos' : 'net-neg');
+
+    document.getElementById('pageLoading').style.display = 'none';
+    document.getElementById('mainContent').style.display = '';
+
+    renderChart();
+    renderIncomeGrid();
+    renderIncomeCards();
+    renderTaxTable();
+    renderCombinedTable(actData || [], demolishRefunds);
+
+    // ── Inactivity status bar ──
+    (function() {
+      const bar = document.getElementById('inactivityStatusBar');
+      if (!bar || !viewUser) return;
+      const lastLogin = viewUser.last_login_at ? new Date(viewUser.last_login_at) : null;
+      if (!lastLogin) {
+        bar.innerHTML = '<span style="color:rgba(255,80,60,0.9);font-weight:700;">⚠ Never logged in</span> — triple rate (×3.0) applies.';
+        bar.style.borderColor = 'rgba(255,80,60,0.3)';
+        bar.style.background = 'rgba(255,80,60,0.05)';
+        return;
+      }
+      const days = Math.floor((Date.now() - lastLogin.getTime()) / 86400000);
+      let mult, color, label, advice;
+      if      (days <= 7)  { mult = '×1.0'; color = 'rgba(96,255,171,0.9)';  label = 'Standard rate';  advice = 'You\'re active — no penalty.'; }
+      else if (days <= 14) { mult = '×1.5'; color = 'rgba(255,224,138,0.9)'; label = '50% penalty';    advice = 'Log in soon to avoid a higher rate.'; }
+      else if (days <= 30) { mult = '×2.0'; color = 'rgba(255,160,60,0.9)';  label = 'Double rate';    advice = 'Log in to reset to standard rate.'; }
+      else                 { mult = '×3.0'; color = 'rgba(255,80,60,0.9)';   label = 'Triple rate';    advice = 'Units at risk — log in immediately.'; }
+      bar.innerHTML = `Last login: <strong style="color:rgba(255,255,255,0.7);">${days === 0 ? 'today' : days + ' day' + (days !== 1 ? 's' : '') + ' ago'}</strong> &nbsp;·&nbsp; Current multiplier: <strong style="color:${color};">${mult} — ${label}</strong> &nbsp;·&nbsp; <span style="color:rgba(255,255,255,0.35);">${advice}</span>`;
+      if (days > 7) { bar.style.borderColor = 'rgba(255,100,60,0.25)'; bar.style.background = 'rgba(255,80,60,0.04)'; }
+      else { bar.style.borderColor = 'rgba(96,255,171,0.2)'; bar.style.background = 'rgba(96,255,171,0.03)'; }
+    })();
+
+  } catch(err) {
+    console.error('Treasury init error:', err);
+    document.getElementById('pageLoading').textContent = 'Failed to load treasury. Check console for details.';
+  }
+})();
+
+// ── Privacy toggle ──
+function updatePrivacyBadge(isPublic) {
+  const btn  = document.getElementById('privacyBtn');
+  const icon = document.getElementById('privacyIcon');
+  const lbl  = document.getElementById('privacyLabel');
+  if (!btn) return;
+  icon.textContent = isPublic ? '🌐' : '🔒';
+  lbl.textContent  = isPublic ? 'Public — click to make private' : 'Private — click to make public';
+  btn.style.color  = isPublic ? 'rgba(96,255,171,0.7)' : 'rgba(255,224,138,0.6)';
+  btn.style.borderColor = isPublic ? 'rgba(96,255,171,0.25)' : 'rgba(255,224,138,0.25)';
+}
+
+async function togglePrivacy() {
+  if (!isOwnPage || !viewUser) return;
+  const newVal = viewUser.treasury_public === false ? true : false;
+  const db = window.supabase || window.supabaseClient;
+  if (!db) return;
+  await db.from('users').update({ treasury_public: newVal }).eq('id', viewUser.id);
+  viewUser.treasury_public = newVal;
+  updatePrivacyBadge(newVal);
+}
+
+// ── Section tabs ──
+function showSection(sec, btn) {
+  ['income','tax','combined'].forEach(s => {
+    document.getElementById('section' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('section-hidden', s !== sec);
+  });
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Combined chart (income green + tax red) ──
+function setPeriod(p, btn) {
+  chartPeriod = p;
+  document.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart();
+}
+
+function renderChart() {
+  const canvas   = document.getElementById('flowChart');
+  const empty    = document.getElementById('chartEmpty');
+  const xLabels  = document.getElementById('chartXLabels');
+
+  // Monthly income from developments (for reference label)
+  const monthlyIncome = devIncome.reduce((s,d) => {
+    const dc = d['development_catalog!developments_catalog_id_fkey'] || d.development_catalog || {};
+    return s + Number(d.monthly_income || dc.yield_arkis || 0)
+             + Number(dc.yield_wire   || 0) * 2.2
+             + Number(dc.yield_plasm  || 0) * 0.9
+             + Number(dc.yield_lichen || 0) * 2.7
+             + Number(dc.yield_spore  || 0) * 3.5;
+  }, 0);
+
+  // Apply period filter to yield history
+  let yData = [...yieldHistory];
+  if (chartPeriod === '90') yData = yData.slice(-90);
+  if (chartPeriod === '30') yData = yData.slice(-30);
+
+  // Still use tax history on weekly cadence for tax line
+  let taxData = [...taxHistory];
+  if (chartPeriod === '90') taxData = taxData.slice(-13); // ~13 weeks
+  if (chartPeriod === '30') taxData = taxData.slice(-4);
+
+  if (!taxData.length && !yData.length && !monthlyIncome) {
+    canvas.style.display = 'none'; empty.style.display = ''; xLabels.innerHTML = ''; return;
+  }
+
+  canvas.style.display = ''; empty.style.display = 'none';
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = 220;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD_L = 64, PAD_R = 64, PAD_T = 20, PAD_B = 8;
+  const cW = W - PAD_L - PAD_R;
+  const cH = H - PAD_T - PAD_B;
+
+  // Shared Y max — use daily income points and weekly tax
+  const maxYield = yData.length ? Math.max(...yData.map(r => r.total), 0) : 0;
+  const maxTax   = taxData.length ? Math.max(...taxData.map(r => Number(r.gross_tax)), 0) : 0;
+  const dailyRate = monthlyIncome / 30;
+  const maxVal = Math.max(maxYield, maxTax, dailyRate, 1) * 1.2;
+
+  // Grid + Y labels
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD_T + (cH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    const val = maxVal - (maxVal / 4) * i;
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '9px monospace'; ctx.textAlign = 'right';
+    ctx.fillText(val >= 1000 ? (val/1000).toFixed(0)+'K' : Math.round(val), PAD_L - 6, y + 3);
+  }
+
+  // ── Tax area + line (red) — weekly points ──
+  const taxPts = taxData.map((r, i) => ({
+    x: PAD_L + (taxData.length === 1 ? cW/2 : (i / (taxData.length-1)) * cW),
+    y: PAD_T + cH - (Number(r.gross_tax) / maxVal) * cH,
+    val: Number(r.gross_tax), net: Number(r.net_tax), week: r.week_start
+  }));
+
+  if (taxPts.length) {
+    const gradT = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + cH);
+    gradT.addColorStop(0, 'rgba(255,100,100,0.18)'); gradT.addColorStop(1, 'rgba(255,100,100,0)');
+    ctx.fillStyle = gradT;
+    ctx.beginPath(); ctx.moveTo(taxPts[0].x, PAD_T + cH);
+    taxPts.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(taxPts[taxPts.length-1].x, PAD_T + cH); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.strokeStyle = 'rgba(255,100,100,0.8)'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    taxPts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y)); ctx.stroke();
+    taxPts.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,100,100,0.9)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+  }
+
+  // ── Daily income area + line (green) ──
+  let incPts = [];
+  if (yData.length > 0) {
+    // Real daily payout points
+    incPts = yData.map((r, i) => ({
+      x: PAD_L + (yData.length === 1 ? cW/2 : (i / (yData.length-1)) * cW),
+      y: PAD_T + cH - (r.total / maxVal) * cH,
+      val: r.total, date: r.date,
+      arkis: r.arkis, wire: r.wire, plasm: r.plasm, lichen: r.lichen, spore: r.spore
+    }));
+
+    // Filled area under income curve
+    const gradI = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + cH);
+    gradI.addColorStop(0, 'rgba(96,255,171,0.15)'); gradI.addColorStop(1, 'rgba(96,255,171,0)');
+    ctx.fillStyle = gradI;
+    ctx.beginPath();
+    ctx.moveTo(incPts[0].x, PAD_T + cH);
+    incPts.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(incPts[incPts.length-1].x, PAD_T + cH);
+    ctx.closePath(); ctx.fill();
+
+    // Line
+    ctx.beginPath(); ctx.strokeStyle = 'rgba(96,255,171,0.85)'; ctx.lineWidth = 2;
+    ctx.lineJoin = 'round'; ctx.setLineDash([]);
+    incPts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.stroke();
+
+    // Dots — skip if too many points (>30) to avoid clutter
+    if (yData.length <= 30) {
+      incPts.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(96,255,171,0.95)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.2; ctx.stroke();
+      });
+    }
+
+    // Right-side label
+    const lastPt = incPts[incPts.length-1];
+    ctx.fillStyle = 'rgba(96,255,171,0.75)'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'left';
+    const incMonthly = Math.round(monthlyIncome);
+    ctx.fillText('▶ ' + (incMonthly >= 1000 ? (incMonthly/1000).toFixed(1)+'K' : incMonthly) + '/mo', W - PAD_R + 4, lastPt.y + 3);
+    ctx.textAlign = 'right';
+    ctx.fillText('Income', PAD_L - 6, lastPt.y + 3);
+
+  } else if (dailyRate > 0) {
+    // No payout history yet — show flat projected line
+    const incY = PAD_T + cH - (dailyRate / maxVal) * cH;
+    ctx.beginPath(); ctx.strokeStyle = 'rgba(96,255,171,0.4)'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(PAD_L, incY); ctx.lineTo(W - PAD_R, incY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(96,255,171,0.4)'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('▶ projected', W - PAD_R + 4, incY + 3);
+  }
+
+  // X labels — use yield dates if available, else tax weeks
+  if (yData.length) {
+    const step = Math.max(1, Math.floor(yData.length / 8)); // max ~8 labels
+    xLabels.innerHTML = yData
+      .filter((_, i) => i % step === 0 || i === yData.length - 1)
+      .map(r => {
+        const d = new Date(r.date);
+        return '<span class="chart-x-label">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</span>';
+      }).join('');
+  } else {
+    xLabels.innerHTML = taxData.map(r => {
+      const d = new Date(r.week_start);
+      return '<span class="chart-x-label">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</span>';
+    }).join('');
+  }
+
+  // Tooltip
+  canvas._taxPts  = taxPts;
+  canvas._incPts  = incPts;
+  canvas._weeklyIncome = Math.round(monthlyIncome / 4.3);
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const tip = document.getElementById('chartTooltip');
+
+    // Check income points first (daily, more precise)
+    let closest = null, minDist = 999;
+    (canvas._incPts || []).forEach(p => { const d = Math.abs(mx - p.x); if (d < minDist) { minDist = d; closest = p; } });
+
+    if (closest && minDist < 30) {
+      const dt = new Date(closest.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      let lines = '<div style="color:rgba(255,255,255,0.5);font-size:10px;margin-bottom:4px;">' + dt + '</div>';
+      if (closest.arkis  > 0) lines += '<div style="color:#FFE08A;">✦ ' + closest.arkis.toLocaleString()  + ' ARKIS</div>';
+      if (closest.wire   > 0) lines += '<div style="color:#a0d8ff;">⚡ ' + closest.wire.toLocaleString()   + ' WIRE</div>';
+      if (closest.plasm  > 0) lines += '<div style="color:#c8a0ff;">◈ ' + closest.plasm.toLocaleString()  + ' PLASM</div>';
+      if (closest.lichen > 0) lines += '<div style="color:#80e0a0;">🌿 ' + closest.lichen.toLocaleString() + ' LICHEN</div>';
+      if (closest.spore  > 0) lines += '<div style="color:#f0c060;">🍄 ' + closest.spore.toLocaleString()  + ' SPORE</div>';
+      lines += '<div style="color:#60ffab;margin-top:3px;border-top:1px solid rgba(255,255,255,0.08);padding-top:3px;">≈ ' + closest.val.toLocaleString() + ' ARKIS equiv</div>';
+      tip.innerHTML = lines;
+      tip.style.display = 'block';
+      tip.style.left = Math.min(closest.x + 12, canvas.width - 170) + 'px';
+      tip.style.top  = Math.max(closest.y - 80, 4) + 'px';
+      return;
+    }
+
+    // Fall back to tax points
+    closest = null; minDist = 999;
+    (canvas._taxPts || []).forEach(p => { const d = Math.abs(mx - p.x); if (d < minDist) { minDist = d; closest = p; } });
+    if (closest && minDist < 40) {
+      const wk = new Date(closest.week).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      const inc = canvas._weeklyIncome || 0;
+      const net = inc - closest.val;
+      tip.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:10px;margin-bottom:4px;">w/c ' + wk + '</div>' +
+        '<div style="color:#60ffab;">▶ Income: ~' + inc.toLocaleString() + ' ARKIS/wk equiv</div>' +
+        '<div style="color:rgba(255,110,110,0.9);">▼ Tax: ' + closest.val.toLocaleString() + ' ARKIS</div>' +
+        '<div style="color:' + (net >= 0 ? '#FFE08A' : 'rgba(255,110,110,0.9)') + ';margin-top:4px;border-top:1px solid rgba(255,255,255,0.08);padding-top:4px;">Net: ' + (net >= 0 ? '+' : '') + net.toLocaleString() + ' ARKIS</div>';
+      tip.style.display = 'block';
+      tip.style.left = Math.min(closest.x + 12, canvas.width - 170) + 'px';
+      tip.style.top  = Math.max(closest.y - 70, 4) + 'px';
+    } else { tip.style.display = 'none'; }
+  };
+  canvas.onmouseleave = () => { document.getElementById('chartTooltip').style.display = 'none'; };
+}
+
+// ── Income token cards (realestate style) ──
+const EL_DEFS = {
+  arkis:  { sym:'$ARKIS', name:'Arkis',  role:'Treasury · Tax · Foundation', col:'#FFE08A', rgba:'rgba(255,224,138,', cls:'el-arkis', rate:1 },
+  plasm:  { sym:'$PLASM', name:'Plasm',  role:'Energy · Fuel · Power',       col:'#FF9020', rgba:'rgba(255,144,32,',  cls:'el-plasm', rate:0.9 },
+  wire:   { sym:'$WIRE',  name:'Wire',   role:'Data · Upgrades · Signal',     col:'#50A0FF', rgba:'rgba(80,160,255,',  cls:'el-wire',  rate:2.2 },
+  lichen: { sym:'$LICHEN',name:'Lichen', role:'Structure · Steel · Build',    col:'#46DC82', rgba:'rgba(70,220,130,',  cls:'el-lichen',rate:2.7 },
+  spore:  { sym:'$SPORE', name:'Spore',  role:'Luxury · Yield · Multipliers', col:'#BE5AFF', rgba:'rgba(190,90,255,',  cls:'el-spore', rate:3.5 },
+};
+const incomeCharts = {};
+
+function seededRand(seed) {
+  let s = seed >>> 0;
+  return () => { s += 0x6D2B79F5; let t = Math.imul(s ^ s>>>15, 1|s); t ^= t + Math.imul(t ^ t>>>7, 61|t); return ((t ^ t>>>14) >>> 0) / 4294967296; };
+}
+
+function genSparkData(col, monthly) {
+  const seeds = { '#FFE08A':1, '#FF9020':2, '#50A0FF':3, '#46DC82':4, '#BE5AFF':5 };
+  const rand = seededRand(seeds[col] || 1);
+  let v = monthly * 0.7;
+  return Array.from({ length: 32 }, () => {
+    v += (rand() - 0.48) * monthly * 0.12;
+    v = Math.max(monthly * 0.1, v);
+    return Math.round(v);
+  });
+}
+
+function drawIncomeSparkline(key, monthly, el) {
+  const canvas = document.getElementById('iSpark_' + key);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = genSparkData(el.col, monthly);
+  const g = ctx.createLinearGradient(0, 0, 0, 52);
+  g.addColorStop(0, el.rgba + '0.25)');
+  g.addColorStop(1, el.rgba + '0)');
+  if (incomeCharts[key]) incomeCharts[key].destroy();
+  incomeCharts[key] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: data.map((_,i)=>i), datasets: [{ data, borderColor: el.col, borderWidth: 1.8, fill: true, backgroundColor: g, tension: 0.4, pointRadius: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false}, tooltip:{enabled:false} }, scales: { x:{display:false}, y:{display:false} }, animation:{duration:400} }
+  });
+}
+
+function renderIncomeCards() {
+  const panel = document.getElementById('incomeBreakdownPanel');
+  const grid  = document.getElementById('incomeTokenGrid');
+  if (!panel || !grid) return;
+
+  // Aggregate yields per token
+  const totals = { arkis:0, plasm:0, wire:0, lichen:0, spore:0 };
+  devIncome.forEach(d => {
+    const dc = d['development_catalog!developments_catalog_id_fkey'] || d.development_catalog || {};
+    totals.arkis  += Number(d.monthly_income || dc.yield_arkis  || 0);
+    totals.wire   += Number(dc.yield_wire   || 0);
+    totals.plasm  += Number(dc.yield_plasm  || 0);
+    totals.lichen += Number(dc.yield_lichen || 0);
+    totals.spore  += Number(dc.yield_spore  || 0);
+  });
+
+  // Show all tokens always — even if 0
+  const active = Object.entries(totals);
+
+  const fmt = n => Number(n).toLocaleString();
+
+  grid.innerHTML = active.map(([key, monthly]) => {
+    const el = EL_DEFS[key];
+    const arkisEq = Math.round(monthly * el.rate);
+    return `<div class="re-el-card ${el.cls}">
+      <div class="el-orb"></div>
+      <div class="el-symbol">${el.sym}</div>
+      <div class="el-name">${el.name}</div>
+      <div class="el-role">${el.role}</div>
+      <div class="el-price-row">
+        <div class="el-price">${fmt(monthly)}</div>
+        <div class="el-unit">/ month</div>
+      </div>
+      <div class="el-arkis-eq">≈ <span>${fmt(arkisEq)} ARKIS</span> equivalent</div>
+      <div class="el-spark"><canvas id="iSpark_${key}" height="52" style="width:100%;height:52px;display:block;"></canvas></div>
+    </div>`;
+  }).join('');
+
+  panel.style.display = '';
+  // Always show panel (even if all zeros)
+
+  // Draw sparklines after DOM painted
+  requestAnimationFrame(() => {
+    active.forEach(([key, monthly]) => {
+      drawIncomeSparkline(key, monthly, EL_DEFS[key]);
+    });
+  });
+}
+
+// ── Income grid ──
+function renderIncomeGrid() {
+  const grid = document.getElementById('incomeGrid');
+  if (!devIncome.length) {
+    grid.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;">No completed developments yet. Build on your units to generate income.</div>';
+    return;
+  }
+  const fmt = n => Number(n).toLocaleString();
+  grid.innerHTML = devIncome.map(dev => {
+    const dc = dev['development_catalog!developments_catalog_id_fkey'] || dev.development_catalog || {};
+    const icon = dc.icon || '🏗️';
+    const name = dc.name || dev.building_name || 'Development';
+    const yields = [];
+    if (dev.monthly_income > 0)  yields.push(`<span class="yield-pill yield-arkis">${fmt(dev.monthly_income)} ARKIS/mo</span>`);
+    else if (dc.yield_arkis > 0) yields.push(`<span class="yield-pill yield-arkis">${fmt(dc.yield_arkis)} ARKIS/mo</span>`);
+    if (dc.yield_wire   > 0) yields.push(`<span class="yield-pill yield-wire">${fmt(dc.yield_wire)} WIRE/mo</span>`);
+    if (dc.yield_plasm  > 0) yields.push(`<span class="yield-pill yield-plasm">${fmt(dc.yield_plasm)} PLASM/mo</span>`);
+    if (dc.yield_lichen > 0) yields.push(`<span class="yield-pill yield-lichen">${fmt(dc.yield_lichen)} LICHEN/mo</span>`);
+    if (dc.yield_spore  > 0) yields.push(`<span class="yield-pill yield-spore">${fmt(dc.yield_spore)} SPORE/mo</span>`);
+    if (!yields.length) yields.push(`<span style="font-size:10px;color:rgba(255,255,255,0.25);">No direct income</span>`);
+    return `<div class="income-card">
+      <div class="income-icon">${icon}</div>
+      <div class="income-info">
+        <div class="income-name">${name}</div>
+        <div class="income-unit"><a href="unit.html?code=${dev.unit_code}" style="color:rgba(255,224,138,0.5);text-decoration:none;">${dev.unit_code}</a></div>
+        <div class="income-yields">${yields.join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tax table ──
+function renderTaxTable() {
+  const tbody = document.getElementById('taxTableBody');
+  const empty = document.getElementById('taxEmpty');
+  if (!taxHistory.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const fmt = n => Number(n).toLocaleString();
+  tbody.innerHTML = [...taxHistory].reverse().map(r => {
+    const wk = new Date(r.week_start).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const hasCredit = Number(r.credit_applied) > 0;
+    return `<tr>
+      <td class="td-mono">${wk}</td>
+      <td>${r.units_held} units</td>
+      <td class="td-red">−${fmt(r.gross_tax)}</td>
+      <td>${hasCredit ? `<span class="td-green">+${fmt(r.credit_applied)}</span>` : '<span style="color:rgba(255,255,255,0.2);">—</span>'}</td>
+      <td class="td-red">−${fmt(r.net_tax)}</td>
+      <td class="td-mono" style="color:rgba(255,255,255,0.5);">${r.balance_after ? fmt(r.balance_after) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Combined table ──
+function renderCombinedTable(actData, demolishRefunds) {
+  const tbody = document.getElementById('combinedTableBody');
+  const empty = document.getElementById('combinedEmpty');
+  const rows = [];
+
+  // Tax rows
+  taxHistory.forEach(r => {
+    rows.push({ date: new Date(r.week_start), type: 'tax', desc: `Holding tax — ${r.units_held} units`, amount: -Number(r.net_tax) });
+  });
+
+  // Income from activity_log
+  actData.forEach(a => {
+    const m = a.description.match(/(\d[\d,]+)\s*ARKIS/);
+    if (m) rows.push({ date: new Date(a.created_at), type: 'income', desc: a.description, amount: parseInt(m[1].replace(/,/g,'')) });
+  });
+
+  // Demolish refunds from treasury_transactions
+  (demolishRefunds || []).forEach(r => {
+    rows.push({
+      date:   new Date(r.created_at),
+      type:   'demolish',
+      desc:   r.description || ('Demolition refund — ' + (r.unit_code || r.territory_code || '')),
+      amount: Number(r.amount)
+    });
+  });
+
+  rows.sort((a,b) => b.date - a.date);
+
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  const fmt = n => Number(Math.abs(n)).toLocaleString();
+  tbody.innerHTML = rows.map(r => {
+    const dateStr = r.date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const badge = r.type === 'income'
+      ? `<span class="td-badge badge-income">Income</span>`
+      : r.type === 'demolish'
+        ? `<span class="td-badge" style="background:rgba(255,140,60,0.12);color:rgba(255,180,80,0.9);border:1px solid rgba(255,140,60,0.25);">Demolish</span>`
+        : `<span class="td-badge badge-tax">Tax</span>`;
+    const amtStr = r.type === 'tax'
+      ? `<span class="td-red">−${fmt(r.amount)} ARKIS</span>`
+      : `<span class="td-green">+${fmt(r.amount)} ARKIS</span>`;
+    return `<tr><td class="td-mono">${dateStr}</td><td>${badge}</td><td style="color:rgba(255,255,255,0.6);">${r.desc}</td><td>${amtStr}</td></tr>`;
+  }).join('');
+}
+</script>
+
+<script src="lum-time.js?v=20260315a"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){if(typeof startLumClock==="function")startLumClock();});</script>
+<script src="nav-audio.js"></script>
+</body>
+</html>

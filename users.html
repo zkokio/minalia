@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Players — MINALIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260317a">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20260317a"></script>
+  <script src="auth_auro.js?v=20260317a"></script>
+  <style>
+    body {
+      padding-top: 92px;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1520 100%);
+      min-height: 100vh;
+    }
+    body::after { display: none !important; }
+
+    .earth-footer {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 45vh;
+      pointer-events: none; z-index: 0;
+    }
+    .earth-footer img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center 60%;
+      opacity: 0.10; display: block;
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, black 70%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, black 70%);
+    }
+
+    .pu-wrap {
+      position: relative; z-index: 1;
+      max-width: 1380px; margin: 0 auto; padding: 0 24px 140px;
+    }
+
+    /* ─── HERO ─── */
+    .pu-hero {
+      padding: 52px 0 44px; position: relative;
+      border-bottom: 1px solid rgba(255,224,138,0.08); margin-bottom: 48px;
+    }
+    .pu-hero::after {
+      content: 'PIONEERS';
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(48px, 8vw, 110px); font-weight: 900;
+      color: rgba(255,224,138,0.03); letter-spacing: 0.06em;
+      pointer-events: none; white-space: nowrap;
+    }
+    .pu-hero-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,224,138,0.45); margin-bottom: 12px;
+    }
+    .pu-hero-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(26px, 4vw, 44px); font-weight: 900;
+      letter-spacing: 0.04em; color: #fff; line-height: 1.1; margin-bottom: 10px;
+    }
+    .pu-hero-title em { color: #FFE08A; font-style: normal; }
+    .pu-hero-sub { font-size: 13px; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; }
+    .pu-hero-pills { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+    .pu-hero-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 18px;
+    }
+    .pu-pill-val { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 700; color: #FFE08A; }
+    .pu-pill-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+
+    /* ─── LEADERBOARD ─── */
+    .lb-section {
+      margin-bottom: 60px;
+      position: relative;
+    }
+
+    /* Header */
+    .lb-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+    }
+    .lb-eyebrow {
+      font-family: 'Orbitron', monospace;
+      font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+      color: rgba(255,224,138,0.4); margin-bottom: 4px;
+    }
+    .lb-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px; font-weight: 900; letter-spacing: .04em;
+      color: #fff; line-height: 1;
+    }
+    .lb-title em { color: #FFE08A; font-style: normal; }
+    .lb-period {
+      font-size: 10px; color: rgba(255,255,255,0.2);
+      font-family: 'Share Tech Mono', monospace; letter-spacing: .06em;
+    }
+
+    /* Category tabs */
+    .lb-tabs {
+      display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .lb-tab {
+      padding: 5px 12px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: transparent;
+      color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase;
+      cursor: pointer; transition: all .12s; white-space: nowrap;
+      font-family: 'Orbitron', monospace;
+    }
+    .lb-tab.active {
+      background: rgba(255,224,138,0.08);
+      border-color: rgba(255,224,138,0.25);
+      color: #FFE08A;
+    }
+    .lb-tab:hover:not(.active) {
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    /* Board */
+    .lb-board {
+      display: none;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .lb-board.active { display: block; }
+
+    /* ── TOP 3 PODIUM ── */
+    .lb-podium {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+    }
+    .lb-pod {
+      position: relative; overflow: hidden;
+      padding: 28px 16px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; background: rgba(255,255,255,0.015);
+      border-right: 1px solid rgba(255,255,255,0.04);
+      transition: background .15s;
+    }
+    .lb-pod:last-child { border-right: none; }
+
+    /* 1st place — centre slot */
+    .lb-pod.rank-1 {
+      background: linear-gradient(180deg, rgba(255,200,60,0.07) 0%, rgba(255,200,60,0.02) 60%, transparent 100%);
+      border-top: 2px solid rgba(255,200,60,0.35);
+      padding-top: 32px;
+    }
+    .lb-pod.rank-2 {
+      background: linear-gradient(180deg, rgba(200,200,220,0.04) 0%, transparent 70%);
+      border-top: 2px solid rgba(200,200,220,0.2);
+    }
+    .lb-pod.rank-3 {
+      background: linear-gradient(180deg, rgba(180,100,40,0.05) 0%, transparent 70%);
+      border-top: 2px solid rgba(180,120,60,0.2);
+    }
+
+    /* Rank number — large and dramatic */
+    .lb-pod-rank-num {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900; line-height: 1;
+      margin-bottom: 12px;
+      letter-spacing: -.01em;
+    }
+    .lb-pod.rank-1 .lb-pod-rank-num {
+      font-size: 13px;
+      color: rgba(255,200,60,0.6);
+      letter-spacing: .12em;
+    }
+    .lb-pod.rank-2 .lb-pod-rank-num {
+      font-size: 11px;
+      color: rgba(200,210,230,0.4);
+      letter-spacing: .12em;
+    }
+    .lb-pod.rank-3 .lb-pod-rank-num {
+      font-size: 11px;
+      color: rgba(180,130,80,0.4);
+      letter-spacing: .12em;
+    }
+
+    .lb-pod-avatar {
+      width: 90px; height: 90px; border-radius: 12px;
+      overflow: hidden; margin-bottom: 12px; flex-shrink: 0;
+      background: rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .lb-pod.rank-1 .lb-pod-avatar {
+      width: 110px; height: 110px; border-radius: 14px;
+      border-color: rgba(255,200,60,0.3);
+      box-shadow: 0 0 30px rgba(255,200,60,0.15);
+    }
+    .lb-pod-avatar img { width:100%; height:100%; object-fit:cover; object-position: center top; display:block; }
+
+    .lb-pod-name {
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75);
+      margin-bottom: 8px;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      text-decoration: none; display: block;
+    }
+    .lb-pod.rank-1 .lb-pod-name { color: #FFE08A; font-size: 13px; }
+    .lb-pod-name:hover { color: #fff; }
+    .lb-pod { text-decoration: none; }
+
+    .lb-pod-val {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700; color: #fff; line-height: 1;
+    }
+    .lb-pod.rank-1 .lb-pod-val { font-size: 20px; }
+    .lb-pod.rank-2 .lb-pod-val,
+    .lb-pod.rank-3 .lb-pod-val { font-size: 16px; color: rgba(255,255,255,0.8); }
+
+    .lb-pod-unit {
+      font-size: 9px; color: rgba(255,255,255,0.2);
+      text-transform: uppercase; letter-spacing: .1em; margin-top: 3px;
+    }
+
+    /* Diagonal "1ST" text background watermark */
+    .lb-pod.rank-1::after {
+      content: '1ST';
+      position: absolute; bottom: -8px; right: -4px;
+      font-family: 'Orbitron', monospace; font-size: 52px; font-weight: 900;
+      color: rgba(255,200,60,0.04); letter-spacing: -.02em;
+      pointer-events: none; line-height: 1;
+    }
+
+    /* ── RANKS 4–8 ── */
+    .lb-rows { background: rgba(0,0,0,0.1); }
+    .lb-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background .1s; text-decoration: none;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row:hover { background: rgba(255,255,255,0.02); }
+
+    .lb-row-rank {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px; font-weight: 700;
+      color: rgba(255,255,255,0.18); width: 24px;
+      text-align: right; flex-shrink: 0;
+    }
+    .lb-row-avatar {
+      width: 32px; height: 32px; border-radius: 7px;
+      overflow: hidden; flex-shrink: 0;
+      background: rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .lb-row-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+    .lb-row-name {
+      flex: 1; font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.65);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lb-row-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px; font-weight: 700; color: rgba(255,224,138,0.7);
+      white-space: nowrap;
+    }
+    .lb-row-unit {
+      font-size: 9px; color: rgba(255,255,255,0.2);
+      letter-spacing: .06em; text-transform: uppercase; margin-left: 3px;
+    }
+
+    .lb-empty {
+      text-align: center; padding: 40px;
+      font-size: 12px; color: rgba(255,255,255,0.2); font-style: italic;
+      background: rgba(255,255,255,0.015);
+    }
+    .lb-loading {
+      text-align: center; padding: 50px;
+      font-size: 11px; color: rgba(255,255,255,0.2);
+      letter-spacing: .1em; text-transform: uppercase;
+      font-family: 'Orbitron', monospace;
+      background: rgba(255,255,255,0.015);
+    }
+
+        /* ─── CONTROLS ─── */
+    .pu-controls {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .pu-search {
+      flex: 1; min-width: 200px; max-width: 320px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 10px 14px;
+      color: rgba(255,255,255,0.8); font-size: 13px; font-family: inherit;
+      outline: none; transition: border-color .2s;
+    }
+    .pu-search:focus { border-color: rgba(255,224,138,0.3); }
+    .pu-search::placeholder { color: rgba(255,255,255,0.2); }
+    .pu-sort-btn {
+      padding: 10px 16px; border-radius: 8px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.45); font-family: 'Orbitron', monospace;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .pu-sort-btn.active { background: rgba(255,224,138,0.08); border-color: rgba(255,224,138,0.25); color: #FFE08A; }
+    .pu-sort-btn:hover:not(.active) { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); }
+    .pu-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.2); margin-left: auto; }
+
+    /* ─── PLAYER GRID ─── */
+    .pu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    /* ─── PLAYER CARD ─── */
+    .pu-card {
+      position: relative; overflow: hidden;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .pu-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 16px 16px 0 0;
+      opacity: 0.6;
+    }
+    .pu-card:hover {
+      border-color: rgba(255,224,138,0.2); transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,224,138,0.04);
+    }
+
+    /* Card top — avatar + name row */
+    .pu-card-top {
+      display: flex; align-items: center; gap: 16px;
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pu-avatar-link { flex-shrink: 0; display: block; text-decoration: none; }
+    .pu-avatar {
+      width: 56px; height: 56px; border-radius: 12px; overflow: hidden;
+      background: rgba(255,255,255,0.08); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; border: 2px solid var(--accent);
+      transition: transform .15s; text-decoration: none;
+    }
+    .pu-avatar-link:hover .pu-avatar { transform: scale(1.06); }
+    .pu-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+    .pu-card-nameblock { flex: 1; min-width: 0; }
+    .pu-username {
+      font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700;
+      color: #fff; letter-spacing: 0.04em; margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-decoration: none; display: block;
+    }
+    .pu-username:hover { color: #FFE08A; }
+    .pu-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pu-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .pu-badge-og { background: rgba(255,224,138,0.1); color: #FFE08A; border: 1px solid rgba(255,224,138,0.25); }
+    .pu-badge-2ndfaze {
+      color: rgba(96,200,255,0.9);
+      background: rgba(96,200,255,0.08);
+      border-color: rgba(96,200,255,0.3);
+    }
+    .pu-badge-zk { background: rgba(96,255,171,0.08); color: #60ffab; border: 1px solid rgba(96,255,171,0.2); }
+    .pu-member-since {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+      color: rgba(255,255,255,0.25); letter-spacing: 0.04em;
+    }
+    .pu-color-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .pu-socials { display: flex; gap: 6px; margin-top: 6px; }
+    .pu-social-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 5px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09);
+      font-size: 11px; text-decoration: none; color: rgba(255,255,255,0.5);
+      transition: background .15s, color .15s;
+    }
+    .pu-social-link:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); }
+
+    /* Card stats grid */
+    .pu-card-stats {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px; background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pu-stat {
+      background: rgba(10,8,18,0.6); padding: 12px 14px; text-align: center;
+    }
+    .pu-stat-val {
+      font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700;
+      color: #FFE08A; line-height: 1; margin-bottom: 3px;
+    }
+    .pu-stat-val.muted { color: rgba(255,255,255,0.35); font-size: 13px; }
+    .pu-stat-label {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.25);
+    }
+
+    /* Card body — territory + detail rows */
+    .pu-card-body { padding: 16px 22px; }
+
+    .pu-section-label {
+      font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.2); margin-bottom: 8px; margin-top: 14px;
+    }
+    .pu-section-label:first-child { margin-top: 0; }
+
+    /* Territory pills */
+    .pu-territories { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+    .pu-terr-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 6px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: rgba(255,255,255,0.65); text-decoration: none;
+      transition: border-color .15s, color .15s;
+    }
+    .pu-terr-pill:hover { border-color: rgba(255,224,138,0.3); color: #FFE08A; }
+    .pu-terr-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .pu-terr-count { font-size: 9px; color: rgba(255,255,255,0.3); }
+
+    /* Detail rows */
+    .pu-detail-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+    }
+    .pu-detail-row:last-child { border-bottom: none; }
+    .pu-detail-label { color: rgba(255,255,255,0.3); display: flex; align-items: center; gap: 7px; }
+    .pu-detail-icon { font-size: 13px; }
+    .pu-detail-val { color: rgba(255,255,255,0.75); font-family: 'Share Tech Mono', monospace; font-size: 12px; }
+    .pu-detail-val.green { color: #60ffab; }
+    .pu-detail-val.gold { color: #FFE08A; }
+    .pu-detail-val.dim { color: rgba(255,255,255,0.22); font-style: italic; font-family: inherit; font-size: 11px; }
+    .pu-detail-val.red { color: #ff6b6b; }
+
+    /* Unit list inline */
+    .pu-unit-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .pu-unit-chip {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+      padding: 2px 7px; border-radius: 4px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.5); text-decoration: none;
+      transition: all .15s;
+    }
+    .pu-unit-chip:hover { background: rgba(255,224,138,0.08); border-color: rgba(255,224,138,0.2); color: #FFE08A; }
+    .pu-unit-chip.for-sale { border-color: rgba(96,255,171,0.2); color: rgba(96,255,171,0.7); }
+    .pu-unit-chip.auction { border-color: rgba(255,107,107,0.2); color: rgba(255,107,107,0.7); }
+    .pu-unit-chip.dev { border-color: rgba(180,140,255,0.2); color: rgba(180,140,255,0.7); }
+
+    /* Card footer — view profile link */
+    .pu-card-footer {
+      padding: 12px 22px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .pu-view-profile {
+      font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,224,138,0.5); text-decoration: none;
+      transition: color .15s;
+    }
+    .pu-view-profile:hover { color: #FFE08A; }
+    .pu-wallet-chip {
+      font-family: 'Share Tech Mono', monospace; font-size: 9px;
+      color: rgba(255,255,255,0.18); letter-spacing: 0.04em;
+    }
+
+    /* Achievement badge strip */
+    .pu-badge-strip {
+      display: flex; align-items: center; gap: 4px;
+      flex-wrap: wrap; padding: 8px 22px 12px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .pu-badge-strip-label {
+      font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18); margin-right: 4px; flex-shrink: 0;
+    }
+    .pu-achv-pip {
+      position: relative; width: 26px; height: 26px; border-radius: 5px;
+      overflow: visible; flex-shrink: 0; cursor: default;
+    }
+    .pu-achv-pip img {
+      width: 26px; height: 26px; object-fit: cover; border-radius: 5px;
+      border: 1px solid rgba(255,224,138,0.2); display: block;
+      transition: transform .15s;
+    }
+    .pu-achv-pip:hover img { transform: scale(1.15); }
+    /* Tooltip */
+    .pu-achv-pip .pu-achv-tip {
+      display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,8,20,0.97); border: 1px solid rgba(255,224,138,0.2);
+      border-radius: 6px; padding: 5px 8px; white-space: nowrap; z-index: 999;
+      pointer-events: none;
+    }
+    .pu-achv-pip:hover .pu-achv-tip { display: block; }
+    .pu-achv-tip-name {
+      font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+      color: #FFE08A; letter-spacing: .06em; display: block;
+    }
+    .pu-achv-tip-sub {
+      font-size: 9px; color: rgba(255,255,255,0.4); display: block; margin-top: 1px;
+    }
+    /* Send message button */
+    .pu-send-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 6px;
+      background: rgba(180,140,255,0.08); border: 1px solid rgba(180,140,255,0.25);
+      color: rgba(180,140,255,0.85); font-size: 11px; font-weight: 600;
+      font-family: 'Orbitron', monospace; letter-spacing: .06em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; transition: all .15s;
+    }
+    .pu-send-btn:hover { background: rgba(180,140,255,0.16); border-color: rgba(180,140,255,0.4); color: rgba(180,140,255,1); }
+
+    .pu-achv-none {
+      font-size: 10px; color: rgba(255,255,255,0.15); font-style: italic;
+    }
+
+    /* Loading / empty */
+    .pu-loading {
+      text-align: center; padding: 80px 0;
+      font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      color: rgba(255,255,255,0.2);
+    }
+    .pu-loading-spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid rgba(255,224,138,0.15);
+      border-top-color: rgba(255,224,138,0.6);
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pu-empty { color: rgba(255,255,255,0.2); font-size: 13px; padding: 40px; text-align: center; font-style: italic; }
+
+    /* Section header */
+    .pu-sh {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+    }
+    .pu-sh-icon { font-size: 16px; }
+    .pu-sh-title {
+      font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,224,138,0.55);
+      white-space: nowrap;
+    }
+    .pu-sh-count { font-size: 11px; color: rgba(255,255,255,0.2); font-family: 'Share Tech Mono', monospace; }
+    .pu-sh-line { flex: 1; height: 1px; background: rgba(255,224,138,0.07); }
+
+    /* Expandable units section */
+    .pu-units-toggle {
+      font-size: 10px; color: rgba(255,224,138,0.45); cursor: pointer;
+      font-family: 'Orbitron', monospace; letter-spacing: 0.08em;
+      background: none; border: none; padding: 0; transition: color .15s;
+    }
+    .pu-units-toggle:hover { color: #FFE08A; }
+    .pu-units-expanded { display: none; margin-top: 6px; }
+    .pu-units-expanded.open { display: block; }
+  </style>
+</head>
+<body>
+
+<script src="load-nav.js?v=20260317a"></script>
+<script src="ticker.js?v=20260317a"></script>
+<script src="lum-time.js?v=20260302a"></script>
+<script>document.addEventListener('DOMContentLoaded', function(){ if(typeof startLumClock==='function') startLumClock(); });</script>
+
+<div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+
+<div class="pu-wrap">
+
+  <!-- HERO -->
+  <div class="pu-hero">
+    <div class="pu-hero-eyebrow">Luminaea · Player Directory</div>
+    <h1 class="pu-hero-title">The <em>Pioneers</em> <span style="font-size:0.55em;opacity:0.5;font-weight:400;">&amp; 2nd Faze</span></h1>
+    <div class="pu-hero-sub">Every settler who has staked their claim across the 20 territories of Luminaea</div>
+    <div class="pu-hero-pills">
+      <div class="pu-hero-pill">
+        <div>
+          <div class="pu-pill-val" id="heroPlayerCount">—</div>
+          <div class="pu-pill-label">Players</div>
+        </div>
+      </div>
+      <div class="pu-hero-pill">
+        <div>
+          <div class="pu-pill-val" id="heroUnitCount">—</div>
+          <div class="pu-pill-label">Units Claimed</div>
+        </div>
+      </div>
+      <div class="pu-hero-pill">
+        <div>
+          <div class="pu-pill-val" id="heroDevCount">—</div>
+          <div class="pu-pill-label">Developments Built</div>
+        </div>
+      </div>
+      <div class="pu-hero-pill">
+        <div>
+          <div class="pu-pill-val" id="heroTradeCount">—</div>
+          <div class="pu-pill-label">Trades Completed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="lb-section">
+    <div class="lb-header">
+      <div>
+        <div class="lb-eyebrow">Luminaea</div>
+        <div class="lb-title">Player <em>Rankings</em></div>
+      </div>
+      <span class="lb-period" id="lbPeriod">Loading period…</span>
+    </div>
+    <div class="lb-tabs" id="lbTabs">
+      <button class="lb-tab active" data-cat="richest"     onclick="switchLb('richest',this)">💰 Richest</button>
+      <button class="lb-tab"        data-cat="most_units"  onclick="switchLb('most_units',this)">🏠 Units</button>
+      <button class="lb-tab"        data-cat="most_devs"   onclick="switchLb('most_devs',this)">🏗️ Devs</button>
+      <button class="lb-tab"        data-cat="most_sold"   onclick="switchLb('most_sold',this)">📤 Sold</button>
+      <button class="lb-tab"        data-cat="most_bought" onclick="switchLb('most_bought',this)">📥 Bought</button>
+      <button class="lb-tab"        data-cat="most_income" onclick="switchLb('most_income',this)">📈 Income</button>
+      <button class="lb-tab"        data-cat="most_tax"    onclick="switchLb('most_tax',this)">🏛️ Tax</button>
+      <button class="lb-tab"        data-cat="plasm_rich"  onclick="switchLb('plasm_rich',this)">◈ PLASM</button>
+      <button class="lb-tab"        data-cat="wire_rich"   onclick="switchLb('wire_rich',this)">⚡ WIRE</button>
+      <button class="lb-tab"        data-cat="lichen_rich" onclick="switchLb('lichen_rich',this)">🌿 LICHEN</button>
+      <button class="lb-tab"        data-cat="spore_rich"  onclick="switchLb('spore_rich',this)">🍄 SPORE</button>
+      <button class="lb-tab"        data-cat="top_tuners"  onclick="switchLb('top_tuners',this)">⚡ Tuners</button>
+    </div>
+    <div id="lbBoardWrap">
+      <div class="lb-board active" id="lbBoard">
+        <div class="lb-loading">Loading rankings…</div>
+      </div>
+    </div>
+  </div>
+
+    <!-- CONTROLS -->
+  <div class="pu-controls">
+    <input class="pu-search" type="text" placeholder="🔍  Search players…" id="playerSearch" oninput="filterPlayers()"/>
+    <button class="pu-sort-btn active" id="sortUnits" onclick="setSort('units')">🏠 Most Units</button>
+    <button class="pu-sort-btn" id="sortDevs" onclick="setSort('devs')">🏗️ Most Devs</button>
+    <button class="pu-sort-btn" id="sortTrades" onclick="setSort('trades')">📊 Most Trades</button>
+    <button class="pu-sort-btn" id="sortBalance" onclick="setSort('balance')">💰 Richest</button>
+    <button class="pu-sort-btn" id="sortEarliest" onclick="setSort('earliest')">🌱 Earliest</button>
+    <button class="pu-sort-btn" id="sortNewest" onclick="setSort('newest')">🆕 Newest</button>
+    <div class="pu-count" id="playerCountLabel"></div>
+  </div>
+
+  <!-- SECTION HEADER -->
+  <div class="pu-sh">
+    <span class="pu-sh-icon">👥</span>
+    <span class="pu-sh-title">All Players</span>
+    <span class="pu-sh-count" id="shCount"></span>
+    <div class="pu-sh-line"></div>
+  </div>
+
+  <!-- GRID -->
+  <div class="pu-grid" id="playerGrid">
+    <div class="pu-loading">
+      <div class="pu-loading-spinner"></div>
+      Loading Luminaea pioneers…
+    </div>
+  </div>
+
+</div><!-- /pu-wrap -->
+
+<script>
+// ── Territory name map ─────────────────────────────────────────────────────
+const TERRITORY_NAMES = {
+  'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+  'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+  'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+  'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+  'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia',
+};
+
+// Territory colors from unit_data (approximate — use territory_color from DB if available)
+const TERRITORY_COLORS = {
+  'LUM-01':'#d4a96a','LUM-02':'#c084c4','LUM-03':'#6ab4d4','LUM-04':'#d4c46a',
+  'LUM-05':'#6ad490','LUM-06':'#8a6ad4','LUM-07':'#d4846a','LUM-08':'#6a9ad4',
+  'LUM-09':'#84d46a','LUM-10':'#d46a84','LUM-11':'#6ad4c4','LUM-12':'#d4a46a',
+  'LUM-13':'#a46ad4','LUM-14':'#6ab4a4','LUM-15':'#d46a6a','LUM-16':'#6ad464',
+  'LUM-17':'#c4846a','LUM-18':'#6a84d4','LUM-19':'#d4d46a','LUM-20':'#846ad4',
+};
+
+let allPlayers = [];
+let currentSort = 'units';
+
+// ── LOAD DATA ──────────────────────────────────────────────────────────────
+async function loadPlayers() {
+  const sb = window.supabaseClient || window.supabase;
+  if (!sb) { setTimeout(loadPlayers, 600); return; }
+
+  try {
+    // Core user + token data
+    const { data: users } = await sb.from('users')
+      .select('id, username, avatar, avatar_url, territory_color, created_at, mina_wallet_address, x_username, telegram_username, discord_username, zk_verified, profile_public, show_units, show_wallet, show_trade_history, treasury_public, tax_history_public, player_type')
+      .order('created_at', { ascending: true });
+
+    const { data: tokens } = await sb.from('user_tokens')
+      .select('user_id, token_balance, plasm_balance, wire_balance, lichen_balance, spore_balance, og_player');
+
+    // Units per player
+    const { data: units } = await sb.from('units')
+      .select('unit_code, area_code, owner_id, for_sale, auction_active')
+      .not('owner_id', 'is', null);
+
+    // Developments
+    const { data: devs } = await sb.from('developments')
+      .select('owner_id, status, building_name, unit_code');
+
+    // Transactions
+    const { data: txns } = await sb.from('transactions')
+      .select('seller_id, buyer_id, unit_code, price, type, created_at');
+
+    // Active developments for monthly income
+    const { data: activeDevs } = await sb.from('active_developments')
+      .select('owner_id, monthly_income');
+
+    // Holding tax (latest per player)
+    const { data: taxLog } = await sb.from('holding_tax_log')
+      .select('player_id, net_tax, week_start')
+      .order('week_start', { ascending: false });
+
+    // Collaborations
+    const { data: collabs } = await sb.from('special_building_collaborations')
+      .select('player_id, status').eq('status', 'active');
+
+    // Build token map
+    const tokenMap = {};
+    (tokens || []).forEach(t => { tokenMap[t.user_id] = t; });
+
+    // Build units map
+    const unitsMap = {};
+    (units || []).forEach(u => {
+      if (!unitsMap[u.owner_id]) unitsMap[u.owner_id] = [];
+      unitsMap[u.owner_id].push(u);
+    });
+
+    // Build devs map
+    const devsMap = {};
+    (devs || []).forEach(d => {
+      if (!devsMap[d.owner_id]) devsMap[d.owner_id] = [];
+      devsMap[d.owner_id].push(d);
+    });
+
+    // Build income map
+    const incomeMap = {};
+    (activeDevs || []).forEach(d => {
+      if (d.owner_id) incomeMap[d.owner_id] = (incomeMap[d.owner_id] || 0) + Number(d.monthly_income || 0);
+    });
+
+    // Build tax map (latest entry per player)
+    const taxMap = {};
+    (taxLog || []).forEach(t => {
+      if (!taxMap[t.player_id]) taxMap[t.player_id] = t;
+    });
+
+    // Build collab map
+    const collabMap = {};
+    (collabs || []).forEach(c => {
+      collabMap[c.player_id] = (collabMap[c.player_id] || 0) + 1;
+    });
+
+    // Build txn map
+    const txnMap = {};
+    (txns || []).forEach(t => {
+      [t.seller_id, t.buyer_id].forEach(id => {
+        if (!id) return;
+        if (!txnMap[id]) txnMap[id] = { sales: [], purchases: [] };
+        if (t.seller_id === id) txnMap[id].sales.push(t);
+        if (t.buyer_id === id) txnMap[id].purchases.push(t);
+      });
+    });
+
+    // Merge
+    allPlayers = (users || []).map(u => {
+      const myUnits = unitsMap[u.id] || [];
+      const myDevs  = devsMap[u.id]  || [];
+      const myTxns  = txnMap[u.id]   || { sales: [], purchases: [] };
+      const tok     = tokenMap[u.id] || {};
+
+      // Get unique territories
+      const terrSet = {};
+      myUnits.forEach(un => { terrSet[un.area_code] = (terrSet[un.area_code] || 0) + 1; });
+
+      return {
+        ...u,
+        token_balance:  Number(tok.token_balance  || 0),
+        plasm_balance:  Number(tok.plasm_balance   || 0),
+        wire_balance:   Number(tok.wire_balance    || 0),
+        lichen_balance: Number(tok.lichen_balance  || 0),
+        spore_balance:  Number(tok.spore_balance   || 0),
+        og_player: tok.og_player || false,
+        player_type: u.player_type || 'standard',
+        units: myUnits,
+        territories: terrSet,
+        devs_completed: myDevs.filter(d => d.status === 'completed').length,
+        devs_building:  myDevs.filter(d => d.status === 'building').length,
+        devs_all: myDevs,
+        sales_count: myTxns.sales.length,
+        purchases_count: myTxns.purchases.length,
+        sales_list: myTxns.sales,
+        purchases_list: myTxns.purchases,
+        monthly_income: incomeMap[u.id] || 0,
+        latest_tax: taxMap[u.id] || null,
+        collabs: collabMap[u.id] || 0,
+      };
+    });
+
+    // Hero stats
+    const totalPlayers = allPlayers.length;
+    const totalUnits   = (units || []).filter(u => u.owner_id).length;
+    const totalDevs    = (devs  || []).filter(d => d.status === 'completed').length;
+    const totalTrades  = (txns  || []).length;
+    document.getElementById('heroPlayerCount').textContent = totalPlayers;
+    document.getElementById('heroUnitCount').textContent   = totalUnits;
+    document.getElementById('heroDevCount').textContent    = totalDevs;
+    document.getElementById('heroTradeCount').textContent  = totalTrades;
+
+    renderPlayers();
+
+  } catch(e) {
+    console.error('loadPlayers error:', e);
+    document.getElementById('playerGrid').innerHTML = `<div class="pu-empty">Failed to load player data — ${e.message}</div>`;
+  }
+  // Share loaded user data with the leaderboard
+  seedLbUsers();
+}
+
+// ── SORT & FILTER ──────────────────────────────────────────────────────────
+function setSort(key) {
+  currentSort = key;
+  document.querySelectorAll('.pu-sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort' + key.charAt(0).toUpperCase() + key.slice(1))?.classList.add('active');
+  renderPlayers();
+}
+
+function filterPlayers() { renderPlayers(); }
+
+function getSorted(players) {
+  const s = [...players];
+  switch (currentSort) {
+    case 'units':    return s.sort((a,b) => Object.keys(b.territories).length - Object.keys(a.territories).length || b.units.length - a.units.length);
+    case 'devs':     return s.sort((a,b) => (b.devs_completed + b.devs_building) - (a.devs_completed + a.devs_building));
+    case 'trades':   return s.sort((a,b) => (b.sales_count + b.purchases_count) - (a.sales_count + a.purchases_count));
+    case 'balance':  return s.sort((a,b) => b.token_balance - a.token_balance);
+    case 'earliest': return s.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    case 'newest':   return s.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    default: return s;
+  }
+}
+
+function renderPlayers() {
+  const query  = document.getElementById('playerSearch').value.toLowerCase().trim();
+  let filtered = allPlayers;
+  if (query) {
+    filtered = allPlayers.filter(p =>
+      (p.username || '').toLowerCase().includes(query) ||
+      Object.keys(p.territories).some(t => t.toLowerCase().includes(query) || (TERRITORY_NAMES[t]||'').toLowerCase().includes(query))
+    );
+  }
+  const sorted = getSorted(filtered);
+
+  document.getElementById('shCount').textContent = `${sorted.length} player${sorted.length !== 1 ? 's' : ''}`;
+  document.getElementById('playerCountLabel').textContent = `Showing ${sorted.length} of ${allPlayers.length}`;
+
+  const grid = document.getElementById('playerGrid');
+  if (!sorted.length) { grid.innerHTML = '<div class="pu-empty">No players match your search.</div>'; return; }
+  grid.innerHTML = sorted.map(p => renderCard(p)).join('');
+  setTimeout(hideOwnSendBtn, 0);
+}
+
+// ── RENDER CARD ────────────────────────────────────────────────────────────
+function renderCard(p) {
+  const accentColor = p.territory_color || '#FFE08A';
+
+  // Avatar — prefer avatar_url, then http avatar, then x_username via unavatar, then emoji/initial
+  let avatarHtml;
+  const _xUser = p.x_username ? p.x_username.replace(/^@/, '') : null;
+  const avatarSrc = p.avatar_url
+    || (p.avatar && (p.avatar.startsWith('http') || p.avatar.startsWith('images/')) ? p.avatar : null)
+    || (_xUser ? `https://unavatar.io/twitter/${_xUser}` : null);
+  if (avatarSrc) {
+    avatarHtml = `<img src="${avatarSrc}" alt="${p.username}" onerror="this.parentNode.innerHTML='😎'">`;
+  } else if (p.avatar && p.avatar.length <= 2) {
+    avatarHtml = p.avatar; // short emoji
+  } else {
+    avatarHtml = '😎';
+  }
+
+  // Member since
+  const since = p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '—';
+
+  // Badges
+  let badgeHtml = '';
+  if (p.og_player || p.player_type === 'og') badgeHtml += `<span class="pu-badge pu-badge-og">⚡ OG</span>`;
+  if (p.player_type === '2ndfazer') badgeHtml += `<span class="pu-badge pu-badge-2ndfaze">❖ 2nd Faze</span>`;
+  if (p.zk_verified) badgeHtml += `<span class="pu-badge pu-badge-zk">✓ ZK</span>`;
+
+  // Social links
+  let socialHtml = '';
+  if (p.x_username) socialHtml += `<a class="pu-social-link" href="https://x.com/${p.x_username}" target="_blank" title="@${p.x_username} on X">𝕏</a>`;
+  if (p.telegram_username) socialHtml += `<a class="pu-social-link" href="https://t.me/${p.telegram_username}" target="_blank" title="@${p.telegram_username} on Telegram">✈</a>`;
+  if (p.discord_username) socialHtml += `<a class="pu-social-link" href="#" title="${p.discord_username} on Discord">🎮</a>`;
+
+  // Territories
+  const terrEntries = Object.entries(p.territories).sort((a,b) => b[1] - a[1]);
+  const terrHtml = terrEntries.length
+    ? terrEntries.map(([code, count]) => {
+        const color = TERRITORY_COLORS[code] || '#888';
+        const name  = TERRITORY_NAMES[code]  || code;
+        return `<a href="district.html?code=${code}" class="pu-terr-pill" title="${name}">
+          <span class="pu-terr-dot" style="background:${color};"></span>
+          ${code}
+          <span class="pu-terr-count">${count}u</span>
+        </a>`;
+      }).join('')
+    : `<span style="font-size:11px;color:rgba(255,255,255,0.2);">No territories</span>`;
+
+  // Unit chips — pre-compute HTML strings to avoid nested template literal crash
+  const forSaleUnits = p.units.filter(u => u.for_sale && !u.auction_active);
+  const auctionUnits = p.units.filter(u => u.auction_active);
+  const devUnits     = p.units.filter(u => p.devs_all.some(d => d.unit_code === u.unit_code && d.status === 'building'));
+  const devUnitCodes = new Set(devUnits.map(u => u.unit_code));
+  const specialUnits = [...new Map([...auctionUnits, ...forSaleUnits, ...devUnits].map(u => [u.unit_code, u])).values()];
+  const specialCodes = new Set(specialUnits.map(u => u.unit_code));
+  const plainUnits   = p.units.filter(u => !specialCodes.has(u.unit_code));
+
+  // Build chip HTML using string concatenation — no nested backticks
+  function _chipClass(u) {
+    if (u.auction_active) return 'auction';
+    if (u.for_sale) return 'for-sale';
+    if (devUnitCodes.has(u.unit_code)) return 'dev';
+    return '';
+  }
+  function _chip(u, cls) {
+    return '<a href="unit.html?code=' + u.unit_code + '" class="pu-unit-chip' + (cls ? ' ' + cls : '') + '">' + u.unit_code + '</a>';
+  }
+
+  let unitChipsHtml = '';
+  if (p.show_units === false) {
+    unitChipsHtml = '<span class="pu-detail-val dim">User has chosen to hide this info</span>';
+  } else {
+    if (specialUnits.length) {
+      unitChipsHtml += '<div class="pu-unit-chips">' + specialUnits.map(u => _chip(u, _chipClass(u))).join('') + '</div>';
+    }
+    if (plainUnits.length) {
+      unitChipsHtml += '<div class="pu-units-expanded" id="units-exp-' + p.id + '">';
+      unitChipsHtml += '<div class="pu-unit-chips">' + plainUnits.map(u => _chip(u, '')).join('') + '</div>';
+      unitChipsHtml += '</div>';
+      unitChipsHtml += '<button class="pu-units-toggle" onclick="toggleUnits(\'' + p.id + '\')" id="units-tog-' + p.id + '">+' + plainUnits.length + ' more ▾</button>';
+    }
+    if (!specialUnits.length && !plainUnits.length) {
+      unitChipsHtml = '<span style="font-size:11px;color:rgba(255,255,255,0.2);">No units</span>';
+    }
+  }
+
+  // Finance rows — all token balances
+  const fmt = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n.toLocaleString();
+
+  const balanceVal = p.treasury_public !== false
+    ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-family:'Orbitron',monospace;font-size:10px;font-weight:800;color:#FFE08A;">${fmt(p.token_balance)} <span style="font-size:8px;opacity:.7;">ARKIS</span></span>
+        ${p.plasm_balance  > 0 ? `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(200,160,255,0.8);">${fmt(p.plasm_balance)} PLASM</span>`   : ''}
+        ${p.wire_balance   > 0 ? `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(160,216,255,0.8);">${fmt(p.wire_balance)} WIRE</span>`     : ''}
+        ${p.lichen_balance > 0 ? `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(128,224,160,0.8);">${fmt(p.lichen_balance)} LICHEN</span>` : ''}
+        ${p.spore_balance  > 0 ? `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(240,192,96,0.8);">${fmt(p.spore_balance)} SPORE</span>`   : ''}
+      </div>`
+    : `<span class="pu-detail-val dim">Hidden</span>`;
+
+  const incomeVal = p.monthly_income > 0
+    ? `<span class="pu-detail-val green">+${p.monthly_income.toLocaleString()} ARKIS/mo</span>`
+    : `<span class="pu-detail-val dim">No active income</span>`;
+
+  const taxVal = p.latest_tax
+    ? `<span class="pu-detail-val red">${Number(p.latest_tax.net_tax).toLocaleString()} ARKIS/wk</span>`
+    : `<span class="pu-detail-val dim">No tax data</span>`;
+
+  // Trade history
+  const tradeVal = p.show_trade_history !== false
+    ? `<span class="pu-detail-val">${p.sales_count} sold · ${p.purchases_count} bought</span>`
+    : `<span class="pu-detail-val dim">User has chosen to hide this info</span>`;
+
+  // Wallet display
+  const walletDisplay = p.show_wallet !== false && p.mina_wallet_address
+    ? p.mina_wallet_address.slice(0,8) + '…' + p.mina_wallet_address.slice(-6)
+    : '';
+
+  // ── Unlocked achievement badges ─────────────────────────────────────────
+  const hasSold   = p.sales_count > 0;
+  const hasBought = p.purchases_count > 0;
+  const hasSocial = !!(p.x_username || p.telegram_username || p.discord_username);
+  const hasDevs   = p.devs_completed > 0;
+  const hasCollab = p.collabs > 0;
+
+  const ALL_BADGES = [
+    { img: 'images/badge.png',  name: 'First Login',  sub: 'Joined Luminaea',      unlocked: true },
+    { img: 'images/badge1.png', name: 'Owner',        sub: 'Holds at least 1 unit', unlocked: p.units.length > 0 },
+    { img: 'images/badge3.png', name: 'Unit Trader',  sub: 'Sold a unit',           unlocked: hasSold,   tint: hasSold ? 'hue-rotate(30deg) saturate(1.4)' : null },
+    { img: 'images/badge.png',  name: 'Unit Buyer',   sub: 'Bought a unit',         unlocked: hasBought, tint: hasBought ? 'hue-rotate(200deg) saturate(1.5)' : null },
+    { img: 'images/badge2.png', name: 'Builder',      sub: 'Completed a development', unlocked: hasDevs },
+    { img: 'images/badge7.png', name: 'Social',       sub: 'Linked social accounts', unlocked: hasSocial },
+    { img: 'images/badge6.png', name: 'Verified',     sub: 'ZK verified',            unlocked: !!(p.zk_verified) },
+    { img: 'images/badge4.png', name: 'Ally',         sub: 'Active collaboration',   unlocked: hasCollab },
+  ];
+  const unlockedBadges = ALL_BADGES.filter(b => b.unlocked);
+
+  const badgeStripHtml = p.show_badges !== false ? `
+    <div class="pu-badge-strip">
+      <span class="pu-badge-strip-label">Badges</span>
+      ${unlockedBadges.length ? unlockedBadges.map(b => {
+        const tintStyle = b.tint ? ` style="filter:${b.tint}"` : '';
+        return `<div class="pu-achv-pip">
+          <img src="${b.img}" alt="${b.name}"${tintStyle}>
+          <div class="pu-achv-tip">
+            <span class="pu-achv-tip-name">${b.name}</span>
+            ${b.sub ? `<span class="pu-achv-tip-sub">${b.sub}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('') : `<span class="pu-achv-none">No badges yet</span>`}
+    </div>` : '';
+
+  return `
+  <div class="pu-card" style="--accent:${accentColor};">
+    <div class="pu-card-top">
+      <a href="profile.html?user=${p.username}" class="pu-avatar-link">
+        <div class="pu-avatar" style="border-color:${accentColor}40;">
+          ${avatarHtml}
+        </div>
+      </a>
+      <div class="pu-card-nameblock">
+        <a href="profile.html?user=${p.username}" class="pu-username">${p.username || 'Unknown'}</a>
+        <div class="pu-card-meta">
+          <span class="pu-color-dot" style="background:${accentColor};"></span>
+          ${badgeHtml}
+          <span class="pu-member-since">Since ${since}</span>
+        </div>
+        ${socialHtml ? `<div class="pu-socials">${socialHtml}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="pu-card-stats">
+      <div class="pu-stat">
+        <div class="pu-stat-val">${p.units.length}</div>
+        <div class="pu-stat-label">Units</div>
+      </div>
+      <div class="pu-stat">
+        <div class="pu-stat-val">${p.devs_completed}${p.devs_building > 0 ? `<span style="font-size:10px;color:rgba(180,140,255,0.6);">+${p.devs_building}</span>` : ''}</div>
+        <div class="pu-stat-label">Devs Built</div>
+      </div>
+      <div class="pu-stat">
+        <div class="pu-stat-val">${p.sales_count + p.purchases_count}</div>
+        <div class="pu-stat-label">Trades</div>
+      </div>
+    </div>
+
+    <div class="pu-card-body">
+
+      <div class="pu-section-label">Territories</div>
+      <div class="pu-territories">${terrHtml}</div>
+
+      <div class="pu-section-label" style="margin-top:14px;">Units
+        ${forSaleUnits.length ? `<span style="color:rgba(96,255,171,0.5);margin-left:6px;">${forSaleUnits.length} for sale</span>` : ''}
+        ${auctionUnits.length ? `<span style="color:rgba(255,107,107,0.5);margin-left:6px;">${auctionUnits.length} at auction</span>` : ''}
+        ${devUnits.length ? `<span style="color:rgba(180,140,255,0.5);margin-left:6px;">${devUnits.length} in dev</span>` : ''}
+      </div>
+      ${unitChipsHtml}
+
+      <div class="pu-section-label" style="margin-top:16px;">Activity</div>
+
+      <div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">💰</span>ARKIS Balance</span>
+        ${balanceVal}
+      </div>
+      <div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">📈</span>Monthly Income</span>
+        ${incomeVal}
+      </div>
+      <div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">🏦</span>Est. Weekly Tax</span>
+        ${taxVal}
+      </div>
+      <div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">🔄</span>Trade History</span>
+        ${tradeVal}
+      </div>
+      <div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">🏗️</span>In Development</span>
+        <span class="pu-detail-val">${p.devs_building > 0 ? `${p.devs_building} building` : '—'}</span>
+      </div>
+      ${p.collabs > 0 ? `<div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">🤝</span>Collaborations</span>
+        <span class="pu-detail-val green">${p.collabs} active</span>
+      </div>` : ''}
+      ${auctionUnits.length > 0 ? `<div class="pu-detail-row">
+        <span class="pu-detail-label"><span class="pu-detail-icon">🔨</span>Active Auctions</span>
+        <span class="pu-detail-val" style="color:#ff6b6b;">${auctionUnits.map(u => `<a href="unit.html?code=${u.unit_code}" style="color:#ff6b6b;text-decoration:none;font-family:'Share Tech Mono',monospace;font-size:11px;">${u.unit_code}</a>`).join(', ')}</span>
+      </div>` : ''}
+    </div>
+
+    ${badgeStripHtml}
+
+    <div class="pu-card-footer">
+      <a href="profile.html?user=${p.username}" class="pu-view-profile">View Full Profile →</a>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${walletDisplay ? `<span class="pu-wallet-chip">${walletDisplay}</span>` : ''}
+        <a href="alerts.html?sendto=${p.id}&amp;name=${encodeURIComponent(p.username)}" class="pu-send-btn" id="send-${p.id}">💬 Message</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Hide send button on own card after render
+function hideOwnSendBtn() {
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const myId = session?.user?.id;
+  if (!myId) return;
+  const btn = document.getElementById('send-' + myId);
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleUnits(userId) {
+  const exp = document.getElementById('units-exp-' + userId);
+  const tog = document.getElementById('units-tog-' + userId);
+  if (!exp) return;
+  const isOpen = exp.classList.toggle('open');
+  if (tog) {
+    const hidden = tog.textContent.match(/\d+/)?.[0] || '';
+    tog.textContent = isOpen ? `▴ show less` : `+${hidden} more ▾`;
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(loadPlayers, 600));
+} else {
+  setTimeout(loadPlayers, 600);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── LEADERBOARD ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+const LB_CATEGORIES = {
+  richest:     { label: 'Richest Players',             unit: 'ARKIS',  icon: '💰' },
+  most_units:  { label: 'Most Units Owned',             unit: 'units',  icon: '🏠' },
+  most_devs:   { label: 'Most Developments',            unit: 'devs',   icon: '🏗️' },
+  most_sold:   { label: 'Units Sold (all time)',        unit: 'sold',   icon: '📤' },
+  most_bought: { label: 'Units Bought (all time)',      unit: 'bought', icon: '📥' },
+  most_income: { label: 'Most Tax Income (all time)',   unit: 'ARKIS',  icon: '📈' },
+  most_tax:    { label: 'Most Tax Paid (all time)',     unit: 'ARKIS',  icon: '🏛️' },
+  plasm_rich:  { label: 'PLASM Holdings',          unit: 'PLASM',       icon: '◈'  },
+  wire_rich:   { label: 'WIRE Holdings',           unit: 'WIRE',        icon: '⚡' },
+  lichen_rich: { label: 'LICHEN Holdings',         unit: 'LICHEN',      icon: '🌿' },
+  spore_rich:  { label: 'SPORE Holdings',          unit: 'SPORE',       icon: '🍄' },
+  top_tuners:  { label: 'Top Tuners',               unit: 'pts',         icon: '⚡' },
+};
+
+const RANK_SUFFIXES = ['1ST', '2ND', '3RD'];
+
+let _lbData   = {};   // cached results per category
+let _lbUsers  = {};   // id → user record (shared with player grid)
+let _lbActive = 'richest';
+let _lbSb     = null;
+
+async function initLeaderboard() {
+  _lbSb = window.supabaseClient || window.supabase;
+  if (!_lbSb) { setTimeout(initLeaderboard, 400); return; }
+
+  // Set period label — current week Mon→Sun
+  const now  = new Date();
+  const dow  = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const mon  = new Date(now); mon.setDate(now.getDate() - dow); mon.setHours(0,0,0,0);
+  const sun  = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt  = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  const el   = document.getElementById('lbPeriod');
+  if (el) el.textContent = 'Week of ' + fmt(mon) + ' – ' + fmt(sun);
+
+  await loadLbCategory(_lbActive);
+}
+
+async function loadLbCategory(cat) {
+  if (_lbData[cat]) { renderLb(cat); return; } // use cache
+
+  const sb    = _lbSb;
+  const board = document.getElementById('lbBoard');
+  if (!board) return;
+  board.innerHTML = '<div class="lb-loading">Loading rankings…</div>';
+
+  // Current week start (ISO Monday)
+  const now = new Date();
+  const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const mon = new Date(now); mon.setDate(now.getDate() - dow); mon.setHours(0,0,0,0);
+  const weekStart = mon.toISOString();
+
+  try {
+    let rows = [];
+
+    if (cat === 'richest') {
+      const { data } = await sb.from('user_tokens')
+        .select('user_id, token_balance')
+        .order('token_balance', { ascending: false })
+        .limit(8);
+      rows = (data||[]).map(r => ({ id: r.user_id, val: Number(r.token_balance||0) }));
+
+    } else if (cat === 'most_units') {
+      const { data } = await sb.from('units')
+        .select('owner_id')
+        .not('owner_id', 'is', null);
+      const cnt = {};
+      (data||[]).forEach(r => { cnt[r.owner_id] = (cnt[r.owner_id]||0) + 1; });
+      rows = Object.entries(cnt).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'most_devs') {
+      const { data } = await sb.from('developments')
+        .select('owner_id')
+        .in('status', ['building','completed']);
+      const cnt = {};
+      (data||[]).forEach(r => { cnt[r.owner_id] = (cnt[r.owner_id]||0) + 1; });
+      rows = Object.entries(cnt).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'most_sold') {
+      const { data } = await sb.from('transactions')
+        .select('seller_id')
+        .eq('status','completed')
+        .not('seller_id','is',null);
+      const cnt = {};
+      (data||[]).forEach(r => { cnt[r.seller_id] = (cnt[r.seller_id]||0) + 1; });
+      rows = Object.entries(cnt).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'most_bought') {
+      const { data } = await sb.from('transactions')
+        .select('buyer_id')
+        .eq('status','completed')
+        .not('buyer_id','is',null);
+      const cnt = {};
+      (data||[]).forEach(r => { cnt[r.buyer_id] = (cnt[r.buyer_id]||0) + 1; });
+      rows = Object.entries(cnt).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'most_income') {
+      // treasury_transactions direction='in' type='tax' = tax income flowing into minister treasuries per player
+      const { data } = await sb.from('treasury_transactions')
+        .select('player_id, amount')
+        .eq('direction','in')
+        .eq('type','tax')
+        .not('player_id','is',null);
+      const sum = {};
+      (data||[]).forEach(r => { sum[r.player_id] = (sum[r.player_id]||0) + Number(r.amount||0); });
+      rows = Object.entries(sum).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'most_tax') {
+      // Holding tax paid by players — recorded as direction='in', type='tax'
+      const { data } = await sb.from('treasury_transactions')
+        .select('player_id, amount')
+        .eq('direction','in')
+        .eq('type','tax')
+        .not('player_id','is',null);
+      const sum = {};
+      (data||[]).forEach(r => { sum[r.player_id] = (sum[r.player_id]||0) + Number(r.amount||0); });
+      rows = Object.entries(sum).map(([id,val])=>({id,val})).sort((a,b)=>b.val-a.val).slice(0,8);
+
+    } else if (cat === 'plasm_rich') {
+      const { data } = await sb.from('user_tokens').select('user_id, plasm_balance').order('plasm_balance', { ascending: false }).limit(8);
+      rows = (data||[]).map(r => ({ id: r.user_id, val: Number(r.plasm_balance||0) }));
+
+    } else if (cat === 'wire_rich') {
+      const { data } = await sb.from('user_tokens').select('user_id, wire_balance').order('wire_balance', { ascending: false }).limit(8);
+      rows = (data||[]).map(r => ({ id: r.user_id, val: Number(r.wire_balance||0) }));
+
+    } else if (cat === 'lichen_rich') {
+      const { data } = await sb.from('user_tokens').select('user_id, lichen_balance').order('lichen_balance', { ascending: false }).limit(8);
+      rows = (data||[]).map(r => ({ id: r.user_id, val: Number(r.lichen_balance||0) }));
+
+    } else if (cat === 'spore_rich') {
+      const { data } = await sb.from('user_tokens').select('user_id, spore_balance').order('spore_balance', { ascending: false }).limit(8);
+      rows = (data||[]).map(r => ({ id: r.user_id, val: Number(r.spore_balance||0) }));
+
+    } else if (cat === 'top_tuners') {
+      const { data } = await sb.from('leaderboard_tuning')
+        .select('rank, player_id, username, avatar, x_username, primary_territory, total_score, avg_score, units_tuned, perfect_count')
+        .order('rank', { ascending: true })
+        .limit(8);
+      // Store full rows in _lbUsers so renderLb can access them
+      (data||[]).forEach(r => {
+        if (r.player_id) {
+          const avatarSrc = r.avatar
+            ? (r.avatar.startsWith('http') || r.avatar.startsWith('/') || r.avatar.startsWith('images/') ? r.avatar : 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + r.avatar)
+            : r.x_username ? 'https://unavatar.io/twitter/' + r.x_username : '';
+          _lbUsers[r.player_id] = { id: r.player_id, username: r.username, avatar_url: avatarSrc, territory_color: r.territory_color };
+        }
+      });
+      rows = (data||[]).map(r => ({
+        id:         r.player_id,
+        val:        Number(r.total_score || 0),
+        avg_score:  r.avg_score,
+        units_tuned: r.units_tuned,
+        perfect_count: r.perfect_count,
+        territory:  r.primary_territory,
+      }));
+    }
+
+    rows = rows.filter(r => r.val > 0);
+
+    // Resolve user names/avatars for any IDs we don't have yet
+    const missing = rows.map(r => r.id).filter(id => id && !_lbUsers[id]);
+    if (missing.length) {
+      const { data: udata } = await sb.from('users')
+        .select('id, username, avatar, avatar_url, territory_color')
+        .in('id', missing);
+      (udata||[]).forEach(u => { _lbUsers[u.id] = u; });
+    }
+
+    _lbData[cat] = rows;
+    renderLb(cat);
+
+  } catch(e) {
+    console.error('Leaderboard error:', e);
+    board.innerHTML = '<div class="lb-empty">Could not load rankings.</div>';
+  }
+}
+
+function renderLb(cat) {
+  const board = document.getElementById('lbBoard');
+  if (!board) return;
+  const cfg  = LB_CATEGORIES[cat] || {};
+  const rows = _lbData[cat] || [];
+
+  if (!rows.length) {
+    board.innerHTML = '<div class="lb-empty">No data yet for this category.</div>';
+    return;
+  }
+
+  function avatarHtml(u) {
+    const src = u?.avatar_url || u?.avatar || null;
+    const init = (u?.username || '?').substring(0,2).toUpperCase();
+    return src ? '<img src="' + src + '" alt="' + (u?.username||'') + '" onerror="this.remove()">' : init;
+  }
+
+  function fmtVal(v, unit) {
+    if (['ARKIS','PLASM','WIRE','LICHEN','SPORE'].includes(unit)) {
+      return v >= 1000000 ? (v/1000000).toFixed(1) + 'M'
+           : v >= 1000    ? (v/1000).toFixed(1) + 'K'
+           : v.toLocaleString();
+    }
+    return v.toLocaleString();
+  }
+
+  const RANK_LABELS = ['1ST', '2ND', '3RD'];
+  const RANK_CLASSES = ['rank-2', 'rank-1', 'rank-3']; // visual order: 2nd left, 1st centre, 3rd right
+  const DATA_RANKS   = [1, 0, 2];                       // data index for each visual position
+
+  const top3 = rows.slice(0, 3);
+  const rest = rows.slice(3);
+
+  // Render in visual order: 2nd | 1st | 3rd
+  let podHtml = '';
+  [0, 1, 2].forEach(visualPos => {
+    const dataIdx = DATA_RANKS[visualPos];
+    const row = top3[dataIdx];
+    if (!row) return;
+    const u    = _lbUsers[row.id] || {};
+    const name = u.username || row.id?.substring(0,8) || '—';
+    const pUrl = 'profile.html?user=' + encodeURIComponent(name);
+    const rankClass = RANK_CLASSES[visualPos];
+    const rankLabel = RANK_LABELS[dataIdx];
+
+    podHtml += '<a class="lb-pod ' + rankClass + '" href="' + pUrl + '">'
+      + '<div class="lb-pod-rank-num">' + rankLabel + '</div>'
+      + '<div class="lb-pod-avatar">' + avatarHtml(u) + '</div>'
+      + '<div class="lb-pod-name">' + name + '</div>'
+      + '<div class="lb-pod-val">' + fmtVal(row.val, cfg.unit) + '</div>'
+      + '<div class="lb-pod-unit">' + (cat === 'top_tuners' ? (row.avg_score ? 'avg ' + Number(row.avg_score).toFixed(1) : cfg.unit) : cfg.unit) + '</div>'
+      + '</a>';
+  });
+
+  let restHtml = '';
+  rest.forEach((row, i) => {
+    const u    = _lbUsers[row.id] || {};
+    const name = u.username || row.id?.substring(0,8) || '—';
+    const pUrl = 'profile.html?user=' + encodeURIComponent(name);
+    restHtml += '<a class="lb-row" href="' + pUrl + '">'
+      + '<div class="lb-row-rank">' + (i+4) + '</div>'
+      + '<div class="lb-row-avatar">' + avatarHtml(u) + '</div>'
+      + '<div class="lb-row-name">' + name + (cat === 'top_tuners' && row.territory ? '<span style="font-size:9px;color:rgba(255,255,255,0.3);margin-left:6px;">' + row.territory + '</span>' : '') + '</div>'
+      + '<div class="lb-row-val">' + fmtVal(row.val, cfg.unit) + '<span class="lb-row-unit">' + (cat === 'top_tuners' ? (row.avg_score ? ' · avg ' + Number(row.avg_score).toFixed(1) : ' pts') : ' ' + cfg.unit) + '</span></div>'
+      + '</a>';
+  });
+
+  board.innerHTML =
+    '<div class="lb-podium">' + podHtml + '</div>'
+    + (rest.length ? '<div class="lb-rows">' + restHtml + '</div>' : '');
+}
+
+function switchLb(cat, btn) {
+  _lbActive = cat;
+  document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadLbCategory(cat);
+}
+
+// Seed _lbUsers from the already-loaded allPlayers once available
+function seedLbUsers() {
+  if (typeof allPlayers !== 'undefined') {
+    allPlayers.forEach(p => {
+      if (p.id) _lbUsers[p.id] = p;
+    });
+  }
+}
+
+// Init
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(initLeaderboard, 200));
+} else {
+  setTimeout(initLeaderboard, 200);
+}
+window.switchLb = switchLb;
+
+</script>
+
+</body>
+</html>

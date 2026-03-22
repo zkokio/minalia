@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Point — MINALIA</title>
+<link rel="stylesheet" href="style.css?v=20260311a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=20260320a"></script>
+<script src="auth_auro.js?v=20260320a"></script>
+
+<style>
+  /* ── NEXUS PAGE — gold-accent special theme ── */
+
+  /* Background image */
+  body {
+    overflow-x: hidden;
+    background-color: #0a0812;
+  }
+
+  body::after { display: none !important; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+    background-size:64px 64px; pointer-events:none; z-index:1;
+  }
+
+  /* nexus-bg removed — using shared grid background from body::before */
+  .nexus-bg { display: none; }
+
+  /* Remove old image-layer divs if present */
+  .stars, .twinkling, .earth-footer { display: none !important; }
+
+  .page-wrap {
+    position: relative; z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 100px 24px 80px;
+  }
+
+  /* ── LOADING STATE ── */
+  .loading-state {
+    text-align: center;
+    padding: 80px 0;
+    color: rgba(255,255,255,0.35);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── NEXUS HERO ── */
+  .nexus-hero {
+    background: rgba(20,16,28,0.97);
+    border: 2px solid rgba(255,224,138,0.35);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 0 60px rgba(255,200,60,0.06), 0 8px 32px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Gold shimmer accent top edge */
+  .nexus-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,224,138,0.6), rgba(255,200,60,0.8), rgba(255,224,138,0.6), transparent);
+  }
+
+  .nexus-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .nexus-id-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,200,60,0.7);
+    background: rgba(255,200,60,0.08);
+    border: 1px solid rgba(255,200,60,0.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .nexus-type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .nexus-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  .nexus-title {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, #FFE08A 0%, #FFC832 50%, #FFF4D6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    line-height: 1.1;
+  }
+
+  .nexus-lore {
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+
+  .nexus-coords {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,200,60,0.5);
+    letter-spacing: 0.06em;
+    margin-bottom: 20px;
+  }
+
+  /* ── TERRITORY CONNECTIONS ── */
+  .connected-territories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .terr-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .terr-pill:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+  }
+
+  .terr-pill-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  .terr-pill-code {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+  }
+
+  .terr-pill-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.85);
+  }
+
+  /* ── NEXUS SVG MAP ── */
+  .nexus-map-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,200,60,0.15);
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── SECTION CARDS (gold theme) ── */
+  /* Nexus building catalog */
+  .nexus-catalog-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+  @media(max-width:1100px) { .nexus-catalog-grid { grid-template-columns:repeat(3,1fr); } }
+  @media(max-width:760px)  { .nexus-catalog-grid { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:480px)  { .nexus-catalog-grid { grid-template-columns:1fr; } }
+  .nbc-card {
+    background: rgba(255,200,80,0.03);
+    border: 1px solid rgba(255,200,80,0.14);
+    border-radius:10px;
+    padding:14px;
+    display:flex; flex-direction:column; gap:6px;
+    position:relative;
+  }
+  .nbc-card.legendary {
+    background: rgba(160,100,255,0.04);
+    border-color: rgba(160,100,255,0.22);
+  }
+  .nbc-tier-badge {
+    font-size:8px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    padding:2px 7px; border-radius:5px; width:fit-content;
+  }
+  .nbc-tier-badge.rare     { background:rgba(100,180,255,0.08); border:1px solid rgba(100,180,255,0.2); color:rgba(100,180,255,0.8); }
+  .nbc-tier-badge.legendary{ background:rgba(160,100,255,0.08); border:1px solid rgba(160,100,255,0.25); color:rgba(160,100,255,0.85); }
+  .nbc-name  { font-size:13px; font-weight:800; color:rgba(255,224,138,0.9); line-height:1.3; }
+  .nbc-card.legendary .nbc-name { color:rgba(200,150,255,0.95); }
+  .nbc-desc  { font-size:11px; color:rgba(255,255,255,0.45); line-height:1.5; flex:1; }
+  .nbc-cost  { font-size:10px; color:rgba(255,200,80,0.5); margin-top:2px; }
+  .nbc-effect{ font-size:10px; color:rgba(100,220,150,0.65); margin-top:2px; }
+
+  .nexus-section {
+    background: rgba(20,16,28,0.96);
+    border: 1px solid rgba(255,200,60,0.18);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+
+  .nexus-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,200,60,0.6);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nexus-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,200,60,0.12);
+  }
+
+  /* ── STATUS PILL ── */
+  .nexus-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .nexus-status.open         { background:rgba(96,255,171,0.08); border:1px solid rgba(96,255,171,0.2); color:#60ffab; }
+  .nexus-status.in_progress  { background:rgba(255,200,60,0.08); border:1px solid rgba(255,200,60,0.25); color:#FFE08A; }
+  .nexus-status.completed    { background:rgba(80,176,255,0.08); border:1px solid rgba(80,176,255,0.2); color:#50b0ff; }
+
+  .nexus-status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── COLLAB PLAYER CARDS ── */
+  /* ── GATE PROJECT SECTION ── */
+  .gate-project-card {
+    background: rgba(160,100,255,0.06);
+    border: 1px solid rgba(160,100,255,0.25);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .gate-project-card.completed {
+    background: rgba(96,255,171,0.05);
+    border-color: rgba(96,255,171,0.2);
+  }
+  .gate-project-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .gate-project-icon { font-size: 28px; }
+  .gate-project-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+  }
+  .gate-project-status {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-left: auto;
+  }
+  .gate-project-status.pending   { color: rgba(255,200,60,0.9);  background: rgba(255,200,60,0.1);  border: 1px solid rgba(255,200,60,0.3); }
+  .gate-project-status.recruiting{ color: rgba(160,100,255,0.9); background: rgba(160,100,255,0.1); border: 1px solid rgba(160,100,255,0.3); }
+  .gate-project-status.building  { color: rgba(80,160,255,0.9);  background: rgba(80,160,255,0.1);  border: 1px solid rgba(80,160,255,0.3); }
+  .gate-project-status.completed { color: rgba(96,255,171,0.9);  background: rgba(96,255,171,0.1);  border: 1px solid rgba(96,255,171,0.3); }
+  .gate-players {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .gate-player-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .gate-player-chip.you { border-color: rgba(255,200,60,0.4); color: rgba(255,200,60,0.9); }
+  .gate-player-chip.open { opacity: 0.4; font-style: italic; }
+  .gate-info-row {
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
+  .gate-info-row strong { color: rgba(255,255,255,0.7); }
+  .gate-action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .btn-gate-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(160,100,255,0.5);
+    background: rgba(160,100,255,0.1);
+    color: rgba(200,160,255,0.95);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-gate-primary:hover { background: rgba(160,100,255,0.2); border-color: rgba(160,100,255,0.7); }
+  .btn-gate-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-gate-secondary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: rgba(255,255,255,0.45);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-gate-secondary:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+  .gate-warning {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(255,180,60,0.6);
+    margin-top: 10px;
+    line-height: 1.6;
+    padding: 8px 12px;
+    background: rgba(255,180,60,0.05);
+    border: 1px solid rgba(255,180,60,0.15);
+    border-radius: 6px;
+  }
+  .gate-feedback {
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 8px;
+    min-height: 14px;
+  }
+  .gate-feedback.ok  { color: rgba(96,255,171,0.8); }
+  .gate-feedback.err { color: rgba(255,100,100,0.8); }
+  /* Convergence treasury panel */
+  .convergence-treasury {
+    background: rgba(0,255,220,0.04);
+    border: 1px solid rgba(0,255,220,0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .convergence-treasury-icon { font-size: 24px; }
+  .convergence-treasury-label {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(0,255,220,0.5);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 2px;
+  }
+  .convergence-treasury-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(0,255,220,0.9);
+  }
+  .convergence-treasury-sub {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(0,255,220,0.3);
+    margin-top: 2px;
+  }
+
+  .collab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .collab-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+
+  .collab-card:hover {
+    background: rgba(255,200,60,0.04);
+    border-color: rgba(255,200,60,0.15);
+  }
+
+  .collab-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .collab-avatar {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: rgba(255,200,60,0.15);
+    border: 1px solid rgba(255,200,60,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFE08A;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .collab-avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+
+  .collab-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .collab-territory {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .collab-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: inline-block;
+  }
+  .collab-status-badge.interested { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.45); border:1px solid rgba(255,255,255,0.1); }
+  .collab-status-badge.building   { background:rgba(255,200,60,0.1);  color:#FFE08A;                border:1px solid rgba(255,200,60,0.25); animation: pulse-badge 2s ease-in-out infinite; }
+  .collab-status-badge.completed  { background:rgba(96,255,171,0.08); color:#60ffab;                border:1px solid rgba(96,255,171,0.2); }
+  @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  .collab-building-name {
+    font-size: 12px;
+    color: rgba(255,200,60,0.8);
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .collab-share {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 4px;
+  }
+
+  /* ── OPEN SLOTS ── */
+  .open-slot {
+    background: rgba(255,200,60,0.03);
+    border: 1px dashed rgba(255,200,60,0.18);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    color: rgba(255,200,60,0.35);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .open-slot:hover {
+    background: rgba(255,200,60,0.08);
+    border-color: rgba(255,200,60,0.4);
+    color: rgba(255,200,60,0.7);
+  }
+  /* Interest modal */
+  .nexus-modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .nexus-modal {
+    background: #14101e;
+    border: 1px solid rgba(255,200,60,0.2);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .nexus-modal h3 { font-size: 16px; color: #FFE08A; margin: 0 0 6px; }
+  .nexus-modal p  { font-size: 12px; color: rgba(255,255,255,0.45); margin: 0 0 16px; line-height: 1.6; }
+  .modal-building-option {
+    background: rgba(255,200,60,0.04);
+    border: 1px solid rgba(255,200,60,0.14);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex; align-items: flex-start; gap: 10px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .modal-building-option:hover {
+    background: rgba(255,200,60,0.09);
+    border-color: rgba(255,200,60,0.3);
+  }
+  .modal-building-option.legendary {
+    border-color: rgba(160,100,255,0.2);
+    background: rgba(160,100,255,0.04);
+  }
+  .modal-building-option.legendary:hover {
+    background: rgba(160,100,255,0.09);
+    border-color: rgba(160,100,255,0.35);
+  }
+  .modal-btn-row { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+  .modal-btn {
+    font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 7px;
+    border: none; cursor: pointer; letter-spacing: 0.05em;
+  }
+  .modal-btn.cancel { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+  .modal-btn.confirm { background: rgba(255,200,60,0.15); color: rgba(255,200,60,0.9); border: 1px solid rgba(255,200,60,0.3); }
+  .modal-btn.confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── MAP LINK BUTTON ── */
+  .btn-nexus-map {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    background: rgba(255,200,60,0.08);
+    border: 1px solid rgba(255,200,60,0.25);
+    border-radius: 8px;
+    color: #FFE08A;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .btn-nexus-map:hover {
+    background: rgba(255,200,60,0.14);
+    border-color: rgba(255,200,60,0.4);
+    transform: translateY(-1px);
+  }
+
+  /* ── NOT FOUND ── */
+  .not-found {
+    text-align: center;
+    padding: 80px 0;
+  }
+
+  .not-found h1 {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FFE08A, #FFF4D6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .nexus-hero-inner { grid-template-columns: 1fr; }
+    .nexus-map-wrap { display: none; }
+    .nexus-title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+
+
+<script src="load-nav.js"></script>
+
+<div class="page-wrap" id="pageContent">
+  <div class="loading-state">Loading nexus point…</div>
+</div>
+
+<script>
+// ── SHARED CONSTANTS ──
+const TERRITORY_COLORS = {
+  'LUM-01':'#d4a96a','LUM-02':'#c084c4','LUM-03':'#6ab4d4','LUM-04':'#d4c46a',
+  'LUM-05':'#6ad490','LUM-06':'#8a6ad4','LUM-07':'#d4846a','LUM-08':'#6a9ad4',
+  'LUM-09':'#84d46a','LUM-10':'#d46a84','LUM-11':'#6ad4c4','LUM-12':'#d4a46a',
+  'LUM-13':'#a46ad4','LUM-14':'#6ab4a4','LUM-15':'#d46a6a','LUM-16':'#6ad464',
+  'LUM-17':'#c4846a','LUM-18':'#6a84d4','LUM-19':'#d4d46a','LUM-20':'#846ad4'
+};
+const TERRITORY_NAMES = {
+  'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+  'LUM-05':'Fenwild',  'LUM-06':'Firesky','LUM-07':'Pieve', 'LUM-08':'Oakland',
+  'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+  'LUM-13':'Northfen', 'LUM-14':'Oldmarch',  'LUM-15':'Mugugno','LUM-16':'Bauscia',
+  'LUM-17':'Ravenholm','LUM-18':'Stormgate', 'LUM-19':'The Spine','LUM-20':'Umbralia'
+};
+
+// ── SUPABASE INIT ──
+(function(){
+  try {
+    // If supabaseClient already set (e.g. by auth_auro.js on another page), reuse it
+    if (window.supabaseClient && typeof window.supabaseClient.from === 'function') return;
+    // Otherwise create from library
+    if (window.supabase && typeof window.supabase.createClient === 'function' &&
+        window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_ANON_KEY) {
+      window.supabaseClient = window.supabase.createClient(
+        window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_ANON_KEY
+      );
+    }
+  } catch(e) { console.warn('Supabase init failed:', e); }
+})();
+
+// ── AVATAR RESOLVER ──
+function resolveAvatar(av, xUser) {
+  if (!av || av.length < 4) {
+    if (xUser) return `https://unavatar.io/twitter/${xUser}`;
+    return null;
+  }
+  if (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/')) return av;
+  return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+}
+
+// ── NEXUS SVG MINIMAP ──
+function generateNexusSVG(nexus) {
+  const W = 180, H = 180;
+  const cx = W/2, cy = H/2;
+  const HEX = 26;
+
+  function hexPts(hx, hy, hr) {
+    return Array.from({length:6}, (_,i) => {
+      const a = Math.PI/3*i - Math.PI/6;
+      return `${(hx+hr*Math.cos(a)).toFixed(1)},${(hy+hr*Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+  }
+
+  function axialToPixel(q, r) {
+    return [
+      cx + HEX * (Math.sqrt(3)*q + Math.sqrt(3)/2*r) * 0.65,
+      cy + HEX * (3/2*r) * 0.65
+    ];
+  }
+
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]];
+  const touches = nexus.touches || [];
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+<defs>
+  <radialGradient id="nbg" cx="50%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="rgba(40,30,15,1)"/>
+    <stop offset="100%" stop-color="rgba(12,8,4,1)"/>
+  </radialGradient>
+  <radialGradient id="nglow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,200,60,0.3)"/>
+    <stop offset="100%" stop-color="rgba(255,200,60,0)"/>
+  </radialGradient>
+  <filter id="nblur"><feGaussianBlur stdDeviation="3"/></filter>
+  <clipPath id="ncp"><rect width="${W}" height="${H}" rx="12"/></clipPath>
+</defs>
+<g clip-path="url(#ncp)">
+<rect width="${W}" height="${H}" fill="url(#nbg)"/>
+<circle cx="${cx}" cy="${cy}" r="60" fill="url(#nglow)" filter="url(#nblur)"/>`;
+
+  // Draw neighbour hexes in territory colours
+  dirs.forEach(([dq, dr], i) => {
+    const [px, py] = axialToPixel(dq, dr);
+    const tc = i < touches.length ? (TERRITORY_COLORS[touches[i]] || '#888') : 'rgba(255,255,255,0.05)';
+    s += `\n<polygon points="${hexPts(px,py,HEX-1)}" fill="${tc}" opacity="0.22"/>`;
+    s += `\n<polygon points="${hexPts(px,py,HEX-1)}" fill="none" stroke="${tc}" stroke-width="0.8" opacity="0.4"/>`;
+  });
+
+  // Territory colour dots at hex positions for up to 3 touches
+  touches.slice(0,3).forEach((tc_code, i) => {
+    const a = (Math.PI/3)*i*2;
+    const bx = cx + (HEX+14)*Math.cos(a), by = cy + (HEX+14)*Math.sin(a);
+    const col = TERRITORY_COLORS[tc_code] || '#888';
+    s += `\n<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4.5" fill="${col}" opacity="0.9"/>`;
+    s += `\n<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>`;
+  });
+
+  // Centre nexus hex — gold
+  s += `\n<polygon points="${hexPts(cx,cy,HEX+5)}" fill="rgba(255,200,60,0.08)" filter="url(#nblur)"/>`;
+  s += `\n<polygon points="${hexPts(cx,cy,HEX)}" fill="rgba(255,190,40,0.2)"/>`;
+  s += `\n<polygon points="${hexPts(cx,cy,HEX)}" fill="none" stroke="rgba(255,200,60,0.75)" stroke-width="2"/>`;
+  s += `\n<polygon points="${hexPts(cx,cy,HEX-6)}" fill="none" stroke="rgba(255,200,60,0.3)" stroke-width="0.8"/>`;
+
+  // Glyph
+  s += `\n<text x="${cx}" y="${(cy+5).toFixed(1)}" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="16" fill="rgba(255,210,60,0.9)">✦</text>`;
+
+  // Orbit rings
+  for (let ri=0; ri<2; ri++) {
+    s += `\n<circle cx="${cx}" cy="${cy}" r="${HEX+20+ri*12}" fill="none" stroke="rgba(255,200,60,0.08)" stroke-width="1" stroke-dasharray="4,6"/>`;
+  }
+
+  s += `\n</g></svg>`;
+  return s;
+}
+
+// ── MAIN RENDER ──
+async function render() {
+  const params = new URLSearchParams(window.location.search);
+  const id = (params.get('id') || '').toUpperCase().trim();
+  const page = document.getElementById('pageContent');
+
+  if (!id) {
+    // ── INDEX VIEW: list all nexus points ──
+    page.innerHTML = `
+<style>
+  .ni-lore-section { max-width:900px; margin:0 auto 32px; }
+
+  /* Hero */
+  .ni-hero { text-align:center; padding:44px 24px 36px; }
+  .ni-hero-eyebrow { font-size:9px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,200,60,0.5); margin-bottom:14px; }
+  .ni-hero-title { font-size:44px; font-weight:900; letter-spacing:-.02em; line-height:1; margin-bottom:10px; background:linear-gradient(135deg,#FFE08A,#FFC832,#FFF4D6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .ni-hero-sub { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.7; max-width:520px; margin:0 auto; }
+
+  /* Info grid */
+  .ni-info-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:32px; }
+
+  /* Nexus card (full width, blue accent) */
+  .ni-card { background:rgba(0,0,0,0.42); border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .ni-card-nexus { border:1px solid rgba(96,200,255,0.15); }
+  .ni-card-nexus::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(96,200,255,0.3),rgba(96,200,255,0.6),rgba(96,200,255,0.3),transparent); }
+  .ni-card-header { padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+  .ni-card-icon { font-size:18px; line-height:1; }
+  .ni-card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,200,60,0.7); }
+  .ni-card-body { padding:16px 18px 18px; display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+  @media(max-width:600px){ .ni-card-body { grid-template-columns:1fr; } }
+  .ni-card-desc { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.75; margin-bottom:0; }
+  .ni-card-desc strong { color:rgba(255,255,255,0.8); font-weight:700; }
+  .ni-card-accent { color:rgba(96,200,255,0.6); font-size:13px; line-height:1.75; }
+
+  /* Two-col lower grid */
+  .ni-two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:640px){ .ni-two-col { grid-template-columns:1fr; } }
+  .ni-card-gold { border:1px solid rgba(255,200,60,0.14); }
+  .ni-card-link { margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(96,200,255,0.55); text-decoration:none; border:1px solid rgba(96,200,255,0.2); border-radius:8px; padding:3px 9px; transition:all .2s; }
+  .ni-card-link:hover { color:#60c8ff; border-color:rgba(96,200,255,0.5); background:rgba(96,200,255,0.06); }
+  .ni-card-body-simple { padding:16px 18px 18px; flex:1; }
+
+  /* Stat strip */
+  .ni-stat-strip { display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid rgba(255,255,255,0.06); }
+  .ni-stat-item { padding:12px 16px; text-align:center; border-right:1px solid rgba(255,255,255,0.05); }
+  .ni-stat-item:last-child { border-right:none; }
+  .ni-stat-val { font-size:22px; font-weight:900; color:#FFE08A; line-height:1; margin-bottom:2px; }
+  .ni-stat-lbl { font-size:8px; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,0.25); font-weight:700; }
+
+  /* Position pills */
+  .ni-pos-grid { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .ni-pos-pill { display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+  .ni-pos-pill-icon { font-size:12px; }
+  .ni-pos-pill-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.55); letter-spacing:.04em; }
+
+  /* Nexus grid section heading */
+  .ni-grid-heading { max-width:900px; margin:0 auto 16px; display:flex; align-items:center; gap:12px; }
+  .ni-grid-heading-text { font-family:'Orbitron',monospace; font-size:16px; font-weight:700; letter-spacing:.06em; color:#FFE08A; }
+  .ni-grid-heading-sub { font-size:12px; color:rgba(255,255,255,0.3); font-family:'Share Tech Mono',monospace; }
+  .ni-grid-heading::after { content:''; flex:1; height:1px; background:rgba(255,200,60,0.12); }
+</style>
+
+<div class="ni-lore-section">
+
+  <!-- HERO -->
+  <div class="ni-hero">
+    <div class="ni-hero-eyebrow">Luminaea · Territory Guide</div>
+    <h1 class="ni-hero-title">Nexus Points</h1>
+    <p class="ni-hero-sub">Unclaimed strategic positions on the map — where critical infrastructure is built through player collaboration.</p>
+  </div>
+
+  <!-- NEXUS LORE — full width -->
+  <div class="ni-info-grid">
+    <div class="ni-card ni-card-nexus">
+      <div class="ni-card-header">
+        <span class="ni-card-icon">⚡</span>
+        <span class="ni-card-title">What are Nexus Points?</span>
+      </div>
+      <div class="ni-card-body">
+        <div>
+          <p class="ni-card-desc">Nexus Points are <strong>unclaimed strategic positions</strong> on the map — they are not governed by any Minalien and do not belong to any District.</p>
+          <p class="ni-card-desc" style="margin-top:10px;">These are powerful locations where <strong>critical infrastructure</strong> can be constructed — power grids, transit hubs, relay stations — that benefit multiple Districts at once.</p>
+        </div>
+        <div>
+          <p class="ni-card-desc">Nexus Point projects <strong>cannot be built alone</strong>. They require collaboration between players from <strong>adjacent Districts</strong> — making them the most challenging and most rewarding projects in Luminaea.</p>
+          <p class="ni-card-accent" style="margin-top:10px;">No Governor. No single owner. Only alliances.</p>
+        </div>
+      </div>
+      <div class="ni-stat-strip">
+        <div class="ni-stat-item"><div class="ni-stat-val">23</div><div class="ni-stat-lbl">Nexus Points</div></div>
+        <div class="ni-stat-item"><div class="ni-stat-val">2–3</div><div class="ni-stat-lbl">Districts Per Junction</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NEXUS GRID -->
+<div class="ni-grid-heading">
+  <span class="ni-grid-heading-text">⬡ All Nexus Points</span>
+  <span class="ni-grid-heading-sub">Click any to view buildings &amp; register interest</span>
+</div>
+
+<div style="max-width:900px;margin:0 auto;">
+  <div id="nexusIndexGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:40px;">
+    <div style="color:rgba(255,255,255,0.25);font-size:13px;padding:20px 0;grid-column:1/-1;">Loading nexus points…</div>
+  </div>
+</div>
+
+<!-- UNITS + DISTRICTS INFO -->
+<div style="max-width:900px;margin:0 auto;">
+  <div class="ni-two-col" style="margin-bottom:16px;">
+
+    <!-- UNITS -->
+    <div class="ni-card ni-card-gold">
+      <div class="ni-card-header">
+        <span class="ni-card-icon">⬡</span>
+        <span class="ni-card-title">What are Units?</span>
+        <a href="unit.html?code=LUM-01-A" class="ni-card-link">Browse Units →</a>
+      </div>
+      <div class="ni-card-body-simple">
+        <p class="ni-card-desc">Units are individual <strong>areas of land</strong> — like a neighbourhood within a District. Each District contains exactly <strong>16 Units</strong>, owned and developed by individual players.</p>
+        <div class="ni-pos-grid">
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🌊</span><span class="ni-pos-pill-name">Coastal</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🏔️</span><span class="ni-pos-pill-name">Highland</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🌲</span><span class="ni-pos-pill-name">Forest</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🌾</span><span class="ni-pos-pill-name">Plains</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🏙️</span><span class="ni-pos-pill-name">Urban Core</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🗺️</span><span class="ni-pos-pill-name">Isolated</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🌿</span><span class="ni-pos-pill-name">Wetlands</span></div>
+          <div class="ni-pos-pill"><span class="ni-pos-pill-icon">🏜️</span><span class="ni-pos-pill-name">Frontier</span></div>
+        </div>
+      </div>
+      <div class="ni-stat-strip">
+        <div class="ni-stat-item"><div class="ni-stat-val">16</div><div class="ni-stat-lbl">Per District</div></div>
+        <div class="ni-stat-item"><div class="ni-stat-val">320</div><div class="ni-stat-lbl">Total in Luminaea</div></div>
+      </div>
+    </div>
+
+    <!-- DISTRICTS -->
+    <div class="ni-card ni-card-gold">
+      <div class="ni-card-header">
+        <span class="ni-card-icon">🗺️</span>
+        <span class="ni-card-title">What are Districts?</span>
+        <a href="district.html" class="ni-card-link">View Districts →</a>
+      </div>
+      <div class="ni-card-body-simple">
+        <p class="ni-card-desc">Districts are <strong>larger areas of land</strong> within Luminaea. There are <strong>20 Districts</strong>, each governed by a <strong>Minalien</strong> — a unique NFT character that earns a share of all yield generated within their territory.</p>
+      </div>
+      <div class="ni-stat-strip">
+        <div class="ni-stat-item"><div class="ni-stat-val">20</div><div class="ni-stat-lbl">Districts</div></div>
+        <div class="ni-stat-item"><div class="ni-stat-val">20</div><div class="ni-stat-lbl">Minalien Governors</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="max-width:900px;margin:0 auto;">`;
+
+    const client2 = window.supabaseClient || window.supabase;
+    if (!client2?.from) return;
+
+    // Fetch all nexus points + any active collaborations count
+    const [nexusRes, collabRes2] = await Promise.all([
+      client2.from('nexus_points').select('id,name,touches,status,location_type').order('id'),
+      client2.from('nexus_collaborations').select('nexus_id').neq('status','withdrawn'),
+    ]);
+
+    const allNexus   = nexusRes?.data  || [];
+    const collabRows = collabRes2?.data || [];
+    const collabCount = {};
+    collabRows.forEach(c => { collabCount[c.nexus_id] = (collabCount[c.nexus_id] || 0) + 1; });
+
+    const grid = document.getElementById('nexusIndexGrid');
+    if (!grid) return;
+    if (!allNexus.length) { grid.innerHTML = '<div style="color:rgba(255,255,255,0.2);font-size:12px;">No nexus points found.</div>'; return; }
+
+    grid.innerHTML = allNexus.map(n => {
+      const jType   = (n.touches || []).length >= 3 ? '3-way' : '2-way';
+      const jColor  = jType === '3-way' ? 'rgba(160,100,255,0.8)' : 'rgba(80,160,255,0.8)';
+      const jBg     = jType === '3-way' ? 'rgba(160,100,255,0.08)' : 'rgba(80,160,255,0.08)';
+      const jBorder = jType === '3-way' ? 'rgba(160,100,255,0.25)' : 'rgba(80,160,255,0.2)';
+      const count   = collabCount[n.id] || 0;
+      const isConv  = n.location_type === 'convergence_hub';
+
+      const terrDots = (n.touches || []).map(tc => {
+        const col  = TERRITORY_COLORS[tc] || '#888';
+        const name = TERRITORY_NAMES[tc]  || tc;
+        return `<span title="${name}" style="display:inline-flex;align-items:center;gap:3px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);font-family:'Share Tech Mono',monospace;">${name}</span>
+        </span>`;
+      }).join(`<span style="color:rgba(255,255,255,0.15);margin:0 3px;">·</span>`);
+
+      const activityHtml = count > 0
+        ? `<div style="font-size:10px;font-family:'Share Tech Mono',monospace;color:rgba(96,255,171,0.7);margin-top:6px;">👥 ${count} player${count!==1?'s':''} interested</div>`
+        : '';
+
+      const convergenceBadge = isConv
+        ? `<span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 7px;border-radius:20px;background:rgba(255,200,60,0.12);border:1px solid rgba(255,200,60,0.3);color:rgba(255,200,60,0.9);">✦ Convergence Hub</span>`
+        : '';
+
+      return `<a href="nexus.html?id=${n.id}" style="
+        display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:10px;
+        background:rgba(0,0,0,0.42);border:1px solid rgba(255,255,255,0.08);
+        text-decoration:none;transition:all .15s;
+      " onmouseover="this.style.borderColor='rgba(255,224,138,0.25)';this.style.background='rgba(0,0,0,0.55)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.background='rgba(0,0,0,0.42)'">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,0.3);">${n.id}</div>
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${jBg};border:1px solid ${jBorder};color:${jColor};font-family:'Share Tech Mono',monospace;">⬡ ${jType}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.9);">${n.name}</div>
+        ${convergenceBadge}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${terrDots}</div>
+        ${activityHtml}
+      </a>`;
+    }).join('');
+    // close the max-width wrapper opened in innerHTML
+    document.querySelector('#pageContent > div:last-of-type') && null; // no-op, div already in DOM
+    return;
+  }
+
+  const client = window.supabaseClient || window.supabase;
+
+  // Fetch nexus data from DB
+  let nexus = null;
+  if (client && typeof client.from === 'function') {
+    const { data } = await client.from('nexus_points').select('*').eq('id', id).maybeSingle();
+    nexus = data;
+  }
+
+  if (!nexus) {
+    page.innerHTML = `<div class="not-found"><h1>Nexus Not Found</h1><p style="color:rgba(255,255,255,0.3);margin-bottom:24px;">"${id}" does not exist in Luminaea.</p><a href="map.html" class="btn btn-primary">← Back to Map</a></div>`;
+    return;
+  }
+
+  document.title = `${nexus.name} · Nexus Point — MINALIA`;
+
+  // Read session
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch { return {}; } })();
+  const sessionUserId = session?.user?.id || null;
+
+  // Fetch all data in parallel
+  const jType = (nexus.touches || []).length >= 3 ? '3way' : '2way';
+  const isConvergence = nexus.location_type === 'convergence_hub';
+
+  const [collabRes, spRes, catRes, ownedRes, gateRes, convRes, teleRes, prefRes] = await Promise.all([
+    client?.from('nexus_collaborations')
+      .select('*, users(id, username, avatar, avatar_url, x_username, territory_color)')
+      .eq('nexus_id', id)
+      .order('joined_at', { ascending: true }),
+    nexus.touches?.length
+      ? client?.from('special_building_collaborations')
+          .select('*, users(id, username, avatar, avatar_url, x_username)')
+          .in('territory_code', nexus.touches)
+          .order('joined_at', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    client?.from('nexus_building_catalog')
+      .select('*')
+      .in('junction_type', [jType, 'any'])
+      .eq('active', true)
+      .order('sort_order', { ascending: true }),
+    sessionUserId && nexus.touches?.length
+      ? client?.from('units')
+          .select('unit_code')
+          .eq('owner_id', sessionUserId)
+      : Promise.resolve({ data: [] }),
+    // Gate projects at this nexus
+    client?.from('gate_projects')
+      .select('*, player_a:player_a_id(id,username), player_b:player_b_id(id,username), player_c:player_c_id(id,username), player_a_anonymous, player_b_anonymous, player_c_anonymous')
+      .eq('nexus_id', id)
+      .in('status', ['pending_second','recruiting','building','completed'])
+      .order('created_at', { ascending: false })
+      .limit(1),
+    // Convergence treasury (NEXUS-01 only)
+    isConvergence
+      ? client?.from('convergence_treasury').select('arkis_balance, total_received').single()
+      : Promise.resolve({ data: null }),
+    // Active teleport network nodes
+    client?.from('teleport_network')
+      .select('nexus_id, status, built_at')
+      .eq('status', 'active')
+      .order('built_at', { ascending: true }),
+    // User's default bidding identity preference
+    sessionUserId
+      ? client?.from('users').select('default_anonymous_investor').eq('id', sessionUserId).single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const collabs             = collabRes?.data    || [];
+  const specialCollabs      = spRes?.data        || [];
+  const nexusCatalog        = catRes?.data       || [];
+  const playerUnits         = ownedRes?.data     || [];
+  const activeGateProject   = gateRes?.data?.[0] || null;
+  const convergenceTreasury = convRes?.data      || null;
+  const teleportNodes       = teleRes?.data      || [];
+  const thisNodeActive      = teleportNodes.some(n => n.nexus_id === id);
+  const defaultAnon         = prefRes?.data?.default_anonymous_investor || false;
+  const networkSize         = teleportNodes.length;
+
+  // Is this player already registered (non-withdrawn)?
+  const playerAlreadyIn = sessionUserId
+    ? collabs.some(c => c.player_id === sessionUserId && c.status !== 'withdrawn')
+    : false;
+
+  // Derive territory from unit_code prefix (area_code column is NULL — territory is LUM-XX in unit_code)
+  // e.g. "LUM-01-B" → "LUM-01"
+  const playerOwnedTerrs = new Set(
+    playerUnits.map(u => u.unit_code.match(/^(LUM-\d+)/)?.[1]).filter(Boolean)
+  );
+  // Which of those territories touch this nexus?
+  const playerTouchingTerrs = (nexus.touches || []).filter(tc => playerOwnedTerrs.has(tc));
+  const playerIsQualified   = playerTouchingTerrs.length > 0;
+
+  const touchCount = (nexus.touches || []).length;
+  const statusLabel = { open: 'Open for Collaboration', in_progress: 'In Progress', completed: 'Completed' }[nexus.status] || nexus.status;
+  const statusDot = nexus.status === 'open' ? '●' : nexus.status === 'in_progress' ? '●' : '●';
+
+  // Build territory pills
+  const terrPills = (nexus.touches || []).map(tc => {
+    const col = TERRITORY_COLORS[tc] || '#888';
+    const name = TERRITORY_NAMES[tc] || tc;
+    return `
+      <a href="district.html?code=${tc}" class="terr-pill" title="View ${name}">
+        <div class="terr-pill-dot" style="background:${col}"></div>
+        <div>
+          <div class="terr-pill-code">${tc}</div>
+          <div class="terr-pill-name">${name}</div>
+        </div>
+      </a>`;
+  }).join('');
+
+  // Build collab player cards
+  function buildCollabCard(c) {
+    const u = c.users || {};
+    const av = resolveAvatar(u.avatar_url || u.avatar, u.x_username);
+    const name = u.username || 'Unknown Player';
+    const initial = name[0]?.toUpperCase() || '?';
+    const avatarHtml = av
+      ? `<img src="${av}" alt="${name}" onerror="this.style.display='none';this.parentNode.textContent='${initial}'">`
+      : initial;
+    const buildingLabel = c.building_slug ? c.building_slug.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) : '—';
+    const shareText = c.share_pct ? `${c.share_pct}% share` : '';
+    const tc = c.territory_code;
+    const dot = tc ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${TERRITORY_COLORS[tc]||'#888'};margin-right:4px;"></span>` : '';
+    return `
+      <div class="collab-card">
+        <div class="collab-card-header">
+          <a href="profile.html?user=${encodeURIComponent(u.mina_wallet_address || u.username || '')}" class="collab-avatar">${avatarHtml}</a>
+          <div>
+            <div class="collab-name">${name}</div>
+            <div class="collab-territory">${dot}${tc ? (TERRITORY_NAMES[tc] || tc) : ''}</div>
+          </div>
+        </div>
+        <div class="collab-building-name">✦ ${buildingLabel}</div>
+        ${shareText ? `<div class="collab-share">${shareText}</div>` : ''}
+        <span class="collab-status-badge ${c.status}">${c.status}</span>
+      </div>`;
+  }
+
+  // Open slots based on territory count minus active collabs
+  const activeCollabs = collabs.filter(c => c.status !== 'withdrawn').length;
+  // 3-way nexus: 2 required + 1 optional. 2-way: exactly 2.
+  const requiredSlots = touchCount >= 3 ? 2 : 2;
+  const optionalSlots = touchCount >= 3 ? 1 : 0;
+  const maxSlots      = requiredSlots + optionalSlots;
+  // Required open = how many of the first 2 slots are unfilled
+  const openRequired  = Math.max(0, requiredSlots - activeCollabs);
+  // Optional slot open only if required slots are filled and max not reached
+  const openOptional  = (activeCollabs >= requiredSlots && activeCollabs < maxSlots) ? 1 : 0;
+  const openSlots     = openRequired + openOptional;
+  const isOptionalSlot= openRequired === 0 && openOptional > 0;
+  // One open slot card per unfilled position — personalised to viewer's ownership status
+  const activeTerrCodes = new Set(collabs.filter(c=>c.status!=='withdrawn').map(c=>c.territory_code));
+
+  const allTerrPips = (nexus.touches || []).map(tc => {
+    const tname = TERRITORY_NAMES[tc] || tc;
+    const tcol  = TERRITORY_COLORS[tc] || '#888';
+    const owned = playerTouchingTerrs.includes(tc);
+    return `<span style="font-size:10px;font-weight:700;color:${tcol};${owned?'text-decoration:underline;':''}">● ${tname}${owned?' ✓':''}</span>`;
+  }).join('<span style="font-size:9px;color:rgba(255,255,255,0.3);margin:0 4px;">or</span>');
+
+  const openSlotHtml = Array.from({length: openSlots}, () => {
+    if (!sessionUserId) {
+      return `<div class="open-slot" style="opacity:0.6;">
+        ✦ Open Slot
+        <div style="font-size:10px;color:rgba(255,255,255,0.35);margin:5px 0 3px;font-weight:400;letter-spacing:0;">Connect wallet to register interest</div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:3px;justify-content:center;">${allTerrPips}</div>
+      </div>`;
+    } else if (playerAlreadyIn) {
+      return `<div class="open-slot" style="border-color:rgba(96,255,171,0.25);background:rgba(96,255,171,0.03);cursor:default;">
+        ✓ You're Registered
+        <div style="font-size:10px;color:rgba(96,255,171,0.6);margin:5px 0 0;font-weight:400;letter-spacing:0;">Your interest has been logged for this nexus</div>
+      </div>`;
+    } else if (playerIsQualified) {
+      const isOpt = isOptionalSlot;
+      const label = isOpt ? '✦ Optional 3rd Slot' : '✦ Register Your Interest';
+      // Show which of the player's territories qualify them
+      const qualifyingTerrs = playerTouchingTerrs.map(tc => {
+        const col  = TERRITORY_COLORS[tc] || '#888';
+        const name = TERRITORY_NAMES[tc]  || tc;
+        return `<span style="color:${col};font-weight:700;">● ${name}</span>`;
+      }).join(', ');
+      const eligibilityNote = isOpt
+        ? `This nexus already has 2 builders. Join as the 3rd — all three builders pay 3M ARKIS instead of 4M, saving everyone 1M.`
+        : `You own a unit in ${qualifyingTerrs}, which touches this nexus. That makes you eligible to collaborate here.`;
+      return `<div class="open-slot" style="border-color:${isOpt?'rgba(160,100,255,0.35)':'rgba(255,200,60,0.35)'};background:${isOpt?'rgba(160,100,255,0.06)':'rgba(255,200,60,0.06)'};">
+        ${label}
+        <div style="font-size:11px;color:${isOpt?'rgba(160,100,255,0.8)':'rgba(255,200,60,0.8)'};margin:6px 0 4px;font-weight:400;letter-spacing:0;line-height:1.5;">${eligibilityNote}</div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:3px;justify-content:center;margin-top:4px;">${allTerrPips}</div>
+      </div>`;
+    } else {
+      // Logged in but no qualifying unit — explain clearly
+      return `<div class="open-slot" style="opacity:0.55;cursor:default;">
+        ✦ Open Slot
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin:6px 0 4px;font-weight:400;letter-spacing:0;line-height:1.5;">To collaborate here you need to own a unit in one of the territories that touch this nexus point:</div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:3px;justify-content:center;">${allTerrPips}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:6px;">Units in touching territories can be found on the <a href="realestate.html" style="color:rgba(255,200,60,0.5);">Real Estate</a> page.</div>
+      </div>`;
+    }
+  }).join('');
+
+  // Build nexus building catalog section
+  function buildCatalogCard(b) {
+    const effects = [];
+    if (b.effect_arkis_pct)      effects.push(`+${b.effect_arkis_pct}% ARKIS yield across territories`);
+    if (b.effect_pop_growth_pct) effects.push(`+${b.effect_pop_growth_pct}% population growth`);
+    if (b.effect_travel_pct)     effects.push(`${b.effect_travel_pct}% travel cost`);
+    if (b.effect_tune_decay_pct) effects.push(`−${b.effect_tune_decay_pct}% tune decay rate <span style="font-size:9px;opacity:0.55;font-weight:400;">(units stay in tune longer)</span>`);
+    if (b.effect_build_time_pct) effects.push(`${b.effect_build_time_pct}% build time`);
+
+    const yieldParts = [];
+    if (b.yield_arkis)  yieldParts.push(`${Number(b.yield_arkis).toLocaleString()} ARKIS/mo`);
+    if (b.yield_plasm)  yieldParts.push(`${Number(b.yield_plasm).toLocaleString()} PLASM/mo`);
+    if (b.yield_wire)   yieldParts.push(`${Number(b.yield_wire).toLocaleString()} WIRE/mo`);
+    if (b.yield_lichen) yieldParts.push(`${Number(b.yield_lichen).toLocaleString()} LICHEN/mo`);
+    if (b.yield_spore)  yieldParts.push(`${Number(b.yield_spore).toLocaleString()} SPORE/mo`);
+    const yieldLine  = yieldParts.length  ? `<div class="nbc-effect">↗ ${yieldParts.join(' · ')} to contributors</div>` : '';
+    const effectLine = effects.length     ? `<div class="nbc-effect">${effects.join(' · ')}</div>` : '';
+
+    // ── Teleportation Gate — info-only catalog card (actions live in the dedicated panel above) ──
+    if (b.slug === 'teleportation_gate') {
+      const gp = activeGateProject;
+      let statusLine = '';
+      if (!gp) {
+        statusLine = `<div class="nbc-cost">⬡ 4,000,000 ARKIS · 2 builders to start · 3M each if a 3rd joins · 24h build</div>`;
+      } else if (gp.status === 'pending_second') {
+        statusLine = `<div class="nbc-effect" style="color:rgba(255,200,60,0.7);">🔔 1 builder registered — 1 slot open</div>`;
+      } else if (gp.status === 'recruiting') {
+        statusLine = `<div class="nbc-effect" style="color:rgba(160,100,255,0.8);">📢 2 builders in — optional 3rd slot open for 7 days</div>`;
+      } else if (gp.status === 'building') {
+        const hoursLeft = Math.max(0, Math.ceil((new Date(gp.build_completes_at) - Date.now()) / 3600000));
+        statusLine = `<div class="nbc-effect" style="color:rgba(80,160,255,0.8);">🔨 Under construction — ${hoursLeft}h remaining</div>`;
+      } else if (gp.status === 'completed') {
+        statusLine = `<div class="nbc-effect" style="color:rgba(96,255,171,0.8);">✅ Active — connected to the teleportation network</div>`;
+      }
+      return `
+        <div class="nbc-card ${b.tier}" id="nbc-${b.slug}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:22px;line-height:1;">${b.icon}</span>
+            <div>
+              <span class="nbc-name">${b.name}</span>
+              <span class="nbc-tier-badge ${b.tier}">${b.tier}</span>
+            </div>
+          </div>
+          <div class="nbc-desc">${b.description}</div>
+          ${yieldLine}
+          ${statusLine}
+        </div>`;
+    }
+
+    // ── Standard catalog card ──
+    const contributors = Number(b.min_contributors) || 2;
+    const perHead      = Math.round(Number(b.cost_arkis) / contributors);
+    const isThreeWay   = b.junction_type === '3way';
+    const costStr      = isThreeWay
+      ? `${perHead.toLocaleString()} ARKIS each · 2 to start · 3rd player welcome`
+      : `${perHead.toLocaleString()} ARKIS each · ${contributors}+ builders`;
+    return `
+      <div class="nbc-card ${b.tier}" id="nbc-${b.slug}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;line-height:1;">${b.icon}</span>
+          <div>
+            <span class="nbc-name">${b.name}</span>
+            <span class="nbc-tier-badge ${b.tier}">${b.tier}</span>
+          </div>
+        </div>
+        <div class="nbc-desc">${b.description}</div>
+        ${yieldLine}
+        ${effectLine}
+        <div class="nbc-cost">⬡ ${costStr}</div>
+        <div class="open-slot nbc-register-btn" data-preselect="${b.slug}" style="margin-top:8px;text-align:center;padding:7px;font-size:10px;letter-spacing:.06em;">✦ Register Interest</div>
+      </div>`;
+  }
+
+  const catalogSection = nexusCatalog.length > 0 ? `
+    <div class="nexus-section">
+      <div class="nexus-section-title">🏗 Buildable at This Nexus</div>
+      <p style="color:rgba(255,255,255,0.35);font-size:12px;margin-bottom:4px;">These structures can only be built on nexus ground. Each requires co-builders from the connected territories. Benefits apply to all connected territories.</p>
+      <div class="nexus-catalog-grid">
+        ${nexusCatalog.map(buildCatalogCard).join('')}
+      </div>
+    </div>` : '';
+
+  const collabSection = collabs.length > 0 || openSlots > 0 ? `
+    <div class="nexus-section">
+      <div class="nexus-section-title">✦ Collaborators</div>
+      <div class="collab-grid">
+        ${collabs.filter(c=>c.status!=='withdrawn').map(buildCollabCard).join('')}
+        ${openSlotHtml}
+      </div>
+    </div>` : `
+    <div class="nexus-section">
+      <div class="nexus-section-title">✦ Collaborators</div>
+      <p style="color:rgba(255,255,255,0.3);font-size:13px;">No collaborations registered yet. Players from the connected territories can register interest here.</p>
+    </div>`;
+
+  // Special collab buildings from adjacent territories
+  const specialSection = specialCollabs.length > 0 ? `
+    <div class="nexus-section">
+      <div class="nexus-section-title">✦ Adjacent Territory Projects</div>
+      <p style="color:rgba(255,255,255,0.35);font-size:12px;margin-bottom:16px;">Active collaborative projects in territories connected to this nexus.</p>
+      <div class="collab-grid">
+        ${specialCollabs.map(c => {
+          const u = c.users || {};
+          const av = resolveAvatar(u.avatar_url || u.avatar, u.x_username);
+          const name = u.username || 'Unknown';
+          const initial = name[0]?.toUpperCase() || '?';
+          const avatarHtml = av
+            ? `<img src="${av}" alt="${name}" onerror="this.style.display='none';this.parentNode.textContent='${initial}'">`
+            : initial;
+          const buildingLabel = c.building_slug.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+          const tc = c.territory_code;
+          return `
+            <div class="collab-card">
+              <div class="collab-card-header">
+                <a href="profile.html?user=${encodeURIComponent(u.mina_wallet_address || name)}" class="collab-avatar" style="text-decoration:none;">${avatarHtml}</a>
+                <div>
+                  <a href="profile.html?user=${encodeURIComponent(u.mina_wallet_address || name)}" class="collab-name" style="text-decoration:none;color:inherit;transition:color .15s;" onmouseover="this.style.color='#FFE08A'" onmouseout="this.style.color=''">${name}</a>
+                  <div class="collab-territory" style="color:${TERRITORY_COLORS[tc]||'#888'}">${TERRITORY_NAMES[tc]||tc}</div>
+                </div>
+              </div>
+              <a href="#nbc-${c.building_slug}" class="collab-building-name" style="text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#FFE08A'" onmouseout="this.style.color=''">🏗 ${buildingLabel} <span style="font-size:9px;opacity:0.4;">↓</span></a>
+              <span class="collab-status-badge ${c.status}">${c.status}</span>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+
+  // ── Teleportation Gate standalone panel ──────────────────────────────────
+  // Always shown — shows current state and all actions
+  const gp = activeGateProject;
+  const alreadyInGate = gp && sessionUserId && (
+    gp.player_a?.id === sessionUserId ||
+    gp.player_b?.id === sessionUserId ||
+    gp.player_c?.id === sessionUserId
+  );
+
+  // Player chips — respects anonymity flags
+  const isCoBuild = alreadyInGate;
+  const playerChips = gp ? [
+    { p: gp.player_a, anon: gp.player_a_anonymous },
+    { p: gp.player_b, anon: gp.player_b_anonymous },
+    { p: gp.player_c, anon: gp.player_c_anonymous }
+  ].filter(x => x.p).map(({ p, anon }) => {
+    const isYou = p.id === sessionUserId;
+    const revealIdentity = isYou || (isCoBuild && gp.status !== 'pending_second' && gp.status !== 'recruiting');
+    const displayName = (anon && !revealIdentity) ? '👤 Anonymous Investor' : `👤 ${p.username}${isYou?' (you)':''}`;
+    return `<div class="gate-player-chip${isYou?' you':''}">${displayName}</div>`;
+  }) : [];
+  if (gp?.status === 'pending_second') playerChips.push(`<div class="gate-player-chip open">✦ Open slot</div>`);
+  if (gp?.status === 'recruiting')     playerChips.push(`<div class="gate-player-chip open">✦ Optional 3rd slot open</div>`);
+
+  // Anon investor checkbox (shown when eligible and not already in)
+  const anonCheckHtml = (sessionUserId && playerIsQualified && !alreadyInGate) ? `
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.45);font-family:'Share Tech Mono',monospace;">
+      <input type="checkbox" id="gateAnonCheck" style="accent-color:#BE5AFF;width:14px;height:14px;">
+      Submit as <strong style="color:rgba(190,90,255,0.8);">Anonymous Investor</strong> — identity hidden until build starts
+    </label>` : '';
+
+  // State-specific content
+  let gateStateHtml = '';
+  if (!gp) {
+    // No project yet — invite first builder
+    const btnHtml = !sessionUserId
+      ? `<a href="login.html" class="btn-gate-primary" style="text-align:center;text-decoration:none;display:inline-block;">Connect Wallet to Register</a>`
+      : !playerIsQualified
+        ? `<button class="btn-gate-primary" disabled>You need a unit in a touching territory to build here</button>`
+        : `${anonCheckHtml}<button class="btn-gate-primary" onclick="registerGateInterest('${id}')">🌀 Register as 1st Builder (4M ARKIS escrow)</button>`;
+    gateStateHtml = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+        <div class="gate-info-row">💰 Cost to start: <strong>4M ARKIS</strong> (escrow)</div>
+        <div class="gate-info-row">👥 Recruit 3rd: <strong>all pay 3M</strong> · save 1M each</div>
+        <div class="gate-info-row">↗ Yield: <strong>3M ARKIS/month</strong> total</div>
+        <div class="gate-info-row">⏱ Build time: <strong>24 hours</strong></div>
+      </div>
+      <div style="margin-bottom:10px;">${btnHtml}</div>
+      <div class="gate-warning">⚠️ Gate ownership requires staying active in MINALIA. If an owner is absent for 30 days their share transfers to the nearest territory ministers, who can sell it on the open market. At 23 days, co-owners and nearby players receive an alert that a buying opportunity may be coming — if the absent owner logs back in before day 30, the transfer is cancelled and everyone is notified.</div>
+      <div class="gate-feedback" id="gateFeedback_teleportation_gate"></div>`;
+  } else if (gp.status === 'pending_second') {
+    const aName = gp.player_a_anonymous ? 'An anonymous investor' : (gp.player_a?.username || '?');
+    const btnHtml = alreadyInGate
+      ? `<button class="btn-gate-primary" disabled>⏳ Waiting for a second builder…</button>`
+      : !sessionUserId
+        ? `<a href="login.html" class="btn-gate-primary" style="text-align:center;text-decoration:none;display:inline-block;">Connect Wallet to Join</a>`
+        : !playerIsQualified
+          ? `<button class="btn-gate-primary" disabled>You need a unit in a touching territory to build here</button>`
+          : `${anonCheckHtml}<button class="btn-gate-primary" onclick="joinGateProject('${gp.id}')">Join as 2nd Builder (4M ARKIS escrow)</button>`;
+    gateStateHtml = `
+      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:12px;line-height:1.6;">
+        <strong style="color:rgba(255,200,60,0.9);">${aName}</strong> has registered interest and paid their 4M ARKIS escrow.
+        Join as the 2nd builder to open a 7-day window — during which a 3rd builder can join and all three pay 3M instead of 4M.
+      </p>
+      <div class="gate-warning" style="margin-bottom:12px;">⚠️ Your 4M ARKIS will be held in escrow. If a 3rd builder joins within 7 days, you'll each be refunded 1M ARKIS automatically.</div>
+      ${btnHtml}
+      <div class="gate-feedback" id="gateFeedback_teleportation_gate"></div>`;
+  } else if (gp.status === 'recruiting') {
+    const aName  = gp.player_a_anonymous ? 'Anonymous Investor' : (gp.player_a?.username || '?');
+    const bName  = gp.player_b_anonymous ? 'Anonymous Investor' : (gp.player_b?.username || '?');
+    const closes = new Date(gp.recruitment_closes_at);
+    const daysLeft = Math.max(0, Math.ceil((closes - Date.now()) / 86400000));
+    const hoursLeft = Math.max(0, Math.ceil((closes - Date.now()) / 3600000));
+    const timeLeft = daysLeft > 0 ? `${daysLeft} day${daysLeft!==1?'s':''} remaining` : `${hoursLeft}h remaining`;
+    const btnHtml = alreadyInGate
+      ? `<button class="btn-gate-secondary" disabled>✓ You're already in this project</button>`
+      : !sessionUserId
+        ? `<a href="login.html" class="btn-gate-primary" style="text-align:center;text-decoration:none;display:inline-block;">Connect Wallet to Join</a>`
+        : !playerIsQualified
+          ? `<button class="btn-gate-primary" disabled>You need a unit in a touching territory to build here</button>`
+          : `${anonCheckHtml}<button class="btn-gate-primary" onclick="joinGateProject('${gp.id}')">Join as 3rd Builder (3M ARKIS — A &amp; B each refunded 1M)</button>`;
+    gateStateHtml = `
+      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:8px;line-height:1.6;">
+        <strong style="color:rgba(160,100,255,0.9);">${aName}</strong> and <strong style="color:rgba(160,100,255,0.9);">${bName}</strong> are looking for a 3rd builder.
+        If you join, all three of you pay <strong style="color:rgba(255,224,138,0.9);">3M ARKIS</strong> instead of 4M — saving everyone 1M ARKIS.
+        The other two builders each get 1M refunded automatically when you commit.
+      </p>
+      <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:rgba(255,200,60,0.6);margin-bottom:12px;">⏰ ${timeLeft} to join</div>
+      ${btnHtml}
+      <div class="gate-feedback" id="gateFeedback_teleportation_gate"></div>`;
+  } else if (gp.status === 'building') {
+    const hoursLeft = Math.max(0, Math.ceil((new Date(gp.build_completes_at) - Date.now()) / 3600000));
+    gateStateHtml = `
+      <p style="font-size:13px;color:rgba(80,160,255,0.8);line-height:1.6;">
+        🔨 The Teleportation Gate is under construction. It will be ready in <strong>${hoursLeft} hour${hoursLeft!==1?'s':''}</strong>.
+        Daily yield of <strong>${gp.player_count === 3 ? '33,333' : '50,000'} ARKIS/day</strong> per builder begins on completion.
+      </p>`;
+  } else if (gp.status === 'completed') {
+    const otherGates = networkSize - 1;
+    const networkLine = otherGates > 0
+      ? `${otherGates} other Gate${otherGates!==1?'s are':' is'} active — direct routes exist between all of them.`
+      : `This is the first gate in the network. Build a second gate anywhere in Luminaea to create a direct teleportation route.`;
+    gateStateHtml = `
+      <p style="font-size:13px;color:rgba(96,255,171,0.8);margin-bottom:8px;line-height:1.6;">✅ Active and connected to the teleportation network.</p>
+      <div class="gate-info-row" style="margin-bottom:6px;">⬡ ${networkLine}</div>
+      <div class="gate-info-row">⚖️ Ownership: <strong>${gp.player_count === 3 ? '33.3% each' : '50% each'}</strong> · sellable in ${gp.player_count === 3 ? '11.1%' : '25%'} lots · view your share on your <a href="profile.html" style="color:rgba(255,224,138,0.7);">Profile</a></div>
+      <div class="gate-info-row">↗ Daily yield: <strong>${gp.player_count === 3 ? '33,333' : '50,000'} ARKIS/day</strong> per builder</div>`;
+  }
+
+  const gatePanelHtml = `
+    <div class="nexus-section">
+      <div class="nexus-section-title">🌀 Teleportation Gate</div>
+      <div class="gate-project-card ${gp?.status === 'completed' ? 'completed' : ''}">
+        ${playerChips.length ? `<div class="gate-players">${playerChips.join('')}</div>` : ''}
+        ${gateStateHtml}
+      </div>
+    </div>`;
+
+  // ── Convergence treasury (NEXUS-01 only) ──
+  const convergenceTreasuryHtml = convergenceTreasury ? `
+    <div class="convergence-treasury">
+      <div class="convergence-treasury-icon">🌀</div>
+      <div>
+        <div class="convergence-treasury-label">Convergence Treasury</div>
+        <div class="convergence-treasury-val">${Number(convergenceTreasury.arkis_balance || 0).toLocaleString()} ARKIS</div>
+        <div class="convergence-treasury-sub">All-time received: ${Number(convergenceTreasury.total_received || 0).toLocaleString()} ARKIS · Held for future world mechanics</div>
+      </div>
+    </div>` : '';
+
+  // ── Store state for click handler ──
+  _nexusRenderState = {
+    sessionUserId, playerIsQualified, playerAlreadyIn,
+    playerTouchingTerrs, nexusTouches: nexus.touches || [],
+    nexusCatalog, nexusId: id,
+    client: window.supabaseClient || window.supabase,
+    activeGateProject,
+    networkSize, thisNodeActive,
+    defaultAnon,
+  };
+
+  // Derive prev/next nexus IDs
+  const nexusNum  = parseInt(id.replace('NEXUS-', ''), 10);
+  const prevId    = nexusNum > 1  ? `NEXUS-${String(nexusNum - 1).padStart(2,'0')}` : null;
+  const nextId    = nexusNum < 23 ? `NEXUS-${String(nexusNum + 1).padStart(2,'0')}` : null;
+
+  page.innerHTML = `
+    <!-- Nexus nav bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;">
+      <a href="nexus.html" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,224,138,0.6);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,224,138,0.9)'" onmouseout="this.style.color='rgba(255,224,138,0.6)'">⬡ All Nexus Points</a>
+      <div style="display:flex;align-items:center;gap:16px;">
+        ${prevId
+          ? `<a href="nexus.html?id=${prevId}" style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:600;color:rgba(80,160,255,0.8);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#60b4ff'" onmouseout="this.style.color='rgba(80,160,255,0.8)'">← ${prevId}</a>`
+          : `<span style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.15);">← First</span>`}
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);">${nexusNum} / 23</span>
+        ${nextId
+          ? `<a href="nexus.html?id=${nextId}" style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:600;color:rgba(80,160,255,0.8);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#60b4ff'" onmouseout="this.style.color='rgba(80,160,255,0.8)'"> ${nextId} →</a>`
+          : `<span style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.15);">Last →</span>`}
+      </div>
+    </div>
+
+    <div class="nexus-hero">
+      <div class="nexus-eyebrow">
+        <span class="nexus-id-badge">${nexus.id}</span>
+        <span class="nexus-type-badge">Nexus Point · ${touchCount}-Way Junction</span>
+      </div>
+      <div class="nexus-hero-inner">
+        <div>
+          <h1 class="nexus-title">${nexus.name}</h1>
+          <p class="nexus-lore">"${nexus.lore || ''}"</p>
+          <div class="nexus-coords">Hex coordinates: q = ${nexus.q}, r = ${nexus.r}</div>
+          <div class="connected-territories">${terrPills}</div>
+        </div>
+        <div>
+          <div class="nexus-map-wrap">${generateNexusSVG(nexus)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <span class="nexus-status ${nexus.status}">
+        <span class="nexus-status-dot"></span>
+        ${statusLabel}
+      </span>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <a href="nexus.html" class="btn-nexus-map" style="background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);">
+          ⬡ All Nexus Points
+        </a>
+        <a href="map.html" class="btn-nexus-map">
+          ⬡ View on Map
+        </a>
+      </div>
+    </div>
+
+    <div class="nexus-section">
+      <div class="nexus-section-title">✦ About This Nexus</div>
+      <p style="color:rgba(255,255,255,0.55);font-size:14px;line-height:1.7;margin-bottom:16px;">
+        Nexus Points are shared inter-territory spaces that sit in the natural gaps between Luminaea's territories. 
+        They cannot be owned outright — instead, players from each connected territory can pool resources to 
+        build <strong style="color:rgba(255,200,60,0.8)">Legendary Collaborative Buildings</strong> here, 
+        structures far more powerful than anything a single territory could construct alone.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+        <div class="stat-item">
+          <div class="stat-label">Connected Territories</div>
+          <div class="stat-value" style="color:#FFE08A;font-size:26px;">${touchCount}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Active Collaborators</div>
+          <div class="stat-value" style="color:#FFE08A;font-size:26px;">${activeCollabs}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Open Slots</div>
+          <div class="stat-value" style="color:#60ffab;font-size:26px;">${openSlots}</div>
+        </div>
+      </div>
+    </div>
+
+    ${convergenceTreasuryHtml}
+    ${gatePanelHtml}
+    ${collabSection}
+    ${catalogSection}
+    ${specialSection}
+
+    <div style="text-align:right;margin-top:8px;">
+      <a href="map.html" class="back-to-top">← Back to Map</a>
+    </div>`;
+
+  // Pre-tick the Anonymous Investor checkbox based on user's saved preference
+  if (defaultAnon) {
+    const cb = document.getElementById('gateAnonCheck');
+    if (cb) cb.checked = true;
+  }
+}
+
+// ── GATE INTEREST / JOIN FUNCTIONS ──────────────────────────────────────────
+
+async function registerGateInterest(nexusId) {
+  const { sessionUserId, client } = _nexusRenderState;
+  if (!sessionUserId || !client) return;
+
+  const isAnon = document.getElementById('gateAnonCheck')?.checked || false;
+  const btn = document.querySelector('.btn-gate-primary');
+  const fb  = document.getElementById('gateFeedback_teleportation_gate');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing…'; }
+  if (fb)  { fb.className = 'gate-feedback'; fb.textContent = ''; }
+
+  try {
+    const { data, error } = await client.rpc('register_gate_interest', {
+      p_nexus_id:  nexusId,
+      p_player_id: sessionUserId,
+      p_anonymous: isAnon
+    });
+    if (error) throw error;
+    const anonNote = isAnon ? ' You are registered as an Anonymous Investor.' : '';
+    if (fb) { fb.className = 'gate-feedback ok'; fb.textContent = '✅ Registered! 4M ARKIS held in escrow. A broadcast has been sent to eligible players.' + anonNote; }
+    setTimeout(() => render(), 1500);
+  } catch(err) {
+    const msg = err.message || '';
+    let friendly = 'Registration failed — please try again.';
+    if (msg.includes('insufficient_balance'))   friendly = 'Insufficient ARKIS balance (need 4,000,000).';
+    if (msg.includes('project_already_exists')) friendly = 'A gate project already exists at this nexus.';
+    if (msg.includes('not_eligible'))           friendly = 'You need a unit in a touching territory.';
+    if (fb) { fb.className = 'gate-feedback err'; fb.textContent = friendly; }
+    if (btn) { btn.disabled = false; btn.textContent = '🌀 Register Interest (4M ARKIS escrow)'; }
+  }
+}
+
+async function joinGateProject(projectId) {
+  const { sessionUserId, client, activeGateProject } = _nexusRenderState;
+  if (!sessionUserId || !client || !projectId) return;
+
+  const isAnon     = document.getElementById('gateAnonCheck')?.checked || false;
+  const isThird    = activeGateProject?.status === 'recruiting';
+  const costLabel  = isThird ? '3,000,000' : '4,000,000';
+  const anonLine   = isAnon ? '\n\nYou will be listed as an Anonymous Investor until the build starts.' : '';
+  const confirmMsg = isThird
+    ? `Join as 3rd builder for 3,000,000 ARKIS?\n\nThe other two builders will each be refunded 1M ARKIS. Build starts immediately.${anonLine}\n\nThis cannot be undone.`
+    : `Join as 2nd builder for 4,000,000 ARKIS escrow?\n\nA 7-day window will open to recruit a 3rd builder. If a 3rd joins you'll each get 1M back.${anonLine}\n\nThis cannot be undone.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const btn = document.querySelector(`button[onclick="joinGateProject('${projectId}')"]`);
+  const fb  = document.getElementById('gateFeedback_teleportation_gate');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing…'; }
+  if (fb)  { fb.className = 'gate-feedback'; fb.textContent = ''; }
+
+  try {
+    const { data, error } = await client.rpc('join_gate_project', {
+      p_project_id: projectId,
+      p_player_id:  sessionUserId,
+      p_anonymous:  isAnon
+    });
+    if (error) throw error;
+    const anonNote = isAnon ? ' You are listed as an Anonymous Investor.' : '';
+    const successMsg = isThird
+      ? '✅ You\'ve joined! Build has started. Your daily yield of 33,333 ARKIS/day begins in 24 hours.' + anonNote
+      : '✅ You\'ve joined! 7-day recruitment window is now open. A broadcast has been sent to eligible players.' + anonNote;
+    if (fb) { fb.className = 'gate-feedback ok'; fb.textContent = successMsg; }
+    setTimeout(() => render(), 1500);
+  } catch(err) {
+    const msg = err.message || '';
+    let friendly = 'Could not join — please try again.';
+    if (msg.includes('insufficient_balance'))       friendly = `Insufficient ARKIS balance (need ${costLabel}).`;
+    if (msg.includes('already_joined'))             friendly = 'You are already part of this project.';
+    if (msg.includes('not_eligible'))               friendly = 'You need a unit in a touching territory.';
+    if (msg.includes('recruitment_window_closed'))  friendly = 'The 7-day window has closed — build started automatically.';
+    if (msg.includes('project_not_open'))           friendly = 'This project is no longer open to join.';
+    if (msg.includes('ownership_cap_exceeded'))     friendly = 'You already hold 50% of this gate — the maximum allowed.';
+    if (fb) { fb.className = 'gate-feedback err'; fb.textContent = friendly; }
+    if (btn) { btn.disabled = false; btn.textContent = isThird ? 'Join as 3rd Builder (3M ARKIS)' : 'Join as 2nd Builder (4M ARKIS escrow)'; }
+  }
+}
+
+window.registerGateInterest = registerGateInterest;
+window.joinGateProject       = joinGateProject;
+
+// Render immediately — session is read from localStorage synchronously inside render()
+// ── OPEN SLOT CLICK → REGISTER INTEREST ───────────────────────────────────
+// Declared before render() so assignment inside render() is valid
+let _nexusRenderState = {};
+
+render();
+
+document.addEventListener('click', async (e) => {
+  const slot = e.target.closest('.open-slot');
+  if (!slot) return;
+
+  const { sessionUserId, playerIsQualified, playerAlreadyIn,
+          playerTouchingTerrs, nexusTouches, nexusCatalog, nexusId, client } = _nexusRenderState;
+
+  if (!sessionUserId) { showNexusModal('not-logged-in'); return; }
+  if (playerAlreadyIn) { showNexusModal('already-registered'); return; }
+  if (!playerIsQualified) { showNexusModal('not-qualified', nexusTouches); return; }
+
+  const playerTerritoryCode = playerTouchingTerrs[0];
+  const preselect = slot.dataset.preselect || null;
+  showNexusModal('register', nexusTouches, nexusCatalog, nexusId, sessionUserId, playerTerritoryCode, client, preselect);
+});
+
+function showNexusModal(type, touches, catalog, nexusId, userId, playerTerritoryCode, client, preselect) {
+  // Remove any existing modal
+  document.querySelector('.nexus-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'nexus-modal-overlay';
+
+  let inner = '';
+
+  if (type === 'not-logged-in') {
+    inner = `
+      <div class="nexus-modal">
+        <h3>Sign In Required</h3>
+        <p>You need to connect your Auro wallet to register interest in a nexus collaboration.</p>
+        <div class="modal-btn-row">
+          <button class="modal-btn cancel" onclick="this.closest('.nexus-modal-overlay').remove()">Close</button>
+          <a href="login.html" class="modal-btn confirm" style="text-decoration:none;display:inline-flex;align-items:center;">Connect Wallet</a>
+        </div>
+      </div>`;
+  } else if (type === 'not-qualified') {
+    const terrList = (touches || []).map(tc => {
+      const col = TERRITORY_COLORS[tc] || '#888';
+      return `<span style="color:${col};font-weight:700;">● ${TERRITORY_NAMES[tc]||tc}</span>`;
+    }).join(' or ');
+    inner = `
+      <div class="nexus-modal">
+        <h3>Unit Required</h3>
+        <p>To collaborate at this nexus, you need to own at least one unit in: ${terrList}.</p>
+        <div class="modal-btn-row">
+          <button class="modal-btn cancel" onclick="this.closest('.nexus-modal-overlay').remove()">Close</button>
+          <a href="real-estate.html" class="modal-btn confirm" style="text-decoration:none;display:inline-flex;align-items:center;">Browse Units</a>
+        </div>
+      </div>`;
+  } else if (type === 'already-registered') {
+    inner = `
+      <div class="nexus-modal">
+        <h3>Already Registered</h3>
+        <p>You've already signalled interest at this nexus. Check your profile to see your active collaborations.</p>
+        <div class="modal-btn-row">
+          <button class="modal-btn cancel" onclick="this.closest('.nexus-modal-overlay').remove()">Close</button>
+        </div>
+      </div>`;
+  } else if (type === 'register') {
+    const buildingOptions = (catalog || []).map(b => `
+      <div class="modal-building-option ${b.tier}" data-slug="${b.slug}">
+        <span style="font-size:20px;line-height:1;flex-shrink:0;">${b.icon}</span>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:${b.tier==='legendary'?'rgba(200,150,255,0.9)':'rgba(255,224,138,0.9)'};">${b.name}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">${b.description}</div>
+          <div style="font-size:9px;color:rgba(255,200,60,0.5);margin-top:4px;">${(()=>{ const c=Number(b.min_contributors)||2; const p=Math.round(Number(b.cost_arkis)/c).toLocaleString(); return b.junction_type==='3way' ? p+' ARKIS each · 2 to start · 3rd optional' : p+' ARKIS each · '+c+' builders'; })()}</div>
+        </div>
+      </div>`).join('');
+
+    inner = `
+      <div class="nexus-modal">
+        <h3>✦ Register Interest</h3>
+        <p>Select which nexus building you'd like to collaborate on. This signals your intent — no ARKIS is charged yet. Building begins once all territory slots are filled.</p>
+        <div id="modalBuildingList">${buildingOptions}</div>
+        <div id="modalSelectedInfo" style="display:none;margin-top:8px;font-size:11px;color:rgba(255,200,60,0.6);"></div>
+        <div class="modal-btn-row">
+          <button class="modal-btn cancel" onclick="this.closest('.nexus-modal-overlay').remove()">Cancel</button>
+          <button class="modal-btn confirm" id="modalConfirmBtn" disabled>Signal Interest</button>
+        </div>
+      </div>`;
+  }
+
+  overlay.innerHTML = inner;
+  document.body.appendChild(overlay);
+
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  if (type !== 'register') return;
+
+  // Building selection logic
+  let selectedSlug = null;
+  overlay.querySelectorAll('.modal-building-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      overlay.querySelectorAll('.modal-building-option').forEach(o => o.style.outline = '');
+      opt.style.outline = '2px solid rgba(255,200,60,0.6)';
+      selectedSlug = opt.dataset.slug;
+      overlay.querySelector('#modalSelectedInfo').style.display = 'block';
+      overlay.querySelector('#modalSelectedInfo').textContent = `Selected: ${opt.querySelector('div > div:first-child').textContent}`;
+      overlay.querySelector('#modalConfirmBtn').disabled = false;
+    });
+  });
+
+  // Pre-select building if coming from a catalog card button
+  if (preselect) {
+    const preOpt = overlay.querySelector(`.modal-building-option[data-slug="${preselect}"]`);
+    if (preOpt) preOpt.click();
+  }
+
+  overlay.querySelector('#modalConfirmBtn').addEventListener('click', async () => {
+    if (!selectedSlug) return;
+    const btn = overlay.querySelector('#modalConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const { error } = await client.from('nexus_collaborations').insert({
+      nexus_id: nexusId,
+      player_id: userId,
+      territory_code: playerTerritoryCode,
+      building_slug: selectedSlug,
+      nexus_building_slug: selectedSlug,
+      status: 'interested',
+      cost_paid: 0,
+    });
+
+    if (error) {
+      btn.textContent = 'Error — try again';
+      btn.disabled = false;
+      console.error('Nexus collab insert error:', error);
+    } else {
+      overlay.remove();
+      // Reload to reflect new collaborator
+      render();
+    }
+  });
+}
+</script>
+</body>
+</html>

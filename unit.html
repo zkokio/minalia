@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<!-- unit.html · build 20260316-1615 -->
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Unit — MINALIA</title>
+<link rel="stylesheet" href="style.css?v=20260316a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=20260320a"></script>
+<script src="auth_auro.js?v=20260320a"></script>
+
+  <style>
+    body { overflow-x:hidden; padding-top:92px; background:#0a0a0f; }
+    body::after { display:none; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(255,224,138,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,224,138,0.025) 1px, transparent 1px);
+      background-size:64px 64px; pointer-events:none; z-index:0;
+    }
+    .page-wrap { max-width:1100px; margin:0 auto; padding:24px 24px 80px; position:relative; z-index:2; }
+    .earth-footer { position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; height:45vh !important; pointer-events:none !important; z-index:0 !important; }
+    .earth-footer img { width:100%; height:100%; object-fit:cover; object-position:top center; opacity:0.15; display:block;
+      mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+      -webkit-mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%); }
+    .loading-state { text-align:center; padding:80px 20px; color:rgba(255,255,255,0.3); font-size:14px; }
+    .not-found { text-align:center; padding:80px 20px; }
+    .not-found h1 { font-size:24px; color:rgba(255,255,255,0.7); margin-bottom:12px; }
+    .breadcrumb { font-size:11px; color:rgba(255,255,255,0.3); margin-bottom:20px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .breadcrumb a { color:rgba(255,255,255,0.45); text-decoration:none; transition:color .15s; }
+    .breadcrumb a:hover { color:#FFE08A; }
+    .breadcrumb .sep { color:rgba(255,255,255,0.15); }
+    .breadcrumb .current { color:rgba(255,255,255,0.7); font-weight:600; }
+    .hero { display:grid; grid-template-columns:260px 1fr; gap:20px; margin-bottom:20px; align-items:start; }
+    @media(max-width:800px) { .hero { grid-template-columns:1fr; } }
+    .visual-col { display:flex; flex-direction:column; gap:10px; }
+    .hex-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px; display:flex; align-items:center; justify-content:center; min-height:180px; }
+    .view-on-map-btn { width:100%; text-align:center; box-sizing:border-box; }
+    .unit-nav { display:flex; align-items:center; gap:8px; }
+    .unit-nav-btn { color:rgba(96,200,255,0.7); text-decoration:none; font-weight:600; font-size:11px; transition:color .15s; font-family:'Share Tech Mono',monospace; }
+    .unit-nav-btn:hover { color:#60c8ff; }
+    .unit-nav-btn.disabled { color:rgba(255,255,255,0.18); cursor:default; pointer-events:none; }
+    .unit-nav-center { flex:1; text-align:center; font-size:10px; color:rgba(255,255,255,0.25); font-weight:600; letter-spacing:.04em; }
+    /* PERMANENT RULE: never crop/round minister NFT cards — full rectangle always */
+    .minister-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:12px; overflow:hidden; }
+    .minister-card-header { padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,224,138,0.55); }
+    .minister-card-body { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+    .minister-portrait { width:60px; height:auto; object-fit:contain; border-radius:0; flex-shrink:0; display:block; }
+    .minister-portrait-placeholder { width:60px; height:75px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; border-radius:0; }
+    .minister-info { flex:1; min-width:0; }
+    .minister-name { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:2px; }
+    .minister-role { font-size:10px; color:rgba(255,255,255,0.3); }
+    .minister-link { display:block; margin-top:5px; font-size:10px; color:rgba(96,200,255,0.6); text-decoration:none; font-weight:600; }
+    .minister-link:hover { color:#60c8ff; }
+    .minister-none { padding:14px 12px; font-size:12px; color:rgba(255,255,255,0.2); font-style:italic; }
+    .unit-info { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.08); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+    .unit-info-header { padding:20px 22px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .unit-code-label { font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:4px; }
+    .unit-title { font-size:32px; font-weight:900; color:#fff; letter-spacing:-.01em; line-height:1; margin-bottom:8px; }
+    .territory-row { display:inline-flex; align-items:center; gap:8px; }
+    .territory-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .territory-name-text { font-size:15px; font-weight:700; }
+    .territory-code-text { font-size:11px; color:rgba(255,255,255,0.3); font-weight:600; }
+    .unit-tier-badge { display:inline-block; padding:2px 9px; border-radius:10px; font-size:9px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.45); margin-top:8px; }
+    .unit-tier-badge.high { background:rgba(255,224,138,0.1); border-color:rgba(255,224,138,0.3); color:#FFE08A; }
+    .unit-tier-badge.medium { background:rgba(96,200,255,0.1); border-color:rgba(96,200,255,0.3); color:rgba(96,200,255,0.9); }
+    .unit-tier-badge.low { background:rgba(255,255,255,0.03); border-color:rgba(255,255,255,0.08); color:rgba(255,255,255,0.35); }
+    .unit-description { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.7; margin-top:8px; }
+    .attr-row { display:flex; flex-wrap:wrap; gap:5px; padding:12px 22px 14px; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .attr-pill { padding:3px 9px; border-radius:10px; font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.35); }
+    .attr-pill.active { background:rgba(255,224,138,0.1); border-color:rgba(255,224,138,0.3); color:#FFE08A; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid rgba(255,255,255,0.06); }
+    .stat-item { padding:12px 16px; border-right:1px solid rgba(255,255,255,0.06); }
+    .stat-item:last-child { border-right:none; }
+    .stat-label { font-size:8px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.3); margin-bottom:4px; font-weight:700; }
+    .stat-value { font-size:18px; font-weight:800; color:rgba(255,255,255,0.9); line-height:1; }
+    .unit-dev-slots-wrap { padding:14px 22px 16px; }
+    .unit-dev-slots-bar { display:flex; align-items:center; gap:5px; margin-top:0; background:transparent; border:none; border-radius:0; padding:0; }
+    .unit-dev-slot { width:22px; height:22px; border-radius:5px; flex-shrink:0; transition:transform .15s,opacity .15s; cursor:default; }
+    .unit-dev-slot.empty { background:transparent; border:1px solid rgba(255,255,255,0.12); }
+    .unit-dev-slot.filled { border:none; cursor:pointer; }
+    .unit-dev-slot.filled:hover { transform:scale(1.2); }
+    .unit-dev-slot.filled.building { animation:devPulse 1.4s ease-in-out infinite; }
+    @keyframes devPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+    .unit-dev-slots-count { font-size:10px; font-weight:700; color:rgba(255,255,255,0.25); margin-left:6px; font-family:'Share Tech Mono',monospace; }
+    .unit-dev-star { font-size:14px; margin-left:4px; text-decoration:none; }
+    .unit-dev-star.star-gold { color:#FFE08A; filter:drop-shadow(0 0 4px rgba(255,224,138,0.5)); }
+    .unit-dev-star.star-empty { color:rgba(255,255,255,0.15); }
+    .dev-slots-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .dev-legend-item { display:flex; align-items:center; gap:4px; font-size:9px; color:rgba(255,255,255,0.35); }
+    .dev-legend-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+    .tune-battery-unit { display:flex; flex-direction:column; gap:4px; }
+    .tune-battery-bar { width:100%; height:14px; border-radius:5px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); overflow:hidden; position:relative; }
+    .tune-battery-fill { height:100%; border-radius:4px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+    .tune-battery-meta { display:flex; align-items:center; justify-content:space-between; font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(255,255,255,0.25); letter-spacing:.05em; }
+    .bat-fill-green  { background:linear-gradient(90deg,#22c55e,#4ade80); box-shadow:0 0 8px rgba(74,222,128,0.4); }
+    .bat-fill-yellow { background:linear-gradient(90deg,#ca8a04,#FFE08A); box-shadow:0 0 8px rgba(255,224,138,0.3); }
+    .bat-fill-orange { background:linear-gradient(90deg,#ea580c,#fb923c); box-shadow:0 0 8px rgba(251,146,60,0.3); }
+    .bat-fill-red    { background:linear-gradient(90deg,#dc2626,#f87171); box-shadow:0 0 8px rgba(248,113,113,0.3); }
+    .bottom-grid { display:grid; grid-template-columns:1fr 280px; gap:16px; align-items:start; }
+    @media(max-width:900px) { .bottom-grid { grid-template-columns:1fr; } }
+    .bottom-left { display:flex; flex-direction:column; gap:16px; }
+    .bottom-right { display:flex; flex-direction:column; gap:16px; }
+    .section { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:12px; overflow:hidden; }
+    .section-heading { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,224,138,0.55); padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .section-body { padding:14px 16px; }
+    /* ── BUILD CATALOG ── */
+    .build-catalog-panel { }
+    /* Balance strip */
+    .build-balance-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-radius:8px; margin-bottom:16px;
+      background:rgba(255,224,138,0.04); border:1px solid rgba(255,224,138,0.14);
+      font-size:11px; color:rgba(255,255,255,0.4);
+    }
+    .build-balance-bar strong { color:#FFE08A; font-size:14px; font-weight:800; }
+    .build-balance-slots { font-family:'Share Tech Mono',monospace; font-size:10px; color:rgba(255,255,255,0.25); }
+    /* Category tabs */
+    .build-cat-tabs { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px; }
+    .build-cat-tab { padding:5px 12px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,255,255,0.38); font-size:10px; font-weight:700; letter-spacing:.04em; cursor:pointer; transition:all .15s; }
+    .build-cat-tab:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6); border-color:rgba(255,255,255,0.13); }
+    .build-cat-tab.active { background:rgba(255,224,138,0.08); border-color:rgba(255,224,138,0.3); color:#FFE08A; }
+    /* Cards grid */
+    .build-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+    /* Individual card — matches profile .unit-card DNA */
+    .build-card {
+      background:rgba(0,0,0,0.42);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px;
+      padding:0;
+      display:flex; flex-direction:column;
+      transition:border-color .15s, background .15s;
+      overflow:hidden;
+    }
+    .build-card:hover { background:rgba(255,255,255,0.025); border-color:rgba(255,224,138,0.22); }
+    .build-card.unaffordable { opacity:.42; }
+    .build-card.unaffordable:hover { opacity:.55; }
+    /* Card header */
+    .build-card-header {
+      display:flex; align-items:center; gap:10px;
+      padding:12px 14px 10px;
+      background:rgba(0,0,0,0.12);
+      border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    .build-card-icon { font-size:22px; flex-shrink:0; line-height:1; }
+    .build-card-name { font-size:12px; font-weight:700; color:rgba(255,255,255,0.88); line-height:1.3; flex:1; min-width:0; }
+    .build-card-name a { color:inherit; text-decoration:none; }
+    .build-card-name a:hover { color:#FFE08A; }
+    .build-card-meta { font-size:9px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; font-family:'Share Tech Mono',monospace; }
+    /* Card body */
+    .build-card-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; }
+    .build-card-desc { font-size:11px; color:rgba(255,255,255,0.38); line-height:1.55; }
+    /* Card footer */
+    .build-card-footer {
+      padding:10px 14px 12px;
+      border-top:1px solid rgba(255,255,255,0.05);
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+    }
+    .build-card-cost { font-size:13px; font-weight:800; color:#FFE08A; flex-shrink:0; white-space:nowrap; }
+    .build-card-cost span { font-size:9px; color:rgba(255,255,255,0.3); font-weight:400; margin-left:3px; }
+    .build-card-btn { flex:1; padding:7px 10px; border-radius:7px; border:1px solid rgba(255,224,138,0.25); background:rgba(255,224,138,0.06); color:#FFE08A; font-size:10px; font-weight:700; letter-spacing:.04em; cursor:pointer; transition:background .15s, border-color .15s; text-align:center; white-space:nowrap; }
+    .build-card-btn:hover:not(:disabled) { background:rgba(255,224,138,0.14); border-color:rgba(255,224,138,0.4); }
+    .build-card-btn:disabled { opacity:.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.25); }
+    .build-card-btn.already-built { border-color:rgba(96,255,171,0.2); background:rgba(96,255,171,0.04); color:rgba(96,255,171,0.65); cursor:default; }
+    .build-card-btn.building { border-color:rgba(255,200,60,0.2); background:rgba(255,200,60,0.04); color:rgba(255,200,60,0.7); cursor:default; }
+    .owner-row { display:flex; align-items:center; gap:12px; text-decoration:none; padding:6px 8px; border-radius:8px; transition:background .15s; }
+    .owner-row:hover { background:rgba(255,255,255,0.04); }
+    .owner-avatar { width:40px; height:40px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#FFE08A; overflow:hidden; flex-shrink:0; }
+    .owner-avatar img { width:100%; height:100%; object-fit:cover; }
+    .owner-name { font-size:13px; font-weight:700; color:rgba(255,224,138,0.9); }
+    .owner-sub { font-size:10px; color:rgba(255,255,255,0.3); margin-top:1px; }
+    .unowned { font-size:12px; color:rgba(255,255,255,0.25); font-style:italic; padding:4px 0; }
+    .market-status-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .market-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .market-dot.sale { background:#00E5FF; box-shadow:0 0 6px #00E5FF55; }
+    .market-dot.auction { background:#FF8C00; box-shadow:0 0 6px #FF8C0055; }
+    .market-dot.none { background:rgba(255,255,255,0.15); }
+    .market-status-label { font-size:12px; font-weight:700; }
+    .market-price-block { margin-bottom:12px; }
+    .market-price-big { font-size:26px; font-weight:900; color:#fff; line-height:1; }
+    .market-price-mina { font-size:13px; color:rgba(255,255,255,0.4); margin-left:6px; }
+    .market-price-note { font-size:10px; color:rgba(255,255,255,0.3); margin-top:3px; }
+    .market-price-mina.sale { color:rgba(0,229,255,0.7); }
+    .market-price-mina.auction { color:rgba(255,140,0,0.7); }
+    .market-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .market-owner-note { font-size:11px; color:rgba(255,255,255,0.25); font-style:italic; }
+    .unit-dev-grid { display:flex; flex-direction:column; gap:8px; }
+    .unit-dev-empty { font-size:12px; color:rgba(255,255,255,0.2); font-style:italic; padding:4px 0; }
+    .unit-dev-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:12px; transition:border-color .15s; }
+    .unit-dev-card:hover { border-color:rgba(255,255,255,0.14); }
+    .unit-dev-card.status-building { border-color:rgba(255,200,60,0.25); }
+    .unit-dev-card-name { font-size:12px; font-weight:700; color:rgba(255,255,255,0.85); text-decoration:none; }
+    .unit-dev-card-name:hover { color:#FFE08A; }
+    .unit-dev-card-cat { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+    /* ── Development status badge (bottom of each dev card) ── */
+    .unit-dev-status-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      margin-top:10px; padding:5px 10px; border-radius:6px;
+      font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    }
+    .unit-dev-status-badge.building {
+      background:rgba(255,200,60,0.08); border:1px solid rgba(255,200,60,0.22); color:rgba(255,200,60,0.85);
+    }
+    .unit-dev-status-badge.completed {
+      background:rgba(96,255,171,0.06); border:1px solid rgba(96,255,171,0.2); color:rgba(96,255,171,0.75);
+    }
+    .status-dot {
+      width:6px; height:6px; border-radius:50%; flex-shrink:0;
+    }
+    .status-dot.building {
+      background:rgba(255,200,60,0.9); box-shadow:0 0 5px rgba(255,200,60,0.5);
+      animation:devPulse 1.4s ease-in-out infinite;
+    }
+    .status-dot.completed {
+      background:rgba(96,255,171,0.9); box-shadow:0 0 5px rgba(96,255,171,0.4);
+    }
+    .border-list { display:flex; flex-direction:column; gap:6px; }
+    .border-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); text-decoration:none; transition:opacity .15s; }
+    .border-item:last-child { border-bottom:none; }
+    .border-item:hover { opacity:.75; }
+    .border-swatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .border-tname { font-size:12px; font-weight:600; color:rgba(255,255,255,0.75); flex:1; }
+    .border-tcode { font-size:10px; color:rgba(255,255,255,0.25); font-family:'Share Tech Mono',monospace; }
+    .no-borders { font-size:12px; color:rgba(255,255,255,0.25); font-style:italic; }
+    .detail-row { display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px; }
+    .detail-row:last-child { border-bottom:none; }
+    .detail-key { color:rgba(255,255,255,0.35); }
+    .detail-value { color:rgba(255,255,255,0.75); font-weight:600; text-align:right; font-family:'Share Tech Mono',monospace; font-size:10px; }
+    .detail-value.gold { color:#FFE08A; font-family:inherit; font-size:11px; }
+    .btn-tune-hero { display:block; width:100%; padding:9px 0; background:rgba(255,224,138,0.07); color:#FFE08A; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; border:1px solid rgba(255,224,138,0.3); border-radius:6px; cursor:pointer; transition:all .15s; }
+    .btn-tune-hero:hover { background:rgba(255,224,138,0.16); border-color:#FFE08A; }
+    .tune-status-hero { font-size:10px; text-align:center; color:rgba(255,255,255,0.3); min-height:14px; }
+    .tune-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:1000; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; pointer-events:none; }
+    .tune-modal-backdrop.open { opacity:1; pointer-events:all; }
+    .tune-modal { background:rgba(14,10,22,0.97); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:32px 36px 28px; text-align:center; width:340px; transform:translateY(12px); transition:transform .2s; }
+    .tune-modal-backdrop.open .tune-modal { transform:translateY(0); }
+    .tune-modal-unit { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,224,138,0.5); margin-bottom:6px; }
+    .tune-modal-title { font-size:17px; font-weight:700; color:#fff; margin-bottom:24px; }
+    #tuneCanvas { display:block; margin:0 auto 20px; }
+    .tune-result { font-size:20px; font-weight:800; letter-spacing:.06em; height:26px; margin-bottom:16px; }
+    .tune-result.perfect { color:#4ade80; }
+    .tune-result.good { color:#FFE08A; }
+    .tune-result.miss { color:#f87171; }
+    .tune-hit-btn { width:100%; padding:13px; border-radius:8px; border:1px solid rgba(255,224,138,0.45); background:rgba(255,224,138,0.08); color:#FFE08A; font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .15s; margin-bottom:8px; }
+    .tune-hit-btn:hover:not(:disabled) { background:rgba(255,224,138,0.18); border-color:#FFE08A; }
+    .tune-hit-btn:disabled { opacity:.4; cursor:not-allowed; }
+    .tune-hit-btn.shake { animation:btnShake .35s ease; }
+    @keyframes btnShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+    .tune-cancel-btn { background:none; border:none; color:rgba(255,255,255,0.25); font-size:11px; cursor:pointer; transition:color .15s; }
+    .tune-cancel-btn:hover { color:rgba(255,255,255,0.55); }
+    .mmodal { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.82); align-items:center; justify-content:center; }
+    .mmodal.open { display:flex; }
+    .mmodal-box { background:rgba(18,14,24,0.99); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:28px; max-width:400px; width:90%; }
+    .mmodal-x { float:right; cursor:pointer; color:rgba(255,255,255,0.3); font-size:20px; line-height:1; transition:color .15s; }
+    .mmodal-x:hover { color:#fff; }
+    .mmodal-title { font-size:16px; font-weight:700; color:#fff; margin-bottom:4px; }
+    .mmodal-ref { font-size:11px; color:rgba(255,255,255,0.3); margin-bottom:18px; font-family:'Share Tech Mono',monospace; }
+    .mmodal-priceline { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
+    .mmodal-price { font-size:28px; font-weight:900; color:#fff; }
+    .mmodal-pmina { font-size:13px; color:rgba(255,255,255,0.4); }
+    .mmodal-pnote { font-size:11px; color:rgba(255,255,255,0.3); margin-bottom:16px; }
+    .mmodal-wallet { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-bottom:16px; }
+    .mmodal-wlbl { font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.3); margin-bottom:4px; font-weight:700; }
+    .mmodal-waddr { font-size:11px; color:rgba(255,255,255,0.7); font-family:'Share Tech Mono',monospace; word-break:break-all; }
+    .mbtn { padding:11px 20px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; border:1px solid; }
+    .mbtn-cancel { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); }
+    .mbtn-offer { background:rgba(255,224,138,0.1); border-color:rgba(255,224,138,0.3); color:#FFE08A; }
+    .mmodal-note { font-size:11px; color:rgba(255,255,255,0.35); line-height:1.6; margin-bottom:14px; }
+    .mmodal-input { width:100%; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#fff; font-size:14px; outline:none; box-sizing:border-box; }
+    .mmodal-hint { font-size:10px; color:rgba(255,255,255,0.25); margin:6px 0 14px; }
+    .mmodal-success-msg { padding:12px; background:rgba(96,255,171,0.07); border:1px solid rgba(96,255,171,0.2); border-radius:8px; font-size:12px; color:rgba(96,255,171,0.9); text-align:center; }
+    .mmodal-bid-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; }
+    .mmodal-bid-row:last-child { border-bottom:none; }
+    .mmodal-bid-msg { font-size:11px; color:rgba(255,255,255,0.3); margin-top:10px; }
+    .unit-card-dev-summary { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+    .unit-card-dev-row { display:flex; align-items:center; gap:6px; font-size:10px; color:rgba(255,255,255,0.55); }
+    .unit-card-dev-badge { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+    .unit-card-dev-badge.building { opacity:.5; animation:devPulse 1.4s ease-in-out infinite; }
+    .unit-card-dev-badge.completed { opacity:1; }
+    .dev-slot-popup { position:fixed; z-index:200; background:rgba(10,8,18,0.97); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:13px 15px 11px; width:220px; pointer-events:none; box-shadow:0 12px 40px rgba(0,0,0,0.7); opacity:0; transition:opacity .15s; }
+    .dev-slot-popup.visible { opacity:1; }
+    .dsp-icon { font-size:22px; display:block; margin-bottom:7px; line-height:1; }
+    .dsp-name { font-size:13px; font-weight:700; color:rgba(255,255,255,0.9); letter-spacing:-.01em; margin-bottom:3px; }
+    .dsp-cat  { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:6px; }
+    .dsp-status { font-size:10px; font-weight:700; letter-spacing:.04em; padding:3px 8px; border-radius:6px; display:inline-block; margin-bottom:8px; }
+    .dsp-status.completed { color:rgba(96,255,171,0.9); background:rgba(96,255,171,0.08); border:1px solid rgba(96,255,171,0.2); }
+    .dsp-status.building  { color:rgba(255,224,138,0.9); background:rgba(255,224,138,0.08); border:1px solid rgba(255,224,138,0.2); }
+    .dsp-hint { font-size:9px; color:rgba(255,255,255,0.25); letter-spacing:.03em; border-top:1px solid rgba(255,255,255,0.06); padding-top:7px; font-style:italic; }
+    #purchaseToast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); z-index:9999; background:rgba(14,10,22,0.97); border:1px solid rgba(96,255,171,0.3); border-radius:10px; padding:12px 20px; display:flex; align-items:center; gap:10px; min-width:240px; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.5); opacity:0; transition:opacity .3s,transform .3s; pointer-events:none; }
+    #purchaseToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast-icon { font-size:18px; }
+    .toast-msg { font-size:13px; color:rgba(255,255,255,0.85); font-weight:600; }
+    /* stars/twinkling removed — replaced by grid overlay on body::before */
+  </style>
+
+</head>
+<body>
+
+<!-- Purchase success toast -->
+<div id="purchaseToast">
+  <div class="toast-icon">✅</div>
+  <div class="toast-body">
+    <div class="toast-title">Purchase Complete</div>
+    <div class="toast-msg" id="purchaseToastMsg">Unit transferred to your account.</div>
+  </div>
+  <span class="toast-close" onclick="hidePurchaseToast()">×</span>
+</div>
+<div class="earth-footer"><img src="images/minalia.png" alt=""></div>
+
+<script src="load-nav.js"></script>
+
+<div class="page-wrap" id="pageContent">
+  <div class="loading-state">Loading unit…</div>
+</div>
+
+<!-- ── TERRITORY / MINISTER DATA ── -->
+<script>
+const TERRITORY_COLORS = {
+  'LUM-01':'#d4a96a','LUM-02':'#c084c4','LUM-03':'#6ab4d4','LUM-04':'#d4c46a',
+  'LUM-05':'#6ad490','LUM-06':'#8a6ad4','LUM-07':'#d4846a','LUM-08':'#6a9ad4',
+  'LUM-09':'#84d46a','LUM-10':'#d46a84','LUM-11':'#6ad4c4','LUM-12':'#d4a46a',
+  'LUM-13':'#a46ad4','LUM-14':'#6ab4a4','LUM-15':'#d46a6a','LUM-16':'#6ad464',
+  'LUM-17':'#c4846a','LUM-18':'#6a84d4','LUM-19':'#d4d46a','LUM-20':'#846ad4'
+};
+const TERRITORY_NAMES = {
+  'LUM-01':'Aurellia','LUM-02':'Celestara','LUM-03':'Willow Head','LUM-04':'Emberveil',
+  'LUM-05':'Fenwild','LUM-06':'Firesky','LUM-07':'Pieve','LUM-08':'Oakland',
+  'LUM-09':'Jadehollow','LUM-10':'Astral Peaks','LUM-11':'Lumenvast','LUM-12':'Mirewood',
+  'LUM-13':'Northfen','LUM-14':'Oldmarch','LUM-15':'Mugugno','LUM-16':'Bauscia',
+  'LUM-17':'Ravenholm','LUM-18':'Stormgate','LUM-19':'The Spine','LUM-20':'Umbralia'
+};
+const TIER_LABELS  = { common:'Common', uncommon:'Uncommon', rare:'Rare', legendary:'Legendary' };
+const TIER_COLORS  = { common:'#8aabaa', uncommon:'#7ab87a', rare:'#a07adc', legendary:'#FFE08A' };
+
+// Minister per territory — dynamic page at root
+const MINISTERS = {
+  'LUM-01': { name:'Nova',   img:'https://play.minaliens.xyz/nfts/13_NOVA.png',  page:'minalien.html?id=nova'  },
+  'LUM-02': { name:'Faze',   img:'https://play.minaliens.xyz/nfts/2_FAZE.png',   page:'minalien.html?id=faze'  },
+  'LUM-03': { name:'Luma',   img:'https://play.minaliens.xyz/nfts/8_LUMA.png',   page:'minalien.html?id=luma'  },
+  'LUM-04': { name:'Talha',  img:'https://play.minaliens.xyz/nfts/1_TALHA.png',  page:'minalien.html?id=talha' },
+  'LUM-05': { name:'Wisp',   img:'https://play.minaliens.xyz/nfts/38_WISP.png',  page:'minalien.html?id=wisp'  },
+  'LUM-06': { name:'Halo',   img:'https://play.minaliens.xyz/nfts/47_HALO.png',  page:'minalien.html?id=halo'  },
+  'LUM-07': { name:'Gaze',   img:'https://play.minaliens.xyz/nfts/84_GAZE.png',  page:'minalien.html?id=gaze'  },
+  'LUM-08': { name:'Blip',   img:'https://play.minaliens.xyz/nfts/16_BLIP.png',  page:'minalien.html?id=blip'  },
+  'LUM-09': { name:'Drip',   img:'https://play.minaliens.xyz/nfts/3_DRIP.png',   page:'minalien.html?id=drip'  },
+  'LUM-10': { name:'Opal',   img:'https://play.minaliens.xyz/nfts/42_OPAL.png',  page:'minalien.html?id=opal'  },
+  'LUM-11': { name:'Frog',   img:'https://play.minaliens.xyz/nfts/25_FROG.png',  page:'minalien.html?id=frog'  },
+  'LUM-12': { name:'Quip',   img:'https://play.minaliens.xyz/nfts/18_QUIP.png',  page:'minalien.html?id=quip'  },
+  'LUM-13': { name:'Vale',   img:'https://play.minaliens.xyz/nfts/69_VALE.png',  page:'minalien.html?id=vale'  },
+  'LUM-14': { name:'Angel',  img:'https://play.minaliens.xyz/nfts/60_ANGEL.png', page:'minalien.html?id=angel' },
+  'LUM-15': { name:'Wise',   img:'https://play.minaliens.xyz/nfts/59_WISE.png',  page:'minalien.html?id=wise'  },
+  'LUM-16': { name:'Yasin',  img:'https://play.minaliens.xyz/nfts/82_YASIN.png', page:'minalien.html?id=yasin' },
+  'LUM-17': { name:'Ali',    img:'https://play.minaliens.xyz/nfts/61_ALI.png',   page:'minalien.html?id=ali'   },
+  'LUM-18': { name:'Mino',   img:'https://play.minaliens.xyz/nfts/19_MINO.png',  page:'minalien.html?id=mino'  },
+  'LUM-19': { name:'Zoro',   img:'https://play.minaliens.xyz/nfts/17_ZORB.png',  page:'minalien.html?id=zoro'  },
+  'LUM-20': { name:'Sike',   img:'https://play.minaliens.xyz/nfts/37_SIKE.png',  page:'minalien.html?id=sike'  },
+};
+
+// Territory special buildings
+const TERRITORY_SPECIAL_UNIT = {
+  'LUM-01': { slug:'canopy_observatory',     icon:'🔭', name:'Canopy Observatory',        benefit:'Boosts navigation clarity, +8 Innovator for builder.' },
+  'LUM-02': { slug:'biolum_market',           icon:'🛒', name:'Biolum Market (Gourmet)',   benefit:'19,900 $ARKIS/month' },
+  'LUM-03': { slug:'energy_garden',           icon:'🌱', name:'Energy Garden',             benefit:'+10% $LICHEN yield for all gardens in Willow Head.' },
+  'LUM-04': { slug:'skybridge_trading_post',  icon:'🌉', name:'Skybridge Trading Post',    benefit:'8,500 $ARKIS/month' },
+  'LUM-05': { slug:'luminaea_art_gallery',    icon:'🖼️', name:'Luminaea Art Gallery',      benefit:'+8 Luminary for builder.' },
+  'LUM-06': { slug:'starlight_amphitheater',  icon:'🎭', name:'Starlight Amphitheater',    benefit:'22,800 $LICHEN/month' },
+  'LUM-07': { slug:'prismatic_wellspring',    icon:'🌊', name:'Prismatic Wellspring',      benefit:'8,100 $PLASM + 650 $LICHEN/month' },
+  'LUM-08': { slug:'harmonic_sound_node',     icon:'🔊', name:'Harmonic Sound Node',       benefit:'+5 Innovator. Creates rhythmic guiding pulses.' },
+  'LUM-09': { slug:'spore_silk_loom',         icon:'🧵', name:'Spore-Silk Loom (Fashion)', benefit:'5,650 $LICHEN/month' },
+  'LUM-10': { slug:'meditation_sanctuary',    icon:'🧘', name:'Meditation Sanctuary',      benefit:'19,950 $PLASM/month' },
+  'LUM-11': { slug:'parkour_athletics_hub',   icon:'🏃', name:'Parkour Athletics Hub',     benefit:'7,100 $LICHEN/month' },
+  'LUM-12': { slug:'comedy_social_club',      icon:'😂', name:'Comedy Social Club',        benefit:'22,000 $WIRE/month' },
+  'LUM-13': { slug:'adaptive_living_units',   icon:'🔧', name:'Adaptive Living Units',     benefit:'-15% build time for ALL structures.' },
+  'LUM-14': { slug:'nectar_infusion_clinic',  icon:'💉', name:'Nectar-Infusion Clinic',    benefit:'Lowers population death rate, +15 Spiritualist.' },
+  'LUM-15': { slug:'archivists_spire',        icon:'📚', name:'Archivist\'s Spire',         benefit:'+5 Innovator +5 Spiritualist.' },
+  'LUM-16': { slug:'energy_efficiency_hub',   icon:'⚡', name:'Energy-Efficiency Hub',     benefit:'9,100 $WIRE/month' },
+  'LUM-17': { slug:'galactic_banquet_hall',   icon:'🍽️', name:'Galactic Banquet Hall',     benefit:'5,450 $ARKIS/month' },
+  'LUM-18': { slug:'mineral_extraction_lab',  icon:'⛏️', name:'Mineral Extraction Lab',    benefit:'9,150 $PLASM/month' },
+  'LUM-19': { slug:'holographic_theater',     icon:'🎬', name:'Holographic Theater',       benefit:'+10 Luminary. Ancient dimensional storytelling.' },
+  'LUM-20': { slug:'acoustic_power_plant',    icon:'🔋', name:'Acoustic Power Plant',      benefit:'50 $WIRE + 30 $ARKIS/month.' },
+};
+
+</script>
+<script src="unit_data.js?v=20260316b"></script>
+<script>
+
+// ── SUPABASE INIT (matches live map pattern) ──
+(function(){
+  try{
+    if(window.supabase && typeof window.supabase.createClient==='function' &&
+       window.CONFIG && window.CONFIG.SUPABASE_URL && window.CONFIG.SUPABASE_ANON_KEY){
+      window.supabase = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_ANON_KEY);
+    }
+  }catch(e){ console.warn('Supabase init failed:',e); }
+})();
+
+
+// ── HEX MINIMAP SVG — clean map-style with hex grid ──
+function generateHexSVG(unitCode, data) {
+  const W=260, H=220;
+  const tc = data.territory_color || '#888';
+  const uid = unitCode.replace(/-/g,'');
+
+  function seed(s){ let h=0; for(let i=0;i<s.length;i++) h=(Math.imul(31,h)+s.charCodeAt(i))|0; return Math.abs(h); }
+  function mkrng(s){ let st=s; return ()=>{ st=(st*1664525+1013904223)&0xffffffff; return (st>>>0)/0xffffffff; }; }
+  const r = mkrng(seed(unitCode));
+  function hx(h){ return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+  const [tr,tg,tb] = hx(tc);
+
+  const cx=W/2, cy=H/2;
+  const HEX=28; // hex radius — feels like the map
+
+  // Pointy-top hex corners
+  function hexPts(hx,hy,hr){
+    return Array.from({length:6},(_,i)=>{
+      const a = Math.PI/3*i - Math.PI/6;
+      return `${(hx+hr*Math.cos(a)).toFixed(1)},${(hy+hr*Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+  }
+
+  // Convert axial to pixel (pointy-top)
+  function axialToPixel(q,rr){
+    return [
+      cx + HEX * (Math.sqrt(3)*q + Math.sqrt(3)/2*rr) * 0.72,
+      cy + HEX * (3/2*rr) * 0.72
+    ];
+  }
+
+  // Draw 7 surrounding hexes + 1 centre = a mini territory cluster
+  // Centre = this unit. Surround with faded territory colour.
+  const neighbours = [[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]];
+
+  let bgD=`rgb(${tr*.07|0},${tg*.09|0},${tb*.08|0})`;
+  let bgM=`rgb(${tr*.13|0},${tg*.16|0},${tb*.14|0})`;
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="${bgM}"/>
+    <stop offset="100%" stop-color="${bgD}"/>
+  </radialGradient>
+  <radialGradient id="gl${uid}" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="${tc}" stop-opacity="0.22"/>
+    <stop offset="100%" stop-color="${tc}" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="blur${uid}"><feGaussianBlur stdDeviation="3"/></filter>
+  <clipPath id="cp${uid}"><rect width="${W}" height="${H}" rx="14"/></clipPath>
+</defs>
+<g clip-path="url(#cp${uid})">
+<rect width="${W}" height="${H}" fill="url(#bg${uid})"/>
+
+<!-- soft glow bloom behind centre -->
+<circle cx="${cx}" cy="${cy}" r="55" fill="url(#gl${uid})" filter="url(#blur${uid})"/>`;
+
+  // Neighbour hexes — territory context, faded
+  neighbours.forEach(([dq,drr]) => {
+    const [px,py] = axialToPixel(dq,drr);
+    const op = (0.12 + r()*0.1).toFixed(2);
+    s += `\n<polygon points="${hexPts(px,py,HEX-1)}" fill="${tc}" opacity="${op}"/>`;
+    s += `\n<polygon points="${hexPts(px,py,HEX-1)}" fill="none" stroke="${tc}" stroke-width="0.6" opacity="0.25"/>`;
+  });
+
+  // Feature: border territory arcs — coloured dots on edges for bordering territories
+  if(data.borders && data.borders.length > 0){
+    data.borders.slice(0,3).forEach((b,i) => {
+      const bc = TERRITORY_COLORS[b] || '#888';
+      const a = (Math.PI/3)*i + Math.PI/6;
+      const bx = cx + (HEX+12)*Math.cos(a), by = cy + (HEX+12)*Math.sin(a);
+      s += `\n<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4" fill="${bc}" opacity="0.85"/>`;
+      s += `\n<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>`;
+    });
+  }
+
+  // Centre hex — THIS unit, full brightness
+  // Fill varies by tier
+  const tierFill = {
+    common:   `rgba(${tr*.4|0},${tg*.45|0},${tb*.4|0},0.75)`,
+    uncommon: `rgba(${tr*.45|0},${tg*.55|0},${tb*.45|0},0.8)`,
+    rare:     `rgba(${Math.min(255,tr*.3+40)|0},${tg*.3|0},${Math.min(255,tb*.5+60)|0},0.8)`,
+    legendary:`rgba(${Math.min(255,tr*.5+60)|0},${Math.min(255,tg*.4+40)|0},${tb*.2|0},0.82)`,
+  };
+  s += `\n<!-- centre hex glow -->`;
+  s += `\n<polygon points="${hexPts(cx,cy,HEX+6)}" fill="${tc}" opacity="0.12" filter="url(#blur${uid})"/>`;
+  s += `\n<polygon points="${hexPts(cx,cy,HEX)}" fill="${tierFill[data.value_tier]||tierFill.common}"/>`;
+
+  // Tier-specific centre border
+  const tierStroke = { common:`rgba(${tr},${tg},${tb},0.45)`, uncommon:`rgba(${Math.min(255,tr+20)},${Math.min(255,tg+35)},${Math.min(255,tb+20)},0.6)`, rare:`rgba(160,130,255,0.7)`, legendary:`rgba(255,220,80,0.85)` };
+  const tierSW = { common:1.5, uncommon:2, rare:2.5, legendary:3 };
+  s += `\n<polygon points="${hexPts(cx,cy,HEX)}" fill="none" stroke="${tierStroke[data.value_tier]}" stroke-width="${tierSW[data.value_tier]}"/>`;
+
+  // Inner ring for rare/legendary
+  if(data.value_tier==='legendary'||data.value_tier==='rare'){
+    s += `\n<polygon points="${hexPts(cx,cy,HEX-6)}" fill="none" stroke="${tierStroke[data.value_tier]}" stroke-width="0.7" opacity="0.4"/>`;
+  }
+
+  // Legendary corner runes
+  if(data.value_tier==='legendary'){
+    for(let i=0;i<6;i++){
+      const a=Math.PI/3*i;
+      s+=`\n<circle cx="${(cx+Math.cos(a)*(HEX+18)).toFixed(1)}" cy="${(cy+Math.sin(a)*(HEX+18)).toFixed(1)}" r="2.2" fill="rgba(255,210,80,0.6)"/>`;
+    }
+  }
+
+  // Isolated: dashed orbit
+  if(data.isolated){
+    s += `\n<circle cx="${cx}" cy="${cy}" r="${HEX+22}" fill="none" stroke="rgba(255,224,138,0.15)" stroke-width="1" stroke-dasharray="5,4"/>`;
+  }
+
+  // Coastal: wave hint at bottom
+  if(data.coastal){
+    s += `\n<line x1="${cx-60}" y1="${H-18}" x2="${cx+60}" y2="${H-18}" stroke="rgba(0,229,255,0.18)" stroke-width="1" stroke-dasharray="4,6"/>`;
+    s += `\n<line x1="${cx-40}" y1="${H-10}" x2="${cx+40}" y2="${H-10}" stroke="rgba(0,229,255,0.1)" stroke-width="1" stroke-dasharray="3,8"/>`;
+  }
+
+  // Unit letter label in centre hex
+  const letter = unitCode.split('-')[2] || '';
+  s += `\n<text x="${cx}" y="${(cy+4.5).toFixed(1)}" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11" font-weight="700" letter-spacing="1" fill="rgba(255,255,255,0.9)">${letter}</text>`;
+
+  s += `\n</g></svg>`;
+  return s;
+}
+
+// ── MAIN RENDER ──
+async function render(){
+  const params = new URLSearchParams(window.location.search);
+  const code = (params.get('code')||'').toUpperCase().trim();
+  const page = document.getElementById('pageContent');
+
+  if(!code || !UNIT_DATA[code]){
+    const codeDisplay = code || '?';
+    page.innerHTML=`
+<style>
+  .lore-page { max-width:860px; margin:0 auto; padding:8px 0 80px; }
+
+  /* ── HERO ── */
+  .lore-hero { text-align:center; padding:52px 24px 44px; position:relative; }
+  .lore-hero-eyebrow { font-size:9px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,224,138,0.45); margin-bottom:14px; }
+  .lore-hero-title { font-size:48px; font-weight:900; letter-spacing:-.02em; line-height:1; color:#fff; margin-bottom:10px; }
+  .lore-hero-title span { background:linear-gradient(135deg,#FFE08A,#FFC832); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .lore-hero-sub { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.7; max-width:500px; margin:0 auto 28px; }
+  .lore-hero-code-pill { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:6px 16px; font-family:'Share Tech Mono',monospace; font-size:11px; color:rgba(255,255,255,0.3); }
+  .lore-hero-code-pill span { color:rgba(255,100,100,0.7); }
+
+  /* ── GRID ── */
+  .lore-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media(max-width:700px){ .lore-grid { grid-template-columns:1fr; } }
+
+  /* ── CARDS ── */
+  .lore-card { background:rgba(0,0,0,0.42); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .lore-card-header { padding:14px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:10px; }
+  .lore-card-icon { font-size:18px; line-height:1; }
+  .lore-card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,224,138,0.7); }
+  .lore-card-link { margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(96,200,255,0.55); text-decoration:none; border:1px solid rgba(96,200,255,0.2); border-radius:8px; padding:3px 9px; transition:all .2s; }
+  .lore-card-link:hover { color:#60c8ff; border-color:rgba(96,200,255,0.5); background:rgba(96,200,255,0.06); }
+  .lore-card-body { padding:16px 18px 18px; flex:1; }
+  .lore-card-desc { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.75; margin-bottom:14px; }
+  .lore-card-desc strong { color:rgba(255,255,255,0.8); font-weight:700; }
+
+  /* ── POSITION PILLS ── */
+  .pos-grid { display:flex; flex-wrap:wrap; gap:7px; }
+  .pos-pill { display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+  .pos-pill-icon { font-size:13px; }
+  .pos-pill-name { font-size:10px; font-weight:700; color:rgba(255,255,255,0.55); letter-spacing:.04em; }
+
+  /* ── STAT STRIP ── */
+  .lore-stat-strip { display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid rgba(255,255,255,0.06); }
+  .lore-stat-item { padding:12px 16px; text-align:center; border-right:1px solid rgba(255,255,255,0.05); }
+  .lore-stat-item:last-child { border-right:none; }
+  .lore-stat-val { font-size:22px; font-weight:900; color:#FFE08A; line-height:1; margin-bottom:2px; }
+  .lore-stat-lbl { font-size:8px; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,0.25); font-weight:700; }
+
+  /* ── NEXUS FULL-WIDTH ── */
+  .lore-card-full { background:rgba(0,0,0,0.42); border:1px solid rgba(96,200,255,0.12); border-radius:14px; overflow:hidden; position:relative; }
+  .lore-card-full::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(96,200,255,0.25),rgba(96,200,255,0.5),rgba(96,200,255,0.25),transparent); }
+
+  /* ── CTA ── */
+  .lore-cta { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding-top:8px; }
+  .lore-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 22px; border-radius:10px; font-size:12px; font-weight:700; letter-spacing:.04em; text-decoration:none; transition:all .2s; }
+  .lore-btn-primary { background:linear-gradient(135deg,rgba(255,224,138,0.15),rgba(255,224,138,0.08)); border:1px solid rgba(255,224,138,0.35); color:#FFE08A; }
+  .lore-btn-primary:hover { background:linear-gradient(135deg,rgba(255,224,138,0.22),rgba(255,224,138,0.14)); border-color:rgba(255,224,138,0.6); transform:translateY(-1px); }
+  .lore-btn-secondary { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.55); }
+  .lore-btn-secondary:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.8); transform:translateY(-1px); }
+
+  /* ── DEV SLOT PREVIEW ── */
+  .slot-preview { display:flex; align-items:center; gap:5px; margin-top:10px; }
+  .slot-sq { width:18px; height:18px; border-radius:4px; flex-shrink:0; }
+  .slot-sq.filled { background:linear-gradient(135deg,rgba(255,224,138,0.4),rgba(255,200,80,0.2)); border:1px solid rgba(255,224,138,0.4); }
+  .slot-sq.empty  { background:transparent; border:1px solid rgba(255,255,255,0.12); }
+  .slot-label { font-size:9px; color:rgba(255,255,255,0.25); margin-left:6px; font-weight:700; letter-spacing:.06em; font-family:'Share Tech Mono',monospace; }
+</style>
+
+<div class="lore-page">
+
+  <!-- HERO -->
+  <div class="lore-hero">
+    <div class="lore-hero-eyebrow">Luminaea · Territory Guide</div>
+    <h1 class="lore-hero-title">The <span>Land</span> of Luminaea</h1>
+    <p class="lore-hero-sub">Units, Districts, and Nexus Points — the three layers of territory that make up this region of Minalia.</p>
+  </div>
+
+  <!-- TWO COLUMN GRID -->
+  <div class="lore-grid">
+
+    <!-- UNITS CARD -->
+    <div class="lore-card">
+      <div class="lore-card-header">
+        <span class="lore-card-icon">⬡</span>
+        <span class="lore-card-title">What are Units?</span>
+        <a href="unit.html?code=LUM-01-A" class="lore-card-link">Browse Units →</a>
+      </div>
+      <div class="lore-card-body">
+        <p class="lore-card-desc">Units are individual <strong>areas of land</strong> — think of them like a neighbourhood, block, or zip code within a District. Each District contains exactly <strong>16 Units</strong>, and every Unit can be owned, developed, and earned from by a single player.</p>
+        <p class="lore-card-desc" style="margin-bottom:10px;">Units sit in different <strong>positions</strong> across the map, each with unique characteristics:</p>
+        <div class="pos-grid">
+          <div class="pos-pill"><span class="pos-pill-icon">🌊</span><span class="pos-pill-name">Coastal</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏔️</span><span class="pos-pill-name">Highland</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌲</span><span class="pos-pill-name">Forest</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌾</span><span class="pos-pill-name">Plains</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏙️</span><span class="pos-pill-name">Urban Core</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🗺️</span><span class="pos-pill-name">Isolated</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🌿</span><span class="pos-pill-name">Wetlands</span></div>
+          <div class="pos-pill"><span class="pos-pill-icon">🏜️</span><span class="pos-pill-name">Frontier</span></div>
+        </div>
+      </div>
+      <div class="lore-stat-strip">
+        <div class="lore-stat-item"><div class="lore-stat-val">16</div><div class="lore-stat-lbl">Per District</div></div>
+        <div class="lore-stat-item"><div class="lore-stat-val">320</div><div class="lore-stat-lbl">Total in Luminaea</div></div>
+      </div>
+    </div>
+
+    <!-- DISTRICTS CARD -->
+    <div class="lore-card">
+      <div class="lore-card-header">
+        <span class="lore-card-icon">🗺️</span>
+        <span class="lore-card-title">What are Districts?</span>
+        <a href="https://play.minaliens.xyz/district.html?code=LUM-01" class="lore-card-link">View Districts →</a>
+      </div>
+      <div class="lore-card-body">
+        <p class="lore-card-desc">Districts are <strong>larger areas of land</strong> within Luminaea — the primary region of Minalia. Each District has its own identity, colour, and economy.</p>
+        <p class="lore-card-desc" style="margin-bottom:0;">There are <strong>20 Districts</strong> in Luminaea, each governed by a <strong>Minalien</strong> — a unique NFT character that represents the spirit of that territory. The Governor earns a share of all yield generated within their District.</p>
+      </div>
+      <div class="lore-stat-strip">
+        <div class="lore-stat-item"><div class="lore-stat-val">20</div><div class="lore-stat-lbl">Districts</div></div>
+        <div class="lore-stat-item"><div class="lore-stat-val">20</div><div class="lore-stat-lbl">Minalien Governors</div></div>
+      </div>
+    </div>
+
+  </div><!-- /lore-grid -->
+
+  <!-- NEXUS FULL WIDTH -->
+  <div class="lore-card-full" style="margin-bottom:28px;">
+    <div class="lore-card-header">
+      <span class="lore-card-icon">⚡</span>
+      <span class="lore-card-title">What are Nexus Points?</span>
+      <a href="nexus.html" class="lore-card-link">View Nexus Points →</a>
+    </div>
+    <div class="lore-card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <p class="lore-card-desc">Nexus Points are <strong>unclaimed strategic positions</strong> on the map — they are not governed by any Minalien and do not belong to any District.</p>
+        <p class="lore-card-desc" style="margin-bottom:0;">These are powerful locations where <strong>critical infrastructure</strong> can be constructed — power grids, transit hubs, relay stations — that benefit multiple Districts at once.</p>
+      </div>
+      <div>
+        <p class="lore-card-desc">The catch: Nexus Point projects <strong>cannot be built alone</strong>. They require <strong>collaboration between players from adjacent Districts</strong> — making them the most challenging and most rewarding projects in Luminaea.</p>
+        <p class="lore-card-desc" style="margin-bottom:0;color:rgba(96,200,255,0.6);">No Governor. No single owner. Only alliances.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="lore-cta">
+    <a href="map.html" class="lore-btn lore-btn-primary">⬡ Explore the Map</a>
+    <a href="users.html" class="lore-btn lore-btn-secondary">👤 View Players</a>
+  </div>
+
+</div>`;
+    return;
+  }
+
+  const d = UNIT_DATA[code];
+  const tc = TERRITORY_COLORS[d.territory]||'#888';
+  const tierLabel = TIER_LABELS[d.value_tier]||d.value_tier;
+  const tierColor = TIER_COLORS[d.value_tier]||'#fff';
+  document.title = `${code} · ${TERRITORY_NAMES[d.territory]} — MINALIA`;
+
+  // Fetch unit from DB first, then resolve real owner from users table
+  const dbUnit = await (async () => {
+    if (!window.supabase || typeof window.supabase.from !== 'function') return null;
+    try {
+      const { data } = await window.supabase.from('units').select('*').eq('unit_code', code).maybeSingle();
+      return data || null;
+    } catch { return null; }
+  })();
+
+
+  // ── Avatar URL resolver ──
+  function resolveAvatar(av, xUsername) {
+    if (av && (av.startsWith('http') || av.startsWith('/') || av.startsWith('data:') || av.startsWith('images/'))) return av;
+    if (av && av.length > 8 && !/\p{Emoji}/u.test(av)) return 'https://vvlgaisfhhjvchequmhh.supabase.co/storage/v1/object/public/avatars/' + av;
+    return null;
+  }
+
+  // Resolve real owner from users table via owner_id on the unit row
+  let owner = null;
+  let ownerLastLoginAt = null;
+  if (dbUnit && dbUnit.owner_id) {
+    try {
+      const { data: userData } = await window.supabase
+        .from('users')
+        .select('id, username, avatar, avatar_url, x_username, mina_wallet_address, last_login_at')
+        .eq('id', dbUnit.owner_id)
+        .maybeSingle();
+      if (userData) {
+        const av = userData.avatar_url || userData.avatar;
+        ownerLastLoginAt = userData.last_login_at || null;
+        owner = {
+          id:         userData.id,
+          wallet:     userData.mina_wallet_address || null,
+          username:   userData.username || userData.mina_wallet_address?.slice(0,12) || 'Unknown',
+          avatar:     resolveAvatar(av, userData.x_username) || null,
+          color:      null,
+          profileUrl: `profile.html?user=${encodeURIComponent(userData.username || userData.mina_wallet_address || '')}`
+        };
+      }
+    } catch (_) {}
+  }
+
+  // ── OWNER BLOCK ──
+  let ownerHtml;
+  if (owner) {
+    const initial = (owner.username || '?')[0].toUpperCase();
+    const avatarInner = owner.avatar
+      ? `<img src="${owner.avatar}" alt="" onerror="this.parentElement.textContent='${initial}'">`
+      : initial;
+    ownerHtml = `<a class="owner-row" href="${owner.profileUrl}">
+      <div class="owner-avatar">${avatarInner}</div>
+      <div>
+        <div class="owner-name">${owner.username}</div>
+        <div class="owner-sub">Owner · View profile →</div>
+      </div>
+    </a>`;
+  } else {
+    ownerHtml = `<div class="unowned">Unclaimed — available for acquisition.</div>`;
+  }
+
+
+  // ── MARKET BLOCK ──
+  window._dbUnit  = dbUnit;
+  window._uCode   = code;
+  window._uOwner  = owner;
+
+  // Detect if current session user is the owner
+  // Uses wallet address as primary check — always reliable regardless of session UUID state
+  const _isOwner = (() => {
+    const _s = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const sessionWallet = _s.wallet_address || null;
+    // Primary: compare session wallet against the owner's wallet fetched from DB
+    if (sessionWallet && owner?.wallet && sessionWallet === owner.wallet) return true;
+    // Secondary: compare session user ID against unit's owner_id
+    const cu = window.currentUser || window._sessionUser || _s.user || null;
+    if (cu?.id && dbUnit?.owner_id && cu.id === dbUnit.owner_id) return true;
+    return false;
+  })();
+
+  let marketHtml = '';
+
+  // Auto-settle expired auctions when unit page is visited
+  if (dbUnit?.auction_active && dbUnit.auction_end_time) {
+    const endTime = new Date(dbUnit.auction_end_time);
+    if (endTime < new Date()) {
+      console.log('Auction expired — settling...');
+      fetch('https://vvlgaisfhhjvchequmhh.supabase.co/functions/v1/process-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'settle', unit_code: dbUnit.unit_code })
+      }).then(() => render()).catch(console.warn);
+      return; // reloads after settlement
+    }
+  }
+
+  if (dbUnit?.auction_active) {
+    const curBid = parseFloat(dbUnit.auction_current_bid || 0);
+    const minBid = parseFloat(dbUnit.auction_min_bid || 0);
+    const disp   = curBid > 0 ? curBid : minBid;
+    const endStr = dbUnit.auction_end_time
+      ? new Date(dbUnit.auction_end_time).toLocaleString(undefined, {dateStyle:'medium',timeStyle:'short'})
+      : '—';
+    // Luminaea context: 1 IRL hour = 1 Lum day
+    const _auctionLumDays = dbUnit.auction_end_time
+      ? Math.max(0, Math.round((new Date(dbUnit.auction_end_time) - Date.now()) / 3600000))
+      : null;
+    const _lumTimeNote = _auctionLumDays !== null
+      ? `<div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:3px;font-style:italic;">≈ ${_auctionLumDays} Lum day${_auctionLumDays!==1?'s':''} · 1 IRL hour = 1 Lum day</div>`
+      : '';
+
+    const _cu = window.currentUser || window._sessionUser || (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}').user || null; } catch(e) { return null; } })();
+
+    marketHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+        <!-- LEFT: status + price + action -->
+        <div>
+          <div class="market-status-row">
+            <div class="market-dot auction"></div>
+            <span class="market-status-label" style="color:#FF8C00">🔨 Active Auction</span>
+          </div>
+          <div class="market-price-block">
+            <span class="market-price-big">${disp.toLocaleString()}</span>
+            <span class="market-price-mina">ARKIS</span>
+            <div class="market-price-note">${curBid > 0 ? 'Current bid' : 'Minimum bid'} · Ends ${endStr}</div>
+            ${_lumTimeNote}
+          </div>
+          ${!_isOwner
+            ? `<div class="market-btns" id="bidActionArea">
+                 <button class="btn btn-primary" onclick="openBidModal()">🔨 Place Bid</button>
+               </div>`
+            : `<div class="market-owner-note">You own this unit · <a href="profile.html" style="color:rgba(255,224,138,0.6);font-size:11px;">Manage in profile →</a></div>`}
+        </div>
+        <!-- RIGHT: bid leaderboard -->
+        <div id="bidListWrap"></div>
+      </div>`;
+
+  } else if (dbUnit?.for_sale && dbUnit?.sale_price) {
+    const price = parseFloat(dbUnit.sale_price);
+    marketHtml = `
+      <div class="market-status-row">
+        <div class="market-dot sale"></div>
+        <span class="market-status-label" style="color:#00E5FF">💰 Listed For Sale</span>
+      </div>
+      <div class="market-price-block">
+        <span class="market-price-big">${price.toLocaleString()}</span>
+        <span class="market-price-mina">ARKIS</span>
+        <div class="market-price-note">Fixed price · Instant transfer on purchase</div>
+      </div>
+      ${!_isOwner
+        ? `<div class="market-btns" id="offerActionArea">
+             <button class="btn btn-primary" onclick="openBuyModal(${price})">Buy Now · ${price.toLocaleString()} ARKIS</button>
+             <button class="btn btn-secondary" id="makeOfferBtn" onclick="openOfferModal(${price})">Make Offer</button>
+           </div>
+           <div id="ownerOfferPanel"></div>`
+        : `<div class="market-owner-note">Your listing · <a href="#" onclick="alert('Delist coming soon');return false;" style="color:#00E5FF;text-decoration:none;">Delist</a></div>
+           <div id="ownerOfferPanel" style="margin-top:10px;"></div>`}`;
+
+  } else {
+    const canOffer = owner && !_isOwner;
+    marketHtml = `
+      <div class="market-status-row">
+        <div class="market-dot none"></div>
+        <span class="market-status-label" style="color:rgba(255,255,255,0.3)">Not Listed</span>
+      </div>
+      <p style="font-size:13px;color:rgba(255,255,255,0.3);margin-top:8px;font-style:italic;line-height:1.6;">
+        This unit is not currently on the market.
+      </p>
+      ${canOffer
+        ? `<div class="market-btns" id="offerActionArea" style="margin-top:14px;">
+             <button class="btn btn-secondary" id="makeOfferBtn" onclick="openOfferModal(0)">Make Offer to Owner</button>
+           </div>
+           <div id="ownerOfferPanel"></div>`
+        : ''}
+      ${_isOwner
+        ? `<div class="market-btns" style="margin-top:14px;">
+             <button class="btn btn-secondary" onclick="alert('List for sale — coming soon')">List for Sale</button>
+             <button class="btn btn-secondary" onclick="alert('Create auction — coming soon')">Start Auction</button>
+           </div>
+           <div id="ownerOfferPanel" style="margin-top:10px;"></div>
+           <div id="tuneStatus" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:5px;"></div>`
+        : ''}`;
+  }
+
+  // ── DEV CATEGORY COLOURS (mirrors profile.html) ──
+  const DEV_CAT_COLORS = {
+    housing:    'rgba(255,224,138,0.9)',
+    economy:    'rgba(96,255,171,0.9)',
+    science:    'rgba(96,200,255,0.9)',
+    nature:     'rgba(100,220,130,0.9)',
+    culture:    'rgba(200,160,255,0.9)',
+    health:     'rgba(255,140,140,0.9)',
+    prestige:   'rgba(255,200,80,0.9)',
+    defence:    'rgba(255,160,60,0.9)',
+    biological: 'rgba(160,230,120,0.9)',
+  };
+  const DEV_CAT_LABELS = {
+    housing:'Housing', economy:'Economy', science:'Science',
+    nature:'Nature', culture:'Culture', health:'Health', prestige:'Prestige',
+    defence:'Defence',
+  };
+
+  // ── FETCH DEVELOPMENTS FOR THIS UNIT ──
+  let unitDevs = [];
+  if (window.supabase && typeof window.supabase.from === 'function') {
+    try {
+      const { data: devData } = await window.supabase
+        .from('developments')
+        .select('*, development_catalog(slug, name, icon, category, description, is_special_collab, yield_arkis, yield_plasm, yield_wire, yield_lichen, yield_spore)')
+        .eq('unit_code', code)
+        .in('status', ['building', 'completed'])
+        .order('created_at', { ascending: true });
+      unitDevs = devData || [];
+      window._unitDevs = unitDevs;
+    } catch(e) { console.warn('Dev fetch for unit:', e); }
+  }
+
+  // Build the large slot bar HTML
+  function buildUnitDevSlots(devs, territory) {
+    const slots = [];
+    for (let i = 0; i < 10; i++) {
+      const dev = devs[i];
+      if (dev) {
+        const cat = dev.development_catalog?.category || 'housing';
+        const col = DEV_CAT_COLORS[cat] || '#fff';
+        const name = dev.development_catalog?.name || 'Development';
+        const icon = dev.development_catalog?.icon || '🏗️';
+        const isBuilding = dev.status === 'building';
+        slots.push(
+          `<div class="unit-dev-slot filled${isBuilding ? ' building' : ''}" ` +
+          `style="background:${col}${isBuilding ? '66' : ''};" ` +
+          `title="${icon} ${name}${isBuilding ? ' (Under Construction…)' : ' (Fully Operational)'}" ` +
+          `onclick="showDevSlotPopup(event,${i})"></div>`
+        );
+      } else {
+        slots.push(`<div class="unit-dev-slot empty" title="Empty slot — click to view developments" onclick="scrollToDevPanel()"></div>`);
+      }
+    }
+
+    // Star
+    const collabRows = window._unitCollabRows || [];
+    const hasActiveCollab = collabRows.some(c => c.status === 'completed' || c.status === 'building' || c.status === 'interested');
+    const specialBldgName = TERRITORY_SPECIAL_UNIT[territory]?.name || 'Territory Special Building';
+    const starTitle = hasActiveCollab
+      ? `⭐ Collaboration active: ${specialBldgName} — click to view district`
+      : `Joint Collaboration Participant — click to view ${territory} district`;
+    const starClass = hasActiveCollab ? 'star-gold' : 'star-empty';
+    const starHtml = `<a href="district.html?code=${territory}" class="unit-dev-star ${starClass}" title="${starTitle}">★</a>`;
+
+    // Legend for filled categories
+    const usedCats = [...new Set(devs.filter(d => d.development_catalog?.category).map(d => d.development_catalog.category))];
+    const legendHtml = usedCats.length
+      ? `<div class="dev-slots-legend">${usedCats.map(cat =>
+          `<div class="dev-legend-item"><div class="dev-legend-dot" style="background:${DEV_CAT_COLORS[cat]}"></div>${DEV_CAT_LABELS[cat]}</div>`
+        ).join('')}</div>`
+      : '';
+
+    return `
+      <div class="unit-dev-slots-bar" title="${devs.length}/10 development slots used">
+        ${slots.join('')}
+        <span class="unit-dev-slots-count">${devs.length}/10</span>
+        ${starHtml}
+      </div>
+      ${legendHtml}`;
+  }
+
+  // Build the developments panel HTML
+  // ── Tune yield multiplier based on owner's last_login_at ──────────────────
+  function tuneYieldMultiplier(lastLoginAt) {
+    if (!lastLoginAt) return { mult: 1.0, label: null, pct: 100 };
+    const days = (Date.now() - new Date(lastLoginAt).getTime()) / 86400000;
+    if (days >= 30) return { mult: 0.0, label: 'SUSPENDED',  pct: 0,   col: '#f87171' };
+    if (days >= 21) return { mult: 0.5, label: '50% YIELD',  pct: 50,  col: '#f87171' };
+    if (days >= 14) return { mult: 0.75,label: '75% YIELD',  pct: 75,  col: '#fb923c' };
+    if (days >= 7)  return { mult: 0.9, label: '90% YIELD',  pct: 90,  col: '#FFE08A' };
+    return { mult: 1.0, label: null, pct: 100, col: '#4ade80' };
+  }
+
+  function buildUnitDevPanel(devs, lastLoginAt) {
+    if (!devs.length) {
+      return `<div class="unit-dev-empty">No developments on this unit yet.</div>`;
+    }
+
+    const { mult, label, pct, col } = tuneYieldMultiplier(lastLoginAt);
+    const yieldBannerHtml = label ? `
+      <div style="margin-bottom:12px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid ${col}33;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="font-size:11px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.45);">⚡ Tune power affects all development yields</div>
+        <span style="font-size:11px;font-weight:700;font-family:'Share Tech Mono',monospace;color:${col};padding:2px 8px;border-radius:20px;background:${col}18;border:1px solid ${col}44;">${label}</span>
+      </div>` : '';
+
+    return `<div class="unit-dev-grid">${yieldBannerHtml}${devs.map(dev => {
+      const cat   = dev.development_catalog?.category || 'housing';
+      const col   = DEV_CAT_COLORS[cat] || '#fff';
+      const name  = dev.development_catalog?.name || 'Development';
+      const icon  = dev.development_catalog?.icon || '🏗️';
+      const desc  = dev.development_catalog?.description || '';
+      const isBuilding = dev.status === 'building';
+      const statusLabel = isBuilding ? 'Under Construction' : 'Fully Operational';
+      const statusClass = isBuilding ? 'building' : 'completed';
+      const dotClass    = isBuilding ? 'building' : 'completed';
+      // Build income display from catalog yields + monthly_income — apply tune multiplier
+      const dc = dev.development_catalog || {};
+      const incomeLines = [];
+      const applyMult = (n) => Math.round(Number(n) * mult);
+      if (dev.monthly_income > 0)     incomeLines.push(`<span style="color:#60ffab;">${applyMult(dev.monthly_income).toLocaleString()} ARKIS</span>`);
+      else if (dc.yield_arkis > 0)    incomeLines.push(`<span style="color:#60ffab;">${applyMult(dc.yield_arkis).toLocaleString()} ARKIS</span>`);
+      if (dc.yield_wire > 0)          incomeLines.push(`<span style="color:#a0d8ff;">${applyMult(dc.yield_wire).toLocaleString()} WIRE</span>`);
+      if (dc.yield_plasm > 0)         incomeLines.push(`<span style="color:#c8a0ff;">${applyMult(dc.yield_plasm).toLocaleString()} PLASM</span>`);
+      if (dc.yield_lichen > 0)        incomeLines.push(`<span style="color:#80e0a0;">${applyMult(dc.yield_lichen).toLocaleString()} LICHEN</span>`);
+      if (dc.yield_spore > 0)         incomeLines.push(`<span style="color:#f0c060;">${applyMult(dc.yield_spore).toLocaleString()} SPORE</span>`);
+      const incomeHtml = incomeLines.length
+        ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+             <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);margin-bottom:4px;font-weight:700;">Monthly Income</div>
+             <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:700;">${incomeLines.join('')}</div>
+           </div>`
+        : '';
+
+      const slug     = dev.development_catalog?.slug || dev.building_type || '';
+      const isSpecial = dev.development_catalog?.is_special_collab || false;
+      const devLink  = slug ? `dev.html?slug=${slug}` : 'dev.html';
+
+      // Level badge
+      const LEVEL_NAMES  = ['','Standard','Enhanced','Advanced','Superior','Ultimate'];
+      const LEVEL_COLORS = ['','rgba(255,255,255,0.4)','rgba(34,197,94,0.8)','rgba(59,130,246,0.8)','rgba(168,85,247,0.8)','rgba(255,200,60,0.9)'];
+      const lvl      = dev.level || 1;
+      const lvlName  = LEVEL_NAMES[lvl]  || 'Standard';
+      const lvlColor = LEVEL_COLORS[lvl] || LEVEL_COLORS[1];
+
+      // Construction countdown for building-status devs
+      let constructionHtml = '';
+      if (isBuilding && dev.completed_at) {
+        const completedAt = new Date(dev.completed_at);
+        const msLeft = completedAt - Date.now();
+        const timerClass = `dev-build-timer-${dev.id?.replace(/-/g,'') || Math.random().toString(36).slice(2)}`;
+        if (msLeft > 0) {
+          const lumDur  = typeof realMsToLumDuration === 'function' ? realMsToLumDuration(msLeft) : '';
+          const irlHrs  = Math.max(0, (msLeft / 3600000)).toFixed(1);
+          const irlStr  = msLeft < 3600000
+            ? `${Math.ceil(msLeft/60000)} IRL min`
+            : `${irlHrs} IRL hrs`;
+          constructionHtml = `
+            <div class="${timerClass}" style="margin-top:8px;padding:8px 10px;background:rgba(255,200,60,0.06);border:1px solid rgba(255,200,60,0.15);border-radius:8px;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,60,0.5);margin-bottom:4px;">⏳ Under Construction</div>
+              <div style="font-size:13px;font-weight:700;color:rgba(255,200,60,0.9);" data-completedat="${completedAt.toISOString()}">
+                ${lumDur} <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:400;">(${irlStr})</span>
+              </div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px;">Ready: ${completedAt.toLocaleString(undefined,{dateStyle:'short',timeStyle:'short'})}</div>
+            </div>`;
+        } else {
+          // Build time elapsed — DB cron hasn't updated yet. Re-render once after 3s, then stop.
+          if (!window._reRenderScheduled) {
+            window._reRenderScheduled = true;
+            setTimeout(() => { window._reRenderScheduled = false; render(); }, 3000);
+          }
+          constructionHtml = `
+            <div style="margin-top:8px;padding:8px 10px;background:rgba(96,255,171,0.06);border:1px solid rgba(96,255,171,0.2);border-radius:8px;font-size:12px;color:rgba(96,255,171,0.9);font-weight:600;">
+              ✓ Build complete — refreshing…
+            </div>`;
+        }
+      }
+
+      return `
+        <div class="unit-dev-card status-${statusClass}">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <span class="unit-dev-card-icon">${icon}</span>
+            <div style="flex:1;min-width:0;">
+              <a href="${devLink}" class="unit-dev-card-name" style="text-decoration:none;color:inherit;transition:color .15s;" onmouseover="this.style.color='rgba(255,224,138,0.9)'" onmouseout="this.style.color=''">${name} ↗</a>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                <div class="unit-dev-card-cat" style="color:${col}">${DEV_CAT_LABELS[cat] || cat}</div>
+                ${!isBuilding ? `<span style="font-size:9px;font-weight:700;color:${lvlColor};letter-spacing:.05em;padding:1px 5px;border:1px solid ${lvlColor};border-radius:4px;opacity:0.85;">${lvlName}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          ${desc ? `<div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">${desc}</div>` : ''}
+          ${constructionHtml}
+          ${incomeHtml}
+          <div class="unit-dev-status-badge ${statusClass}">
+            <span class="status-dot ${dotClass}"></span>
+            ${isBuilding ? 'Building in progress' : statusLabel}
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  // Fetch special building collab for this unit's territory
+  let specialCollabHtml = '';
+  const specialBldg = TERRITORY_SPECIAL_UNIT[d.territory];
+  if (specialBldg && window.supabase && typeof window.supabase.from === 'function') {
+    try {
+      const { data: collabRows } = await window.supabase
+        .from('special_building_collaborations')
+        .select('player_id, unit_code, status, share_pct')
+        .eq('territory_code', d.territory)
+        .eq('building_slug', specialBldg.slug);
+
+      if (collabRows && collabRows.length) {
+        window._unitCollabRows = collabRows;
+        const builtCollabs = collabRows.filter(c => c.status === 'completed');
+        const interestedCollabs = collabRows.filter(c => c.status === 'interested');
+        const myCollab = collabRows.find(c => c.unit_code === code);
+
+        if (builtCollabs.length > 0) {
+          const myShare = myCollab && myCollab.status === 'completed' ? parseFloat(myCollab.share_pct || 0) : null;
+          const pctStr = myShare != null ? (myShare % 1 === 0 ? myShare : myShare.toFixed(2)) + '%' : null;
+          specialCollabHtml = `
+            <div class="section" style="border-color:rgba(96,255,171,0.35);background:rgba(96,255,171,0.02);">
+              <div class="section-heading" style="color:#60ffab;">${specialBldg.icon} Territory Special Building</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+                <span style="font-size:16px;font-weight:800;color:rgba(255,255,255,0.95);">${specialBldg.name}</span>
+                <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#60ffab;background:rgba(96,255,171,0.1);border:1px solid rgba(96,255,171,0.3);border-radius:4px;padding:2px 7px;">✓ Built</span>
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:12px;">${specialBldg.benefit}</div>
+              ${pctStr ? `<div style="font-size:20px;font-weight:800;color:#FFE08A;">${pctStr} <span style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:400">share on this unit</span></div>` : `<div style="font-size:12px;color:rgba(255,255,255,0.35);font-style:italic;">Built by ${builtCollabs.length} player${builtCollabs.length !== 1 ? 's' : ''} — this unit has no share.</div>`}
+            </div>`;
+        } else if (interestedCollabs.length > 0 || myCollab) {
+          const myIn = !!myCollab && myCollab.status === 'interested';
+          specialCollabHtml = `
+            <div class="section" style="border-color:rgba(255,200,80,0.3);background:rgba(255,200,80,0.02);">
+              <div class="section-heading">${specialBldg.icon} Territory Special Building</div>
+              <div style="font-size:15px;font-weight:800;color:#FFE08A;margin-bottom:6px;">${specialBldg.name}</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5;margin-bottom:10px;">${specialBldg.benefit}</div>
+              <div style="font-size:12px;color:rgba(255,200,80,0.8);">
+                ${myIn ? '✦ You are open to collaboration on this building.' : `${interestedCollabs.length} player${interestedCollabs.length !== 1 ? 's' : ''} interested — need 2+ to build.`}
+              </div>
+            </div>`;
+        }
+      }
+    } catch(e) { console.warn('Special collab fetch for unit:', e); }
+  }
+  const min = MINISTERS[d.territory];
+  // ministerHtml is the minister half of the combined owner+minister row
+  let ministerBlock='';
+  if(min){
+    ministerBlock=`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0;">
+        <a href="${min.page}" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;text-align:center;">
+          <img src="${min.img}" alt="${min.name}"
+            style="width:52px;height:auto;display:block;border-radius:0;object-fit:contain;flex-shrink:0;"
+            onerror="this.style.display='none'">
+          <div>
+            <div class="owner-name" style="font-size:12px;text-align:center;">${min.name}</div>
+            <div class="owner-sub" style="text-align:center;">Territory Minister</div>
+            <div class="owner-sub" style="margin-top:3px;color:rgba(96,200,255,0.6);text-align:center;">View profile →</div>
+          </div>
+        </a>
+      </div>`;
+  }
+
+  // ── ADJACENT TERRITORIES ──
+  let bordersHtml='';
+  if(d.borders?.length>0){
+    bordersHtml=d.borders.map(b=>{
+      const bc=TERRITORY_COLORS[b]||'#888',bn=TERRITORY_NAMES[b]||b;
+      return`<a class="border-item" href="map.html?territory=${b}"><div class="border-swatch" style="background:${bc}"></div><span class="border-tname">${bn}</span><span class="border-tcode">${b}</span></a>`;
+    }).join('');
+  } else {
+    bordersHtml=`<p class="no-borders">No adjacent territories — deep within ${TERRITORY_NAMES[d.territory]}.</p>`;
+  }
+
+  // ── ATTRIBUTE PILLS ──
+  const pillDefs=[
+    {label:'Coastal',           active:d.coastal},
+    {label:'Isolated Outpost',  active:d.isolated},
+    {label:'Dual Border',       active:d.dual_border},
+    {label:'Border Unit',       active:d.border_count===1},
+    {label:'Deep Inland',       active:!d.coastal&&d.border_count===0&&!d.isolated},
+    {label:'Peninsula',         active:d.is_tip},
+    {label:'Corridor Territory',active:d.territory==='LUM-19'},
+  ];
+  const pillsHtml=pillDefs.map(p=>`<span class="attr-pill${p.active?' active':''}">${p.label}</span>`).join('');
+
+  const qStr=`${d.q>=0?'+':''}${d.q}`, rStr=`${d.r>=0?'+':''}${d.r}`;
+
+  // ── PREV / NEXT UNIT NAV ──
+  const allUnitKeys = Object.keys(UNIT_DATA);
+  const unitIdx = allUnitKeys.indexOf(code);
+  const prevCode = unitIdx > 0 ? allUnitKeys[unitIdx - 1] : null;
+  const nextCode = unitIdx < allUnitKeys.length - 1 ? allUnitKeys[unitIdx + 1] : null;
+
+  page.innerHTML=`
+    <div class="breadcrumb">
+      <a href="map.html">Map</a><span class="sep">›</span>
+      <a href="district.html?code=${d.territory}" style="color:${tc}">${TERRITORY_NAMES[d.territory]}</a><span class="sep">›</span>
+      <span class="current">${code}</span>
+    </div>
+
+    <div class="hero">
+      <div class="visual-col">
+        <div class="hex-card">${generateHexSVG(code,d)}</div>
+        <div id="tuneBatteryDisplay" class="tune-battery-unit" style="display:${dbUnit && dbUnit.tune_score!=null ? 'flex' : 'none'}">
+          <div class="tune-battery-bar"><div class="tune-battery-fill" id="tuneBatFill" style="width:${dbUnit && dbUnit.tune_score!=null ? dbUnit.tune_score : 0}%"></div></div>
+          <div class="tune-battery-meta"><span>⚡ TUNE POWER</span><span id="tuneBatLabel"></span></div>
+        </div>
+        <div id="tuneStatus" class="tune-status-hero"></div>
+        <div class="unit-nav">
+          ${prevCode ? '<a href="unit.html?code='+prevCode+'" class="unit-nav-btn">← '+prevCode+'</a>' : '<span class="unit-nav-btn disabled">← First</span>'}
+          <span class="unit-nav-center">${unitIdx+1} / ${allUnitKeys.length}</span>
+          ${nextCode ? '<a href="unit.html?code='+nextCode+'" class="unit-nav-btn">'+nextCode+' →</a>' : '<span class="unit-nav-btn disabled">Last →</span>'}
+        </div>
+        <a href="map.html" class="btn btn-primary view-on-map-btn">← Map</a>
+        <a href="district.html?code=${d.territory}" class="btn btn-secondary view-on-map-btn" style="margin-top:0;text-align:center;">View District</a>
+      </div>
+
+      <div class="unit-info">
+        <div class="unit-info-header">
+          <div class="unit-code-label">${d.territory} · Unit ${code.split('-')[2]}</div>
+          <h1 class="unit-title">${code}</h1>
+          <a class="territory-row" href="district.html?code=${d.territory}" style="text-decoration:none;cursor:pointer;">
+            <div class="territory-dot" style="background:${tc};box-shadow:0 0 8px ${tc}55"></div>
+            <span class="territory-name-text" style="color:${tc}">${TERRITORY_NAMES[d.territory]}</span>
+            <span class="territory-code-text">&nbsp;${d.territory}</span>
+          </a>
+          <div class="unit-tier-badge ${d.value_tier}">${tierLabel}</div>
+          <p class="unit-description">${d.description}</p>
+        </div>
+        <div class="attr-row">${pillsHtml}</div>
+        <div class="stats-row">
+          <div class="stat-item"><div class="stat-label">Value Score</div><div class="stat-value" style="color:#FFE08A">${d.value_score}<span style="font-size:11px;color:rgba(255,255,255,0.2);font-weight:400">/10</span></div></div>
+          <div class="stat-item"><div class="stat-label">Population</div><div class="stat-value" style="color:#60ffab" id="unit-pop-stat">${dbUnit && dbUnit.population!=null ? dbUnit.population.toLocaleString() : '—'}</div></div>
+          <div class="stat-item"><div class="stat-label">Area</div><div class="stat-value">~16<span style="font-size:11px;color:rgba(255,255,255,0.2);font-weight:400"> km²</span></div></div>
+          <div class="stat-item"><div class="stat-label">Borders</div><div class="stat-value">${d.border_count}<span style="font-size:11px;color:rgba(255,255,255,0.2);font-weight:400"> terr.</span></div></div>
+        </div>
+        <div class="unit-dev-slots-wrap">${buildUnitDevSlots(unitDevs, d.territory)}</div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="bottom-left">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="section">
+            <div class="section-heading">Owner${min ? ' · Territory Minister' : ''}</div>
+            <div class="section-body" style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0;">
+                <a href="${owner ? owner.profileUrl : '#'}" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;text-align:center;">
+                  ${owner && owner.avatar
+                    ? `<img src="${owner.avatar}" alt="" style="width:52px;height:52px;display:block;border-radius:4px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div style=\'width:52px;height:52px;border-radius:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#FFE08A;\'>${(owner.username||'?')[0].toUpperCase()}</div>'">`
+                    : `<div style="width:52px;height:52px;border-radius:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#FFE08A;">${owner ? (owner.username||'?')[0].toUpperCase() : '?'}</div>`
+                  }
+                  <div>
+                    <div class="owner-name" style="font-size:12px;text-align:center;">${owner ? owner.username : '—'}</div>
+                    <div class="owner-sub" style="text-align:center;">Owner</div>
+                  </div>
+                </a>
+              </div>
+              ${min ? `<div style="width:1px;background:rgba(255,255,255,0.06);align-self:stretch;flex-shrink:0;"></div>` : ''}
+              ${ministerBlock}
+            </div>
+          </div>
+          <div class="section"><div class="section-heading">Market</div><div class="section-body">${marketHtml}</div></div>
+        </div>
+        ${specialCollabHtml}
+        <div class="section" id="devPanel" style="scroll-margin-top:110px;">
+          <div class="section-heading">Developments</div>
+          <div class="section-body">${buildUnitDevPanel(unitDevs, ownerLastLoginAt)}</div>
+        </div>
+      </div>
+      <div class="bottom-right">
+        <div class="section"><div class="section-heading">Adjacent Territories</div><div class="section-body"><div class="border-list">${bordersHtml}</div></div></div>
+        <div class="section"><div class="section-heading">Land Details</div><div class="section-body">
+          <div class="detail-row"><span class="detail-key">Location</span><span class="detail-value">${d.location_type.replace(/\+/g,' · ')}</span></div>
+          <div class="detail-row"><span class="detail-key">Territory</span><span class="detail-value gold">${TERRITORY_NAMES[d.territory]}</span></div>
+          <div class="detail-row"><span class="detail-key">Population</span><span class="detail-value" style="color:#60ffab">${dbUnit && dbUnit.population!=null ? dbUnit.population.toLocaleString() : '—'}</span></div>
+          <div class="detail-row"><span class="detail-key">Pop. at Founding</span><span class="detail-value">${dbUnit && dbUnit.population_base!=null ? dbUnit.population_base.toLocaleString() : '—'}</span></div>
+          <div class="detail-row"><span class="detail-key">Biome</span><span class="detail-value">Ancient Forest</span></div>
+          <div class="detail-row"><span class="detail-key">World</span><span class="detail-value">Luminaea</span></div>
+          <div class="detail-row"><span class="detail-key">Coords</span><span class="detail-value">${qStr}, ${rStr}</span></div>
+        </div></div>
+      </div>
+    </div>
+    ${_isOwner ? '<div class="section build-catalog-panel" id="buildCatalogPanel" style="margin-top:16px;"><div class="section-heading">Build a Development</div><div class="section-body" id="buildCatalogInner"><div style="color:rgba(255,255,255,0.25);font-size:12px;padding:8px 0;">Loading catalog…</div></div></div>' : ''}
+    </div>`;
+
+
+
+  // Battery colours set post-render
+  (function() {
+    if (!dbUnit || dbUnit.tune_score == null) return;
+    var s = dbUnit.tune_score;
+    var fill = document.getElementById('tuneBatFill');
+    var lbl  = document.getElementById('tuneBatLabel');
+    var fc = s>=80 ? 'bat-fill-green' : s>=50 ? 'bat-fill-yellow' : s>=25 ? 'bat-fill-orange' : 'bat-fill-red';
+    var tc = s>=80 ? '#4ade80' : s>=50 ? '#FFE08A' : s>=25 ? '#fb923c' : '#f87171';
+    var lb = s>=80 ? 'TUNED' : s>=50 ? 'ACTIVE' : s>=25 ? 'WEAK' : 'LOW';
+    if (fill) { fill.className = 'tune-battery-fill ' + fc; }
+    if (lbl)  { lbl.style.color = tc; lbl.style.fontWeight = '700'; lbl.textContent = lb + ' · ' + s + '%'; }
+  })();
+
+  // ── Post-render: bid list needs DOM to exist ──
+  if (dbUnit?.auction_active) {
+    loadBidList(dbUnit.unit_code, dbUnit.owner_id);
+  }
+  // Load offer state (my pending offer or owner's incoming offers)
+  if (!dbUnit?.auction_active) {
+    loadOfferState(dbUnit?.unit_code || code, dbUnit?.owner_id, _isOwner);
+  }
+  // Load build catalog for owner
+  if (_isOwner) {
+    loadBuildCatalog(code);
+  }
+}
+
+render();
+
+// ── BUILD CATALOG ─────────────────────────────────────────────────────
+async function loadBuildCatalog(unitCode) {
+  const inner = document.getElementById('buildCatalogInner');
+  if (!inner) return;
+  const sb = window.supabase || window.supabaseClient;
+  if (!sb) return;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  if (!userId) return;
+
+  try {
+    const [catRes, existRes, tokRes] = await Promise.all([
+      sb.from('development_catalog')
+        .select('id,slug,name,icon,category,description,cost_arkis,build_time_days,yield_arkis,yield_plasm,yield_wire,yield_lichen,yield_spore,instant_build,require_coastal,tier')
+        .eq('active', true)
+        .not('tier', 'eq', 'legendary')
+        .order('sort_order', { ascending: true, nullsFirst: false }),
+      sb.from('developments')
+        .select('building_type, status')
+        .eq('unit_code', unitCode)
+        .in('status', ['building', 'completed']),
+      sb.from('user_tokens').select('token_balance').eq('user_id', userId).single(),
+    ]);
+
+    const catalog  = catRes.data || [];
+    const existing = existRes.data || [];
+    const balance  = Number(tokRes.data?.token_balance || 0);
+    const builtSlugs    = new Set(existing.filter(d => d.status === 'completed').map(d => d.building_type));
+    const buildingSlugs = new Set(existing.filter(d => d.status === 'building').map(d => d.building_type));
+
+    const cats = ['all', ...new Set(catalog.map(d => d.category).filter(Boolean))];
+    const catLabels = { all:'All', culture:'🎭 Culture', defence:'🛡️ Defence', economy:'💰 Economy', health:'💊 Health', housing:'🏠 Housing', nature:'🌿 Nature', prestige:'✦ Prestige', science:'🔬 Science' };
+
+    function renderCards(cat) {
+      const isCoastal = !!(window._dbUnit?.coastal);
+      const filtered = (cat === 'all' ? catalog : catalog.filter(d => d.category === cat))
+        .filter(dev => !dev.require_coastal || isCoastal); // hide coastal-only buildings from inland units
+      return filtered.map(dev => {
+        const cost      = Number(dev.cost_arkis) || 0;
+        const isBuilt   = builtSlugs.has(dev.slug);
+        const isBuilding = buildingSlugs.has(dev.slug);
+        const canAfford = balance >= cost;
+        const cardClass = 'build-card' + ((!canAfford && !isBuilt && !isBuilding) ? ' unaffordable' : '');
+        let btnClass = 'build-card-btn';
+        let btnText  = 'Build · ' + cost.toLocaleString() + ' ARKIS';
+        let btnDisabled = '';
+        if (isBuilt)     { btnClass += ' already-built'; btnText = '✅ Already Built'; btnDisabled = 'disabled'; }
+        else if (isBuilding) { btnClass += ' building'; btnText = '⏳ Building…'; btnDisabled = 'disabled'; }
+        else if (!canAfford) { btnText = '🔒 Need ' + (cost - balance).toLocaleString() + ' more'; btnDisabled = 'disabled'; }
+
+        return '<div class="' + cardClass + '">'
+          + '<div class="build-card-header">'
+          + '<span class="build-card-icon">' + (dev.icon || '🏗️') + '</span>'
+          + '<div style="flex:1;min-width:0;"><div class="build-card-name"><a href="dev.html?slug=' + dev.slug + '">' + dev.name + ' ↗</a></div>'
+          + '<div class="build-card-meta">' + (catLabels[dev.category] || dev.category || '') + ' · ' + dev.build_time_days + ' Lum days</div></div>'
+          + '</div>'
+          + '<div class="build-card-body">'
+          + '<div class="build-card-desc">' + (dev.description || '') + '</div>'
+          + '</div>'
+          + '<div class="build-card-footer">'
+          + '<div class="build-card-cost">' + cost.toLocaleString() + '<span>ARKIS</span></div>'
+          + '<button class="' + btnClass + '" ' + btnDisabled
+          + ' data-slug="' + dev.slug + '" data-name="' + dev.name.replace(/"/g, '&quot;') + '"'
+          + ' data-cost="' + cost + '" data-days="' + dev.build_time_days + '">'
+          + btnText + '</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function buildTabs(activeCat) {
+      return '<div class="build-cat-tabs">'
+        + cats.map(c =>
+            '<button class="build-cat-tab' + (c === activeCat ? ' active' : '') + '"'
+            + ' onclick="switchBuildCat(\'' + c + '\',this)">'
+            + (catLabels[c] || c) + '</button>'
+          ).join('')
+        + '</div>';
+    }
+
+    inner.innerHTML = '<div class="build-balance-bar"><div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:2px;">Your Balance</div><strong>' + balance.toLocaleString() + ' ARKIS</strong></div><span class="build-balance-slots">' + existing.length + ' / 10 slots used</span></div>'
+      + buildTabs('all')
+      + '<div class="build-cards-grid" id="buildCardsGrid">' + renderCards('all') + '</div>';
+
+    // Tab switch
+    window.switchBuildCat = function(cat, btn) {
+      document.querySelectorAll('.build-cat-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('buildCardsGrid').innerHTML = renderCards(cat);
+      wireBuildCardBtns();
+    };
+
+    wireBuildCardBtns();
+
+  } catch(e) {
+    console.error('loadBuildCatalog error:', e);
+    inner.innerHTML = '<div style="color:rgba(255,80,80,0.6);font-size:13px;">Could not load catalog — please reload.</div>';
+  }
+}
+
+function wireBuildCardBtns() {
+  document.querySelectorAll('.build-card-btn:not([disabled])').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true)); // remove old listeners
+  });
+  document.querySelectorAll('.build-card-btn:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', function() {
+      confirmAndBuild(this.dataset.slug, this.dataset.name, Number(this.dataset.cost), Number(this.dataset.days));
+    });
+  });
+}
+
+async function confirmAndBuild(slug, name, cost, days) {
+  const permitFee = Math.round(cost * 0.05);
+  const total = cost + permitFee;
+  if (!confirm(name + '\n\nCost: ' + cost.toLocaleString() + ' ARKIS + ' + permitFee.toLocaleString() + ' permit fee = ' + total.toLocaleString() + ' ARKIS total\nBuild time: ' + days + ' Lum days (' + days + ' IRL hours)\n\nConfirm construction?')) return;
+
+  const sb = window.supabase || window.supabaseClient;
+  const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+  const userId = session?.user?.id;
+  if (!sb || !userId) return;
+
+  const unitCode = window._uCode;
+  const btn = [...document.querySelectorAll('.build-card-btn')].find(b => b.dataset.slug === slug);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Starting…'; }
+
+  try {
+    const { data: result, error } = await sb.rpc('build_development', {
+      p_user_id:   userId,
+      p_unit_code: unitCode,
+      p_slug:      slug
+    });
+
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('insufficient_balance')) throw new Error('Insufficient ARKIS — you cannot afford this building.');
+      if (msg.includes('not_unit_owner'))        throw new Error('You do not own this unit.');
+      if (msg.includes('already_building_or_built')) throw new Error('This building is already built or under construction.');
+      if (msg.includes('no_slots_available'))    throw new Error('No development slots remaining on this unit.');
+      if (msg.includes('building_not_found'))    throw new Error('Building not found in catalog.');
+      throw new Error(msg || 'Build failed — please try again.');
+    }
+
+    // Update nav ARKIS display with server-confirmed balance
+    const newBalance = Number(result.balance_after);
+    if (window.playerTokens) window.playerTokens.arkis = newBalance;
+    if (typeof window.refreshNavArkis === 'function') window.refreshNavArkis(newBalance);
+
+    if (btn) { btn.className = 'build-card-btn building'; btn.textContent = '⏳ Building…'; btn.disabled = true; }
+
+  } catch(e) {
+    alert('Build failed: ' + (e.message || 'please try again'));
+    if (btn) { btn.disabled = false; btn.textContent = '🏗️ Build · ' + cost.toLocaleString() + ' ARKIS'; }
+  }
+}
+
+// ── PULSE TUNING ──
+function tuneThisUnit() {
+  const cu = window.currentUser || window._sessionUser || (() => {
+    try { return JSON.parse(localStorage.getItem('minalia_session') || '{}').user || null; } catch(e) { return null; }
+  })();
+  if (!cu?.id) { alert('Connect your wallet first.'); return; }
+  const code = (new URLSearchParams(window.location.search).get('code') || '').toUpperCase().trim();
+  if (!code) return;
+  if (typeof openTuneModal === 'function') {
+    openTuneModal(code);
+  } else {
+    alert('Tune module not loaded yet — please try again.');
+  }
+}
+</script>
+
+<script src="lum-time.js?v=20260302a"></script>
+<script>document.addEventListener("DOMContentLoaded", function(){
+  if(typeof startLumClock==="function") startLumClock();
+
+  // Tick construction countdown timers every 30 seconds
+  function tickConstructionTimers() {
+    document.querySelectorAll('[data-completedat]').forEach(el => {
+      const msLeft = new Date(el.dataset.completedat) - Date.now();
+      if (msLeft <= 0) {
+        el.innerHTML = '<span style="color:rgba(96,255,171,0.9);">✓ Complete — reload page</span>';
+        return;
+      }
+      const lumDur = typeof realMsToLumDuration === 'function' ? realMsToLumDuration(msLeft) : '';
+      const irlStr = msLeft < 3600000
+        ? `${Math.ceil(msLeft/60000)} IRL min`
+        : `${(msLeft/3600000).toFixed(1)} IRL hrs`;
+      el.innerHTML = `${lumDur} <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:400;">(${irlStr})</span>`;
+    });
+  }
+  tickConstructionTimers();
+  setInterval(tickConstructionTimers, 30000);
+});</script>
+<script>
+// Ticker items
+const tickerItems = [
+  { icon: '🗺️', color: 'info',    text: 'Explore the map to find available units across Luminaea' },
+  { icon: '💰', color: 'sale',    text: 'Units listed for sale can be purchased directly from owners' },
+  { icon: '🔨', color: 'auction', text: 'Auctions run on Luminaea time — check back regularly' },
+  { icon: '🏗️', color: 'build',   text: 'Development projects increase unit value over time' },
+  { icon: '🤝', color: 'collab',  text: 'Collaborate with neighbouring unit owners for bonuses' },
+];
+(function(){
+  const s = document.getElementById('ticker-scroll');
+  if (!s) return;
+  const h = tickerItems.map(i =>
+    `<div class="ticker-item"><span class="ticker-icon ${i.color}">${i.icon}</span><span>${i.text}</span></div>`
+  ).join('<span style="color:rgba(255,224,138,0.3);margin:0 8px">•</span>');
+  s.innerHTML = h + '<span style="color:rgba(255,224,138,0.3);margin:0 8px">•</span>' + h;
+})();
+</script>
+<script src="nav-audio.js"></script>
+<script>
+  // Audio button: nav loads async, wait for navLoaded
+  document.addEventListener('navLoaded', function() {
+    if (window.initNavAudio) window.initNavAudio();
+  });
+</script>
+
+  <!-- ── BUY / OFFER / BID MODALS ── -->
+  <div class="mmodal" id="mm-buy">
+    <div class="mmodal-box">
+      <button class="mmodal-x" onclick="mmClose('mm-buy')">×</button>
+      <div id="mm-buy-body"></div>
+    </div>
+  </div>
+  <div class="mmodal" id="mm-offer">
+    <div class="mmodal-box">
+      <button class="mmodal-x" onclick="mmClose('mm-offer')">×</button>
+      <div id="mm-offer-body"></div>
+    </div>
+  </div>
+  <div class="mmodal" id="mm-bid">
+    <div class="mmodal-box">
+      <button class="mmodal-x" onclick="mmClose('mm-bid')">×</button>
+      <div id="mm-bid-body"></div>
+    </div>
+  </div>
+
+  <script>
+  // ── Modal helpers ──────────────────────────────────────────────
+  function mmClose(id) { document.getElementById(id).classList.remove('open'); }
+
+  let _toastTimer = null;
+  function showPurchaseToast(unitCode, price) {
+    const toast = document.getElementById('purchaseToast');
+    const msg   = document.getElementById('purchaseToastMsg');
+    if (!toast) return;
+    msg.textContent = unitCode
+      ? `${unitCode} is now yours · ${Number(price).toLocaleString()} ARKIS transferred`
+      : 'Unit transferred to your account.';
+    toast.classList.remove('hide');
+    toast.classList.add('show');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(hidePurchaseToast, 6000);
+  }
+  function hidePurchaseToast() {
+    const toast = document.getElementById('purchaseToast');
+    if (!toast) return;
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => toast.classList.remove('hide'), 300);
+  }
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('mmodal')) e.target.classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape')
+      document.querySelectorAll('.mmodal.open').forEach(m => m.classList.remove('open'));
+  });
+
+  function _walletHtml() {
+    const session = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const cu = window.currentUser || window._sessionUser || session.user || null;
+    // Wallet address lives at session root, not inside user object
+    const addr = session.wallet_address || cu?.walletAddress || cu?.wallet_address || cu?.mina_wallet_address || null;
+    const display = addr ? (addr.length > 16 ? addr.slice(0,8)+'…'+addr.slice(-6) : addr) : null;
+    return `<div class="mmodal-wallet">
+      <div class="mmodal-wlbl">Your Wallet</div>
+      <div class="mmodal-waddr">${display || '<span style="color:rgba(255,100,100,0.7)">Not connected — <a href=\"login.html\" style=\"color:#60ffab;\">log in</a></span>'}</div>
+    </div>`;
+  }
+
+  // ── BUY NOW ───────────────────────────────────────────────────
+  function openBuyModal(price) {
+    document.getElementById('mm-buy-body').innerHTML = `
+      <div class="mmodal-title">Buy Now</div>
+      <div class="mmodal-ref">${window._uCode}</div>
+      <div class="mmodal-priceline">
+        <span class="mmodal-price">${Number(price).toLocaleString()}</span>
+        <span class="mmodal-pmina">ARKIS</span>
+      </div>
+      <div class="mmodal-pnote">Fixed price · Ownership transfers immediately on-chain</div>
+      ${_walletHtml()}
+      <button class="mbtn mbtn-buy" onclick="_doBuy(${price})">Confirm Purchase · ${Number(price).toLocaleString()} ARKIS</button>
+      <button class="mbtn mbtn-cancel" onclick="mmClose('mm-buy')">Cancel</button>
+      <div class="mmodal-note">This transaction is processed on Luminaea. It cannot be undone.</div>`;
+    document.getElementById('mm-buy').classList.add('open');
+  }
+
+  async function _doBuy(price) {
+    const _sess = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const cu = window.currentUser || window._sessionUser || _sess.user || null;
+    if (!cu?.id) {
+      document.getElementById('mm-buy-body').innerHTML = `
+        <div class="mmodal-title">Connect Your Wallet</div>
+        <div class="mmodal-ref">${window._uCode}</div>
+        <div style="color:rgba(255,180,80,0.9);font-size:13px;margin:16px 0;line-height:1.7;">
+          You need to connect your Auro wallet to purchase units.
+        </div>
+        <div style="display:flex;gap:10px;">
+          <a href="login.html" class="mbtn mbtn-buy" style="text-decoration:none;text-align:center;">Connect Wallet →</a>
+          <button class="mbtn mbtn-cancel" onclick="mmClose('mm-buy')">Cancel</button>
+        </div>`;
+      return;
+    }
+
+    // Show loading state
+    document.getElementById('mm-buy-body').innerHTML = `
+      <div class="mmodal-title">Buy Now</div>
+      <div class="mmodal-ref">${window._uCode}</div>
+      <div style="text-align:center;padding:24px 0;color:rgba(255,255,255,0.4);font-size:13px;">Processing purchase…</div>`;
+
+    try {
+      const res = await fetch('https://vvlgaisfhhjvchequmhh.supabase.co/functions/v1/process-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'buy', unit_code: window._uCode, buyer_id: cu.id })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        document.getElementById('mm-buy-body').innerHTML = `
+          <div class="mmodal-title">Purchase Failed</div>
+          <div class="mmodal-ref">${window._uCode}</div>
+          <div style="color:rgba(255,100,100,0.9);font-size:13px;margin:16px 0;line-height:1.6;">${data.error || 'Something went wrong.'}</div>
+          <button class="mbtn mbtn-cancel" onclick="mmClose('mm-buy')">Close</button>`;
+        return;
+      }
+
+      document.getElementById('mm-buy-body').innerHTML = `
+        <div class="mmodal-success-icon">✅</div>
+        <div class="mmodal-title" style="text-align:center;margin-bottom:8px;">Purchase Complete!</div>
+        <div class="mmodal-success-msg">
+          You are now the owner of <strong>${window._uCode}</strong>.<br>
+          <strong>${Number(price).toLocaleString()} ARKIS</strong> has been transferred.<br><br>
+          Your new unit is available on your profile.
+        </div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:20px 0;">
+        <div style="display:flex;gap:10px;">
+          <a href="profile.html" class="mbtn mbtn-buy" style="text-decoration:none;flex:1;text-align:center;">View Profile</a>
+          <button class="mbtn mbtn-cancel" onclick="mmClose('mm-buy');render()">Stay Here</button>
+        </div>`;
+      // Silently refresh unit data so ownership reflects new state when modal closed
+      setTimeout(() => render(), 800);
+      // Show persistent toast confirmation
+      showPurchaseToast(window._uCode, price);
+
+    } catch(e) {
+      document.getElementById('mm-buy-body').innerHTML = `
+        <div class="mmodal-title">Error</div>
+        <div style="color:rgba(255,100,100,0.9);font-size:13px;margin:16px 0;">${e.message}</div>
+        <button class="mbtn mbtn-cancel" onclick="mmClose('mm-buy')">Close</button>`;
+    }
+  }
+
+  // ── MAKE OFFER ────────────────────────────────────────────────
+  function openOfferModal(listPrice) {
+    const ownerName = window._uOwner?.username || 'the owner';
+    const db        = window._dbUnit;
+    const sugPrice  = db?.suggested_price ? Number(db.suggested_price) : 0;
+    const minOffer  = db?.min_offer_price ? Number(db.min_offer_price) : 0;
+    const defaultAmt = minOffer || (listPrice > 0 ? Math.round(listPrice * 0.9) : '');
+    document.getElementById('mm-offer-body').innerHTML = `
+      <div class="mmodal-title">Make an Offer</div>
+      <div class="mmodal-ref">${window._uCode} · to ${ownerName}</div>
+      ${listPrice > 0 ? `<div class="mmodal-pnote" style="margin-bottom:12px;">Listed at ${Number(listPrice).toLocaleString()} ARKIS</div>` : '<div style="margin-bottom:8px;"></div>'}
+      ${(sugPrice || minOffer) ? `
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        ${sugPrice ? `<div style="flex:1;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:3px;">Suggested</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:rgba(255,224,138,0.85);">${sugPrice.toLocaleString()} ARKIS</div>
+        </div>` : ''}
+        ${minOffer ? `<div style="flex:1;padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:3px;">Min Offer</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:rgba(180,140,255,0.85);">${minOffer.toLocaleString()} ARKIS</div>
+        </div>` : ''}
+      </div>` : ''}
+      ${_walletHtml()}
+      <div class="mmodal-field">
+        <label class="mmodal-flabel">Your Offer Amount (ARKIS)</label>
+        <input class="mmodal-input" id="offerAmt" type="number" min="${minOffer || 1}" placeholder="${defaultAmt || 'Enter amount…'}" value="${defaultAmt || ''}" />
+        <div class="mmodal-hint">${minOffer ? `Minimum offer: ${minOffer.toLocaleString()} ARKIS` : (listPrice > 0 ? 'Owner can accept, counter, or decline.' : 'Any amount — the owner will be notified.')}</div>
+      </div>
+      <div class="mmodal-field">
+        <label class="mmodal-flabel">Message (optional)</label>
+        <input class="mmodal-input" id="offerMsg" type="text" placeholder="e.g. Happy to discuss development plans" style="font-size:13px;font-weight:400;" />
+      </div>
+      <button class="mbtn mbtn-offer" onclick="_doOffer(${listPrice})">Send Offer</button>
+      <button class="mbtn mbtn-cancel" onclick="mmClose('mm-offer')">Cancel</button>
+      <div class="mmodal-note">Offers are non-binding until the owner accepts.</div>`;
+    document.getElementById('mm-offer').classList.add('open');
+  }
+
+  async function _doOffer(listPrice) {
+    const amt = parseFloat(document.getElementById('offerAmt').value);
+    const msg = document.getElementById('offerMsg').value.trim();
+    if (!amt || amt <= 0) { alert('Please enter a valid offer amount.'); return; }
+    const sess = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const cu = window.currentUser || window._sessionUser || sess.user || null;
+    const _hasWallet = cu?.walletAddress || cu?.wallet_address || cu?.mina_wallet_address || sess?.wallet_address;
+    if (!_hasWallet) { window.location.replace('login.html'); return; }
+
+    // Write offer to Supabase offers table (create if not exists)
+    try {
+      const _sb = window.supabaseClient || window.supabase;
+      if (_sb && typeof _sb.from === 'function') {
+        await _sb.from('unit_offers').insert({
+          unit_code:  window._uCode,
+          buyer_id:   cu.id || null,
+          seller_id:  window._dbUnit?.owner_id || null,
+          price:      amt,
+          message:    msg || null
+        });
+
+        // Alert the seller so they know an offer has arrived
+        const sellerId = window._dbUnit?.owner_id;
+        if (sellerId) {
+          const buyerName = cu.username || cu.name || 'A player';
+          const alertMsg  = `💰 ${buyerName} has made an offer of ${amt.toLocaleString()} ARKIS for ${window._uCode}.${msg ? ' Message: "' + msg + '"' : ''} Check your alerts to respond.`;
+          try {
+            await _sb.rpc('insert_minister_alert', {
+              p_user_id:    sellerId,
+              p_unit_code:  window._uCode,
+              p_alert_type: 'offer_received',
+              p_message:    alertMsg,
+              p_action_url: 'alerts.html'
+            });
+          } catch(alertErr) { console.warn('Could not send offer alert:', alertErr.message); }
+        }
+      }
+    } catch(e) { console.warn('Offer insert:', e.message); }
+
+    document.getElementById('mm-offer-body').innerHTML = `
+      <div class="mmodal-success-icon">📨</div>
+      <div class="mmodal-title" style="text-align:center;margin-bottom:8px;">Offer Sent</div>
+      <div class="mmodal-success-msg">
+        Your offer of <strong>${amt.toLocaleString()} ARKIS</strong> for
+        <strong>${window._uCode}</strong> has been sent to ${window._uOwner?.username || 'the owner'}.
+        ${msg ? `<br><br><em>"${msg}"</em>` : ''}
+        <br><br>You'll be notified when they respond.
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:20px 0;">
+      <button class="mbtn mbtn-cancel" onclick="mmClose('mm-offer')">Close</button>`;
+
+    // Refresh offer panel to show "You offered X ARKIS"
+    loadOfferState(window._uCode, window._dbUnit?.owner_id, false);
+  }
+
+
+  // ── OFFER STATE ─────────────────────────────────────────────────────────
+  // Shows current user's pending offer, or owner's incoming offers with accept/decline
+  async function loadOfferState(unitCode, ownerId, isOwner) {
+    const sb = window.supabaseClient || window.supabase;
+    if (!sb || !unitCode) return;
+
+    const sess = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const myId = sess?.user?.id;
+
+    if (isOwner) {
+      // ── Owner view: show all pending offers with accept/decline ──
+      const panel = document.getElementById('ownerOfferPanel');
+      if (!panel) return;
+      try {
+        const { data: offers } = await sb.from('unit_offers')
+          .select('id, price, message, offered_at, status, buyer_id, users!unit_offers_buyer_id_fkey(username, avatar, avatar_url)')
+          .eq('unit_code', unitCode)
+          .eq('status', 'pending')
+          .order('price', { ascending: false });
+
+        if (!offers || offers.length === 0) { panel.innerHTML = ''; return; }
+
+        const fmt = n => Number(n).toLocaleString();
+        const timeAgo = dt => {
+          const d = Math.floor((Date.now() - new Date(dt)) / 1000);
+          if (d < 60) return 'just now';
+          if (d < 3600) return Math.floor(d/60) + 'm ago';
+          if (d < 86400) return Math.floor(d/3600) + 'h ago';
+          return Math.floor(d/86400) + 'd ago';
+        };
+
+        panel.innerHTML = `
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+              color:rgba(255,224,138,0.5);margin-bottom:8px;">📨 ${offers.length} Pending Offer${offers.length>1?'s':''}</div>
+            ${offers.map(o => {
+              const buyer = o['users!unit_offers_buyer_id_fkey'] || o.users || {};
+              return `<div style="padding:10px 12px;border-radius:8px;background:rgba(255,224,138,0.05);
+                border:1px solid rgba(255,224,138,0.15);margin-bottom:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <div>
+                    <span style="font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;color:#FFE08A;">
+                      ${fmt(o.price)} ARKIS</span>
+                    <span style="font-size:10px;color:rgba(255,255,255,0.3);margin-left:8px;">
+                      from <a href="profile.html?user=${encodeURIComponent(buyer.username||'')}"
+                        style="color:rgba(255,224,138,0.6);text-decoration:none;">${buyer.username||'Unknown'}</a>
+                      · ${timeAgo(o.offered_at)}</span>
+                  </div>
+                </div>
+                ${o.message ? `<div style="font-size:11px;color:rgba(255,255,255,0.4);font-style:italic;margin-bottom:8px;">"${o.message}"</div>` : ''}
+                <div style="display:flex;gap:6px;">
+                  <button onclick="respondOffer('${o.id}','accepted',${o.price},'${buyer.username||''}')"
+                    style="flex:1;padding:6px 0;border-radius:6px;border:1px solid rgba(96,255,171,0.4);
+                    background:rgba(96,255,171,0.08);color:rgba(96,255,171,0.9);font-size:11px;font-weight:700;
+                    cursor:pointer;letter-spacing:.05em;">✓ Accept</button>
+                  <button onclick="respondOffer('${o.id}','declined',${o.price},'${buyer.username||''}')"
+                    style="flex:1;padding:6px 0;border-radius:6px;border:1px solid rgba(255,100,100,0.3);
+                    background:rgba(255,100,100,0.06);color:rgba(255,100,100,0.8);font-size:11px;font-weight:700;
+                    cursor:pointer;letter-spacing:.05em;">✕ Decline</button>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>`;
+      } catch(e) { console.warn('loadOfferState owner:', e.message); }
+
+    } else {
+      // ── Buyer view: show my pending offer ──
+      const btn = document.getElementById('makeOfferBtn');
+      const area = document.getElementById('offerActionArea');
+      if (!myId || !btn) return;
+      try {
+        const { data: myOffer } = await sb.from('unit_offers')
+          .select('id, price, status, offered_at, message')
+          .eq('unit_code', unitCode)
+          .eq('buyer_id', myId)
+          .in('status', ['pending','accepted','declined'])
+          .order('offered_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!myOffer) return;
+
+        const fmt = n => Number(n).toLocaleString();
+        const statusColor = myOffer.status === 'accepted' ? 'rgba(96,255,171,0.9)'
+                          : myOffer.status === 'declined' ? 'rgba(255,100,100,0.8)'
+                          : 'rgba(255,224,138,0.8)';
+        const statusLabel = myOffer.status === 'accepted' ? '✓ Accepted'
+                          : myOffer.status === 'declined' ? '✕ Declined'
+                          : '⏳ Offer Pending';
+
+        // Replace "Make Offer" button with status pill
+        btn.style.display = 'none';
+        const existingPill = document.getElementById('myOfferPill');
+        if (!existingPill) {
+          const pill = document.createElement('div');
+          pill.id = 'myOfferPill';
+          pill.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;' +
+            'background:rgba(255,224,138,0.06);border:1px solid rgba(255,224,138,0.2);margin-top:6px;';
+          pill.innerHTML = `<span style="font-size:13px;">📨</span>
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:${statusColor};">
+                ${statusLabel}</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.6);">${fmt(myOffer.price)} ARKIS offered</div>
+            </div>`;
+          if (area) area.appendChild(pill);
+        }
+      } catch(e) { console.warn('loadOfferState buyer:', e.message); }
+    }
+  }
+
+  // ── OWNER: respond to offer (accept / decline) ────────────────────────
+  async function respondOffer(offerId, response, price, buyerName) {
+    const sb = window.supabaseClient || window.supabase;
+    const sess = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const myId = sess?.user?.id;
+    if (!sb || !myId) return;
+
+    const btn = event?.target;
+    if (btn) { btn.disabled = true; btn.textContent = response === 'accepted' ? 'Accepting…' : 'Declining…'; }
+
+    try {
+      // Update offer status
+      const { error } = await sb.from('unit_offers')
+        .update({ status: response, responded_at: new Date().toISOString() })
+        .eq('id', offerId);
+      if (error) throw error;
+
+      if (response === 'accepted') {
+        // Get buyer_id for the offer
+        const { data: offerRow } = await sb.from('unit_offers')
+          .select('buyer_id').eq('id', offerId).single();
+        const buyerId = offerRow?.buyer_id;
+
+        // Alert the buyer — accepted
+        if (buyerId) {
+          await sb.rpc('insert_minister_alert', {
+            p_user_id:    buyerId,
+            p_unit_code:  window._uCode,
+            p_alert_type: 'offer_accepted',
+            p_message:    `✅ Your offer of ${Number(price).toLocaleString()} ARKIS for ${window._uCode} has been accepted! Visit the unit to complete the purchase.`,
+            p_action_url: `unit.html?code=${window._uCode}`
+          });
+        }
+        // Alert the owner — confirmation
+        await sb.rpc('insert_minister_alert', {
+          p_user_id:    myId,
+          p_unit_code:  window._uCode,
+          p_alert_type: 'offer_accepted',
+          p_message:    `✅ You accepted ${buyerName}'s offer of ${Number(price).toLocaleString()} ARKIS for ${window._uCode}. Complete the sale via the unit page.`,
+          p_action_url: `unit.html?code=${window._uCode}`
+        });
+      } else {
+        // Alert the buyer — declined
+        const { data: offerRow } = await sb.from('unit_offers')
+          .select('buyer_id').eq('id', offerId).single();
+        const buyerId = offerRow?.buyer_id;
+        if (buyerId) {
+          await sb.rpc('insert_minister_alert', {
+            p_user_id:    buyerId,
+            p_unit_code:  window._uCode,
+            p_alert_type: 'offer_declined',
+            p_message:    `Your offer of ${Number(price).toLocaleString()} ARKIS for ${window._uCode} was declined by the owner.`,
+            p_action_url: `unit.html?code=${window._uCode}`
+          });
+        }
+      }
+
+      // Refresh offer panel
+      loadOfferState(window._uCode, window._dbUnit?.owner_id, true);
+
+    } catch(e) {
+      console.warn('respondOffer error:', e.message);
+      alert('Failed to respond — please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = response === 'accepted' ? '✓ Accept' : '✕ Decline'; }
+    }
+  }
+
+  // ── BID LIST + ACTION BADGE ────────────────────────────────────
+  // Single function handles both the leaderboard (right col) and the
+  // bid action badge (left col). One DB query, no separate bid check needed.
+  async function loadBidList(unitCode, ownerId) {
+    const wrap = document.getElementById('bidListWrap');
+    if (!wrap) return;
+    try {
+      const sb = window.supabaseClient || window.supabase;
+      if (!sb) return;
+
+      // ── Resolve current user identity ──
+      // Read session once; use wallet_address as the reliable key
+      const sess = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+      const sessWallet = sess?.wallet_address || null;
+
+      // isOwner: wallet match is primary (always correct), UUID is fallback
+      const isOwner = (sessWallet && window._uOwner?.wallet && sessWallet === window._uOwner.wallet)
+                   || (sess?.user?.id && sess.user.id === ownerId);
+
+      // currentUserId: needed to detect own bids in the list
+      // Use session user.id directly — it IS the real UUID for all real wallet logins
+      // (minaliens uuid = aaaaaaaa-0001-0001-0001-000000000001, confirmed in DB)
+      const currentUserId = sess?.user?.id || null;
+
+      // ── Fetch all bids for this unit ──
+      const { data: bids } = await sb.from('bids')
+        .select('id, bidder_id, amount, status, is_private, message, created_at, users!bids_bidder_id_fkey(username, mina_wallet_address)')
+        .eq('unit_code', unitCode)
+        .in('status', ['active', 'outbid'])
+        .order('amount', { ascending: false });
+
+      // ── Find my bid from the fetched data — no extra DB call needed ──
+      // Match by user ID first; if that misses, match by wallet address
+      let myBid = null;
+      if (bids && bids.length > 0) {
+        myBid = bids.find(b => currentUserId && b.bidder_id === currentUserId)
+             || (sessWallet ? bids.find(b => {
+                  const u = b['users!bids_bidder_id_fkey'] || b.users || {};
+                  return u.mina_wallet_address === sessWallet;
+                }) : null)
+             || null;
+
+      }
+
+      // ── Update action badge in left column ──
+      const area = document.getElementById('bidActionArea');
+      if (area && !isOwner) {
+        const topBid = parseFloat(window._dbUnit?.auction_current_bid || window._dbUnit?.auction_min_bid || 0);
+        if (myBid) {
+          const myAmt    = parseFloat(myBid.amount);
+          const isLeading = myAmt >= topBid && topBid > 0;
+          area.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;
+                background:${isLeading ? 'rgba(96,255,171,0.08)' : 'rgba(255,140,0,0.08)'};
+                border:1px solid ${isLeading ? 'rgba(96,255,171,0.25)' : 'rgba(255,140,0,0.3)'};">
+                <span style="font-size:14px;">🔨</span>
+                <div>
+                  <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+                    color:${isLeading ? 'rgba(96,255,171,0.7)' : 'rgba(255,140,0,0.9)'};">
+                    ${isLeading ? 'Bid Placed · Leading' : '⚠ Outbid'}</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,0.7);">
+                    ${myAmt.toLocaleString()} ARKIS
+                    ${!isLeading ? `<span style="color:rgba(255,255,255,0.35);font-size:10px;"> · top is ${topBid.toLocaleString()}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              ${!isLeading ? `<button class="btn btn-primary" onclick="openBidModal()" style="width:100%;">↑ Raise Bid</button>` : ''}
+            </div>`;
+        }
+        // If no bid found, the default "Place Bid" button already rendered — leave it
+      }
+
+      // ── Render bid leaderboard ──
+      if (!bids || bids.length === 0) {
+        wrap.innerHTML = `<div style="font-size:11px;color:rgba(255,255,255,0.2);padding:4px 0;">No bids yet — be the first.</div>`;
+        return;
+      }
+
+      const fmt      = n => Number(n).toLocaleString();
+      const timeAgo  = dt => {
+        const d = Math.floor((Date.now() - new Date(dt)) / 1000);
+        if (d < 60) return 'just now';
+        if (d < 3600) return Math.floor(d/60) + 'm ago';
+        if (d < 86400) return Math.floor(d/3600) + 'h ago';
+        return Math.floor(d/86400) + 'd ago';
+      };
+      const rankLabel = i => i === 0 ? 'Top bid' : i === 1 ? '2nd bid' : i === 2 ? '3rd bid' : `${i+1}th bid`;
+
+      let html = `<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+        color:rgba(255,255,255,0.25);margin-bottom:10px;">${bids.length} Bid${bids.length !== 1 ? 's' : ''}</div>`;
+
+      bids.forEach((b, i) => {
+        const u      = b['users!bids_bidder_id_fkey'] || b.users || {};
+        const isAnon = b.is_private && !isOwner;
+        const isMine = b === myBid || (currentUserId && b.bidder_id === currentUserId)
+                    || (sessWallet && u.mina_wallet_address === sessWallet);
+
+        const nameHtml = isAnon
+          ? `<span style="color:rgba(255,255,255,0.3);">🔒 Private</span>`
+          : `<a href="profile.html?user=${encodeURIComponent(u.username || '')}"
+               style="color:rgba(255,224,138,0.7);text-decoration:none;font-weight:600;">${u.username || 'Unknown'}</a>`;
+        const mineTag = isMine ? ` <span style="color:rgba(96,255,171,0.6);font-size:9px;">· you</span>` : '';
+        const msgHtml = (b.message && (isOwner || isMine))
+          ? `<div style="margin-top:3px;font-style:italic;color:rgba(255,255,255,0.3);font-size:10px;">"${b.message}"</div>` : '';
+
+        const rankColor = i === 0 ? '#FF8C00' : 'rgba(255,255,255,0.25)';
+        const amtColor  = i === 0 ? '#FFE08A' : 'rgba(255,255,255,0.4)';
+        const rowBg     = i === 0 ? 'rgba(255,140,0,0.07)' : 'rgba(255,255,255,0.02)';
+        const rowBdr    = i === 0 ? 'rgba(255,140,0,0.18)' : 'rgba(255,255,255,0.05)';
+
+        html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+          border-radius:8px;background:${rowBg};border:1px solid ${rowBdr};margin-bottom:4px;">
+          <div style="min-width:44px;flex-shrink:0;">
+            <div style="font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:${rankColor};">${rankLabel(i)}</div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:${amtColor};">${fmt(b.amount)} ARKIS</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;">${nameHtml}${mineTag} · ${timeAgo(b.created_at)}${msgHtml}</div>
+          </div>
+        </div>`;
+      });
+
+      wrap.innerHTML = html;
+    } catch(e) {
+      console.warn('loadBidList error:', e.message);
+    }
+  }
+
+  function openBidModal() {
+    // Hard guard — owner can never bid on their own unit
+    const _sessCheck = (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}'); } catch(e) { return {}; } })();
+    const _walletCheck = _sessCheck.wallet_address || null;
+    if (_walletCheck && window._uOwner?.wallet && _walletCheck === window._uOwner.wallet) {
+      alert('You cannot bid on your own auction.');
+      return;
+    }
+    const db      = window._dbUnit;
+    const curBid  = parseFloat(db?.auction_current_bid || 0);
+    const minBid  = parseFloat(db?.auction_min_bid || 0);
+    const floor   = Math.max(curBid, minBid);
+    const suggest = floor + Math.max(1, Math.round(floor * 0.05));
+    const endStr  = db?.auction_end_time
+      ? new Date(db.auction_end_time).toLocaleString(undefined, {dateStyle:'medium',timeStyle:'short'})
+      : '—';
+    document.getElementById('mm-bid-body').innerHTML = `
+      <div class="mmodal-title">Place a Bid</div>
+      <div class="mmodal-ref">${window._uCode} · Auction ends ${endStr}</div>
+      <div class="mmodal-priceline">
+        <span class="mmodal-price">${floor.toLocaleString()}</span>
+        <span class="mmodal-pmina">ARKIS ${curBid > 0 ? 'current bid' : 'minimum'}</span>
+      </div>
+      <div class="mmodal-pnote">Your bid must exceed ${floor.toLocaleString()} ARKIS</div>
+      ${_walletHtml()}
+      <div class="mmodal-field">
+        <label class="mmodal-flabel">Your Bid (ARKIS)</label>
+        <input class="mmodal-input" id="bidAmt" type="number" min="${floor + 1}" placeholder="Min ${(floor+1).toLocaleString()}" value="${suggest}" />
+        <div class="mmodal-hint">Must exceed ${floor.toLocaleString()} ARKIS · Funds held in escrow until outbid or auction ends</div>
+      </div>
+      <div class="mmodal-field" style="margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.6);">
+          <input type="checkbox" id="bidPrivate" style="width:16px;height:16px;accent-color:#FFE08A;cursor:pointer;" />
+          <span><span style="color:rgba(255,255,255,0.85);font-weight:600;">Private bid</span> — your identity hidden from seller and public list</span>
+        </label>
+      </div>
+      <div class="mmodal-field" style="margin-top:10px;">
+        <label class="mmodal-flabel">Message to seller <span style="color:rgba(255,255,255,0.3);font-weight:400;">(optional)</span></label>
+        <input class="mmodal-input" id="bidMessage" type="text" maxlength="120" placeholder="e.g. Open to trade offers too" style="font-size:13px;" />
+      </div>
+      <button class="mbtn mbtn-bid" onclick="_doBid(${floor})">Place Bid</button>
+      <button class="mbtn mbtn-cancel" onclick="mmClose('mm-bid')">Cancel</button>
+      <div class="mmodal-note">Bids are binding. If outbid, ARKIS is returned automatically.</div>`;
+    document.getElementById('mm-bid').classList.add('open');
+  }
+
+  async function _doBid(floor) {
+    const amt = parseFloat(document.getElementById('bidAmt').value);
+    if (!amt || amt <= floor) { alert('Bid must exceed ' + floor.toLocaleString() + ' ARKIS.'); return; }
+    const cu = window.currentUser || window._sessionUser || (() => { try { return JSON.parse(localStorage.getItem('minalia_session') || '{}').user || null; } catch(e) { return null; } })();
+    if (!cu?.id) { window.location.replace('login.html'); return; }
+
+    // Show loading state
+    document.getElementById('mm-bid-body').innerHTML = `
+      <div class="mmodal-title">Place a Bid</div>
+      <div class="mmodal-ref">${window._uCode}</div>
+      <div style="text-align:center;padding:24px 0;color:rgba(255,255,255,0.4);font-size:13px;">Placing bid…</div>`;
+
+    try {
+      const res = await fetch('https://vvlgaisfhhjvchequmhh.supabase.co/functions/v1/process-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'bid',
+          unit_code: window._uCode,
+          bidder_id: cu.id,
+          amount: amt,
+          is_private: document.getElementById('bidPrivate') ? document.getElementById('bidPrivate').checked : false,
+          message: document.getElementById('bidMessage') ? (document.getElementById('bidMessage').value.trim() || null) : null
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        document.getElementById('mm-bid-body').innerHTML = `
+          <div class="mmodal-title">Bid Failed</div>
+          <div class="mmodal-ref">${window._uCode}</div>
+          <div style="color:rgba(255,100,100,0.9);font-size:13px;margin:16px 0;line-height:1.6;">${data.error || 'Something went wrong.'}</div>
+          <button class="mbtn mbtn-cancel" onclick="mmClose('mm-bid')">Close</button>`;
+        return;
+      }
+
+      document.getElementById('mm-bid-body').innerHTML = `
+        <div class="mmodal-success-icon">🔨</div>
+        <div class="mmodal-title" style="text-align:center;margin-bottom:8px;">Bid Placed!</div>
+        <div class="mmodal-success-msg">
+          Your bid of <strong>${amt.toLocaleString()} ARKIS</strong> on
+          <strong>${window._uCode}</strong> is now the highest bid.<br><br>
+          Your ARKIS has been held in escrow. You'll be notified if outbid.
+        </div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:20px 0;">
+        <button class="mbtn mbtn-cancel" onclick="mmClose('mm-bid');render()">Close</button>`;
+
+      // Immediately refresh the bid list and price display without waiting for modal close
+      if (window._dbUnit) {
+        window._dbUnit.auction_current_bid = amt;
+        const priceEl = document.querySelector('.market-price-big');
+        const noteEl  = document.querySelector('.market-price-note');
+        if (priceEl) priceEl.textContent = amt.toLocaleString();
+        if (noteEl)  noteEl.textContent  = noteEl.textContent.replace('Minimum bid','Current bid');
+      }
+      loadBidList(window._uCode, window._dbUnit?.owner_id);
+
+      // Send alerts — bidder confirmation + owner notification + outbid notification
+      try {
+        const sb = window.supabaseClient || window.supabase;
+        if (sb) {
+          // Find previous top bidder (to notify them they've been outbid)
+          const { data: prevBids } = await sb.from('bids')
+            .select('bidder_id, amount')
+            .eq('unit_code', window._uCode)
+            .eq('status', 'active')
+            .neq('bidder_id', cu.id)
+            .order('amount', { ascending: false })
+            .limit(1);
+          const prevTopBidder = prevBids?.[0];
+
+          // Alert for bidder (own confirmation)
+          await sb.rpc('insert_minister_alert', {
+            p_user_id:    cu.id,
+            p_unit_code:  window._uCode,
+            p_alert_type: 'financial',
+            p_message:    `Your bid of ${amt.toLocaleString()} ARKIS on ${window._uCode} is now the leading bid. Funds are held in escrow until the auction closes or you are outbid.`,
+            p_action_url: `unit.html?code=${window._uCode}`,
+            p_share_text: `I just placed a bid on ${window._uCode} on @Minaliens! play.minaliens.xyz #Minalia #Mina`
+          });
+          // Alert for unit owner
+          if (window._uOwner?.id && window._uOwner.id !== cu.id) {
+            await sb.rpc('insert_minister_alert', {
+              p_user_id:    window._uOwner.id,
+              p_unit_code:  window._uCode,
+              p_alert_type: 'financial',
+              p_message:    `New bid on your auction for ${window._uCode} — ${amt.toLocaleString()} ARKIS. View the auction to track all bids.`,
+              p_action_url: `unit.html?code=${window._uCode}`,
+              p_share_text: null
+            });
+          }
+          // Alert previous top bidder that they've been outbid
+          if (prevTopBidder?.bidder_id && prevTopBidder.bidder_id !== cu.id) {
+            await sb.rpc('insert_minister_alert', {
+              p_user_id:    prevTopBidder.bidder_id,
+              p_unit_code:  window._uCode,
+              p_alert_type: 'financial',
+              p_message:    `You've been outbid on ${window._uCode}. Your bid of ${Number(prevTopBidder.amount).toLocaleString()} ARKIS has been overtaken by a bid of ${amt.toLocaleString()} ARKIS. Raise your bid to stay in the auction.`,
+              p_action_url: `unit.html?code=${window._uCode}`,
+              p_share_text: null
+            });
+          }
+        }
+      } catch(alertErr) { console.warn('Alert error:', alertErr.message); }
+
+    } catch(e) {
+      document.getElementById('mm-bid-body').innerHTML = `
+        <div class="mmodal-title">Error</div>
+        <div style="color:rgba(255,100,100,0.9);font-size:13px;margin:16px 0;">${e.message}</div>
+        <button class="mbtn mbtn-cancel" onclick="mmClose('mm-bid')">Close</button>`;
+    }
+  }
+  </script>
+
+
+  <!-- Rhythm Tune Modal -->
+  <div class="tune-modal-backdrop" id="tuneModalBackdrop">
+    <div class="tune-modal" id="tuneModal">
+      <div class="tune-modal-unit" id="tuneModalUnit">—</div>
+      <div class="tune-modal-title" id="tuneModalTitle">Synchronise the Signal</div>
+      <canvas id="tuneCanvas" width="240" height="240"></canvas>
+      <div class="tune-result" id="tuneResult"></div>
+      <button class="tune-hit-btn" id="tuneHitBtn" onclick="onTuneHit()">⚡ TUNE</button>
+      <button class="tune-cancel-btn" onclick="closeTuneModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script src="tune-modal.js?v=20260316b"></script>
+  <script>
+    window.onTuneCommit = function(unitCode, score) {
+      const btn     = document.getElementById('btnTuneUnit');
+      const status  = document.getElementById('tuneStatus');
+      const battery = document.getElementById('tuneBatteryDisplay');
+      if (!btn || !status) return;
+
+      // Status message based on numeric score
+      let msg, col;
+      if (score >= 100)     { msg = '✦ Perfect! +24h bonus'; col = '#4ade80'; }
+      else if (score >= 75) { msg = '◈ Near! +8h bonus';     col = '#a3e635'; }
+      else if (score >= 50) { msg = '◇ Close +2h bonus';     col = '#FFE08A'; }
+      else                  { msg = '✗ Missed';               col = '#f87171'; }
+
+      btn.textContent = '✓ Tuned';
+      status.textContent = msg;
+      status.style.color = col;
+
+      // Update battery visual live
+      if (battery) {
+        const fc = score >= 80 ? 'bat-fill-green' : score >= 50 ? 'bat-fill-yellow' : score >= 25 ? 'bat-fill-orange' : 'bat-fill-red';
+        const tc = score >= 80 ? '#4ade80'        : score >= 50 ? '#FFE08A'         : score >= 25 ? '#fb923c'         : '#f87171';
+        const label = score >= 80 ? 'TUNED' : score >= 50 ? 'ACTIVE' : score >= 25 ? 'WEAK' : 'LOW';
+        battery.style.display = 'flex';
+        battery.innerHTML = `<div class="tune-battery-bar"><div class="tune-battery-fill ${fc}" style="width:${score}%"></div></div>
+          <div class="tune-battery-meta"><span>⚡ TUNE POWER</span><span style="color:${tc};font-weight:700;">${label} · ${score}%</span></div>`;
+      }
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '⚡ Tune Pulse';
+        status.textContent = '';
+      }, 5000);
+    };
+  </script>
+
+  <!-- ── DEV SLOT POPUP ── -->
+  <div class="dev-slot-popup" id="devSlotPopup">
+    <span class="dsp-icon" id="dspIcon"></span>
+    <div class="dsp-name" id="dspName"></div>
+    <div class="dsp-cat"  id="dspCat"></div>
+    <div class="dsp-status" id="dspStatus"></div>
+    <div class="dsp-hint"  id="dspHint"></div>
+  </div>
+
+  <script>
+  // ── Dev slot popup ──────────────────────────────────────────
+  const DEV_CAT_COLORS_UNIT = {
+    housing:'#ffe08a', economy:'#60ffab', science:'#60c8ff',
+    nature:'#64dc82',  culture:'#c8a0ff', health:'#ff8c8c', prestige:'#ffc850',
+    defence:'#ff6b6b',
+  };
+  const DEV_CAT_LABELS_UNIT = {
+    housing:'Housing', economy:'Economy', science:'Science',
+    nature:'Nature',   culture:'Culture', health:'Health',  prestige:'Prestige',
+    defence:'Defence',
+  };
+
+  function showDevSlotPopup(e, idx) {
+    const devs = window._unitDevs || [];
+    const dev  = devs[idx];
+    if (!dev) return;
+
+    const cat       = dev.development_catalog?.category || 'housing';
+    const col       = DEV_CAT_COLORS_UNIT[cat] || '#fff';
+    const catLabel  = DEV_CAT_LABELS_UNIT[cat] || cat;
+    const name      = dev.development_catalog?.name || dev.building_name || 'Development';
+    const icon      = dev.development_catalog?.icon || '🏗️';
+    const isBuilding = dev.status === 'building';
+
+    const popup = document.getElementById('devSlotPopup');
+    document.getElementById('dspIcon').textContent = icon;
+    document.getElementById('dspName').textContent = name;
+    document.getElementById('dspCat').textContent  = catLabel;
+    document.getElementById('dspCat').style.color  = col;
+
+    const statusEl = document.getElementById('dspStatus');
+    statusEl.textContent = isBuilding ? '⚙ Under Construction' : '✓ Fully Operational';
+    statusEl.className   = 'dsp-status ' + (isBuilding ? 'building' : 'completed');
+    popup.className      = 'dev-slot-popup ' + (isBuilding ? 'building' : 'completed') + '-popup';
+
+    document.getElementById('dspHint').textContent = 'See developments panel below for full details';
+
+    // Position above the clicked slot
+    const r  = e.target.getBoundingClientRect();
+    const pw = 260;
+    let left = r.left + r.width / 2 - pw / 2;
+    let top  = r.top + window.scrollY - 150;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 8) left = 8;
+    if (top < window.scrollY + 8) top = r.bottom + window.scrollY + 8;
+
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+    popup.classList.add('visible');
+    e.stopPropagation();
+  }
+
+  function scrollToDevPanel() {
+    const panel = document.getElementById('devPanel');
+    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Close popup on outside click
+  document.addEventListener('click', () => {
+    const p = document.getElementById('devSlotPopup');
+    if (p) p.classList.remove('visible');
+  });
+  </script>
+
+</html>
