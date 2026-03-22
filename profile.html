@@ -2909,6 +2909,7 @@
               <div class="ph-panel-title">Unit Health</div>
               <a href="tune.html" class="ph-tune-btn" id="tuneUnitsBtn" style="display:none;">⚡ Tune Units</a>
             </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.28);line-height:1.5;margin-bottom:6px;">Low performing units reduce yield. <a href="https://play.minaliens.xyz/faq.html#tuning" style="color:rgba(255,224,138,0.5);text-decoration:none;border-bottom:1px solid rgba(255,224,138,0.2);transition:color .15s;" onmouseover="this.style.color='rgba(255,224,138,0.9)'" onmouseout="this.style.color='rgba(255,224,138,0.5)'">Learn more →</a></div>
             <div class="ph-health-score-row">
               <div class="ph-health-pct" id="healthPct">—</div>
               <div class="ph-health-pct-label">avg health</div>
@@ -3523,6 +3524,7 @@
       }
 
       if (!user) { document.getElementById('usernameDisplay').textContent = 'Profile not found'; return; }
+      window._profileUserId = user.id;
 
       // ── Private profile — show basic info only ──────────────────────────
       const isViewingPrivate = (isViewingOtherUser && !isViewingOwnProfile) && user.profile_public === false;
@@ -6509,6 +6511,30 @@ What are you envisioning for unit ${unitLetter}?`;
         rowsEl.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.18);padding:6px 0;">No tuning data yet</div>';
         return;
       }
+
+      // ── Fetch real health % for this profile's owner ──
+      try {
+        // Wait for loadProfile to set _profileUserId (up to 5s)
+        let profileUserId = null;
+        for (let i = 0; i < 50; i++) {
+          if (window._profileUserId) { profileUserId = window._profileUserId; break; }
+          await new Promise(r => setTimeout(r, 100));
+        }
+        if (profileUserId) {
+          const { data: unitRows } = await sb
+            .from('units')
+            .select('tune_score')
+            .eq('owner_id', profileUserId)
+            .not('tune_score', 'is', null);
+          const hEl = document.getElementById('healthPct');
+          if (hEl && unitRows && unitRows.length) {
+            const avg = Math.round(unitRows.reduce((a, u) => a + u.tune_score, 0) / unitRows.length);
+            const col = avg >= 80 ? '#4ade80' : avg >= 50 ? '#FFE08A' : avg >= 25 ? '#fb923c' : '#f87171';
+            hEl.textContent = avg + '%';
+            hEl.style.color = col;
+          }
+        }
+      } catch(e) { console.warn('Health % fetch failed:', e); }
 
       try {
         const { data: lb, error } = await sb
