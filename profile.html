@@ -6495,10 +6495,6 @@ What are you envisioning for unit ${unitLetter}?`;
     }
 
     async function renderMiniLB() {
-      // Health % placeholder
-      const hEl = document.getElementById('healthPct');
-      if (hEl) hEl.textContent = '—%';
-
       const rowsEl = document.getElementById('phLbRows');
       if (!rowsEl) return;
       rowsEl.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.18);padding:6px 0">Loading…</div>';
